@@ -33,6 +33,10 @@ struct CliArgs {
     /// Test block number
     #[arg(short, long)]
     test_block: Option<u64>,
+
+    /// Disable distributed proving
+    #[arg(short, long)]
+    disable_distributed: bool,
 }
 
 #[tokio::main]
@@ -120,7 +124,7 @@ async fn main() -> Result<()> {
             }
 
             info!("Generating proof for block number {}", block_number);
-            let (proving_time, cycles) = generate_proof(block_number).await?;
+            let (proving_time, cycles) = generate_proof(block_number, args.disable_distributed).await?;
             info!("Proof generated for block number {}, proving_time: {}s, cycles: {}", block_number, proving_time / 1000, cycles);
 
             // Submit the proof to EthProofs

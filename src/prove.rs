@@ -4,12 +4,13 @@ use anyhow::{anyhow, Ok, Result};
 use base64::{engine::general_purpose, Engine};
 use flate2::write::GzEncoder;
 use flate2::Compression;
+use log::info;
 use rand::Rng;
 use tar::Builder;
 
 use crate::{INPUT_FOLDER, LOG_FOLDER, PROGRAM_FOLDER, PROOF_FOLDER};
 
-pub async fn generate_proof(block_number: u64) -> Result<(u128, u64)> {
+pub async fn generate_proof(block_number: u64, no_distributed: bool) -> Result<(u128, u64)> {
     let mut rng = rand::rng();
 
     let elf_file = format!("{}/{}", PROGRAM_FOLDER, env::var("ELF_FILE").unwrap_or("zisk-eth-client.elf".to_string()));
@@ -26,11 +27,18 @@ pub async fn generate_proof(block_number: u64) -> Result<(u128, u64)> {
     // Generate path for the log file
     let log_path = format!("{}/{}.log", LOG_FOLDER, block_number);
 
-    // Build the command as a string with output redirection
-    let command = format!(
-        "mpirun --bind-to none -np {} -x OMP_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -y > {} 2>&1",
-        num_processes, num_threads, elf_file, input_file, output_folder, log_path
-    );
+    let command = if no_distributed {
+        info!("Generating proof without distributed proving");
+        format!(
+            "cargo-zisk prove -e {} -i {} -o {} -a -y > {} 2>&1",
+            elf_file, input_file, output_folder, log_path
+        )
+    } else {
+        format!(
+            "mpirun --bind-to none -np {} -x OMP_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -a -y > {} 2>&1",
+            num_processes, num_threads, elf_file, input_file, output_folder, log_path
+        )
+    };
 
     let start = Instant::now();
     let output = Command::new("sh")
