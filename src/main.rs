@@ -136,7 +136,7 @@ async fn main() -> Result<()> {
             info!("Proof submitted for block number {}", block_number);
             if args.block_submit_alert {
                 send_telegram_alert(
-                    &format!("Proof submitted for block number {}, txs: {}, gas: {}, cycles: {}, proving_time: {}",
+                    &format!("Proof submitted for block number {}, txs: {}, gas: {}, cycles: {}, proving_time: {}s",
                     block_number, block.transactions.len(), block.gas_used, cycles, proving_time / 1000),
                     AlertType::Success
                 ).await?;
