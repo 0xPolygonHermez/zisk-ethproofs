@@ -13,7 +13,7 @@ use crate::{INPUT_FOLDER, LOG_FOLDER, PROGRAM_FOLDER, PROOF_FOLDER};
 pub async fn generate_proof(block_number: u64, no_distributed: bool) -> Result<(u128, u64)> {
     let mut rng = rand::rng();
 
-    let elf_file = format!("{}/{}", PROGRAM_FOLDER, env::var("ELF_FILE").unwrap_or("zisk-eth-client.elf".to_string()));
+    let elf_file = format!("{}/{}", PROGRAM_FOLDER, env::var("ELF_FILE").expect("ELF_FILE must be set"));
     let input_file = format!("{}/{}.bin", INPUT_FOLDER, block_number);
     let output_folder = format!("{}/{}", PROOF_FOLDER, block_number);
 
@@ -21,8 +21,8 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool) -> Result<(
     std::fs::create_dir_all(Path::new(PROOF_FOLDER))?;
     std::fs::create_dir_all(Path::new(LOG_FOLDER))?;
 
-    let num_processes = env::var("DISTRIBUTED_PROVE_PROCESSES").unwrap_or("4".to_string());
-    let num_threads = env::var("DISTRIBUTED_PROVE_THREADS").unwrap_or("56".to_string());
+    let num_processes = env::var("DISTRIBUTED_PROVE_PROCESSES").expect("DISTRIBUTED_PROVE_PROCESSES must be set");
+    let num_threads = env::var("DISTRIBUTED_PROVE_THREADS").expect("DISTRIBUTED_PROVE_THREADS must be set");
 
     // Generate path for the log file
     let log_path = format!("{}/{}.log", LOG_FOLDER, block_number);

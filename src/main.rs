@@ -37,6 +37,10 @@ struct CliArgs {
     /// Disable distributed proving
     #[arg(short, long)]
     disable_distributed: bool,
+
+    /// Keep input file
+    #[arg(short, long)]
+    keep_input: bool,
 }
 
 #[tokio::main]
@@ -149,8 +153,10 @@ async fn main() -> Result<()> {
         if let Err(e) = std::fs::remove_dir_all(&proof_folder) {
             warn!("Failed to remove proof folder {}, error: {}", proof_folder, e);
         }
-        if let Err(e) = std::fs::remove_file(&input_file) {
-            warn!("Failed to remove input file {}, error: {}", input_file, e);
+        if !args.keep_input {
+            if let Err(e) = std::fs::remove_file(&input_file) {
+                warn!("Failed to remove input file {}, error: {}", input_file, e);
+            }
         }
     
         // Handle errors

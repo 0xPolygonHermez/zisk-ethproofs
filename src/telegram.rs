@@ -12,6 +12,16 @@ pub enum AlertType {
 }
 
 pub async fn send_telegram_alert(message: &str, alert_type: AlertType) -> Result<()> {
+    let bot_token = match env::var("TELEGRAM_BOT_TOKEN").ok() {
+        Some(token) => token,
+        None => return Ok(()),
+    };
+
+    let chat_id = match env::var("TELEGRAM_CHAT_ID").ok() {
+        Some(id) => id,
+        None => return Ok(()),
+    };
+
     let icon = match alert_type {
         AlertType::Success => "✅",
         AlertType::Error => "❌",
@@ -20,9 +30,6 @@ pub async fn send_telegram_alert(message: &str, alert_type: AlertType) -> Result
     };
 
     let full_message = format!("{} {}", icon, message);
-
-    let bot_token = env::var("TELEGRAM_BOT_TOKEN")?;
-    let chat_id = env::var("TELEGRAM_CHAT_ID")?;
 
     let url = format!("https://api.telegram.org/bot{}/sendMessage", bot_token);
 
