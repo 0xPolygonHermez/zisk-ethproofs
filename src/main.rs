@@ -133,7 +133,7 @@ async fn main() -> Result<()> {
                 ethproofs_client.proof_proved(ethproofs_cluster_id, block_number, proving_time, cycles, proof_base64, "verifier".to_string()).await?;
             }
 
-            info!("Proof submitted for block number {}", block_number);
+            info!("Proof submitted to ethproofs for block number {}", block_number);
             if args.block_submit_alert {
                 send_telegram_alert(
                     &format!("Proof submitted for block number {}, txs: {}, gas: {}, cycles: {}, proving_time: {}s",

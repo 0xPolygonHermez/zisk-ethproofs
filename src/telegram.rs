@@ -1,5 +1,5 @@
 use anyhow::Result;
-use log::{error, info};
+use log::{debug, error};
 use reqwest::Client;
 use std::env;
 
@@ -36,7 +36,7 @@ pub async fn send_telegram_alert(message: &str, alert_type: AlertType) -> Result
         .await?;
 
     if res.status().is_success() {
-        info!("Telegram alert sent successfully, message: {}", message);
+        debug!("Telegram alert sent successfully, message: {}", message);
     } else {
         error!("Failed to send Telegram alert, error {:?}", res.text().await?);
     }
