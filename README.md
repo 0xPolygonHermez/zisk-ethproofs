@@ -10,9 +10,9 @@ Copy the `example.env` file to `.env`, then edit it to set the required variable
 | `RPC_WS_URL`                 | WebSocket JSON-RPC URL for the Ethereum Mainnet node                        | Yes      | –       |
 | `ETHPROOFS_API_URL`          | URL of the Ethproofs API                                                    | Yes      | –       |
 | `ETHPROOFS_API_TOKEN`        | Token for accessing the Ethproofs API                                       | Yes      | –       |
-| `ERHPROOFS_CLUSTER`          | Ethproofs cluster ID where proofs will be submitted                         | Yes      | –       |
+| `ETHPROOFS_CLUSTER`          | Ethproofs cluster ID where proofs will be submitted                         | Yes      | –       |
 | `BLOCK_MODULUS`              | Modulus value used to select which blocks will be proven                    | No       | `100`   |
-| `ELF_FILE`                   | Name of the ELF file used to prove blocks. It must be located in the `program` folder  | Yes | -     |
+| `ELF_FILE`                   | Name of the ELF file used to prove blocks. It must be located in the `./program` folder  | Yes | -     |
 | `DISTRIBUTED_PROVE_PROCESSES`| Number of processes used for distributed proving                            | Yes      | –       |
 | `DISTRIBUTED_PROVE_THREADS`  | Number of threads per process for distributed proving                       | Yes      | –       |
 | `TELEGRAM_BOT_TOKEN`         | Telegram Bot API token for sending alerts. Alerts are disabled if undefined | No       | –       |
