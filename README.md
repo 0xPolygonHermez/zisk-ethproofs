@@ -38,7 +38,7 @@ zisk-ethproofs
 | Flag | Description |
 |------|-------------|
 | `-n, --no-ethproofs` | Disable proof status reporting and submission to Ethproofs. Only block proving will be performed |
-| `-b, --block-submit-alert` | Send a Telegram alert when a block proof is successfully submitted to Ethproofs |
+| `-b, --block-submit-alert` | Send a Telegram alert when a block proof is successfully submitted to Ethproofs. By default, only error/warning alerts are sent |
 | `-t, --test-block <TEST_BLOCK>` | Generate and submit the proof for a specific block only. Useful for testing or troubleshooting. Example: `-t 22137695` |
 | `-d, --disable-distributed` | Disable distributed proving. The proof will be generated using a single process |
 | `-k, --keep-input` | Keeps the block input file after proof generation (does not delete it) |
