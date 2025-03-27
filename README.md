@@ -22,7 +22,7 @@ Copy the `example.env` file to `.env`, then edit it to set the required variable
 
 To install Zisk-ethproofs, use the following command:
 ```bash
-cargo install --release
+cargo install --path .
 ```
 
 ## Run
