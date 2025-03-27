@@ -105,7 +105,7 @@ async fn main() -> Result<()> {
             block_number = args.test_block.unwrap();
         }
         
-        // Guardamos rutas por adelantado
+        // Get proof folder and input path for the block
         let proof_folder = format!("{}/{}", PROOF_FOLDER, block_number);
         let input_file = format!("{}/{}.bin", INPUT_FOLDER, block_number);
 
