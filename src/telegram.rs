@@ -3,6 +3,7 @@ use log::{debug, error};
 use reqwest::Client;
 use std::env;
 
+// Define the types of Telegran alerts that can be sent
 #[allow(dead_code)]
 pub enum AlertType {
     Success,
@@ -11,17 +12,19 @@ pub enum AlertType {
     Warning,
 }
 
+// Send an alert to a Telegram chat using the Telegram Bot API
 pub async fn send_telegram_alert(message: &str, alert_type: AlertType) -> Result<()> {
+    // Check if the TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID environment variables are set, if not return
     let bot_token = match env::var("TELEGRAM_BOT_TOKEN").ok() {
         Some(token) => token,
         None => return Ok(()),
     };
-
     let chat_id = match env::var("TELEGRAM_CHAT_ID").ok() {
         Some(id) => id,
         None => return Ok(()),
     };
 
+    // Set the icon based on the alert type
     let icon = match alert_type {
         AlertType::Success => "✅",
         AlertType::Error => "❌",
@@ -29,10 +32,11 @@ pub async fn send_telegram_alert(message: &str, alert_type: AlertType) -> Result
         AlertType::Info => "ℹ️",
     };
 
+    // Format the message with the icon
     let full_message = format!("{} {}", icon, message);
 
+    // Send the message to the Telegram chat
     let url = format!("https://api.telegram.org/bot{}/sendMessage", bot_token);
-
     let client = Client::new();
     let res = client.post(&url)
         .json(&serde_json::json!({
@@ -42,6 +46,7 @@ pub async fn send_telegram_alert(message: &str, alert_type: AlertType) -> Result
         .send()
         .await?;
 
+    // Check if the request was successful
     if res.status().is_success() {
         debug!("Telegram alert sent successfully, message: {}", message);
     } else {

@@ -15,11 +15,13 @@ use input::generate_input_file;
 use prove::{generate_proof, get_proof_b64};
 use telegram::{send_telegram_alert, AlertType};
 
+// Constants
 const INPUT_FOLDER: &str = "input";
 const PROOF_FOLDER: &str = "proof";
 const PROGRAM_FOLDER: &str = "program";
 const LOG_FOLDER: &str = "log";
 
+// Command line arguments
 #[derive(Parser)]
 struct CliArgs {
     /// Disable ethproofs integration, only prove blocks
@@ -53,7 +55,7 @@ async fn main() -> Result<()> {
         std::env::set_var("RUST_LOG", "info");
     }
 
-    // Initialize the logger using the LOG_RUST variable
+    // Initialize the logger
     env_logger::init();
 
     // Load environment variables from .env file
@@ -62,6 +64,7 @@ async fn main() -> Result<()> {
     // Parse the command line arguments
     let args = CliArgs::parse();
 
+    // Determine if we should submit proofs to ethproofs
     let ethproofs_submit = !args.no_ethproofs;
 
     // Modulus used to select the blocks to prove
@@ -95,6 +98,7 @@ async fn main() -> Result<()> {
             while let Some(block) = stream.next().await {
                 block_number = block.number.unwrap().as_u64();
                 if block_number % block_modulus == 0 {
+                    // Block selected to be proved
                     break;
                 } else {
                     info!("Skipping block number: {}", block_number);
@@ -105,16 +109,17 @@ async fn main() -> Result<()> {
             block_number = args.test_block.unwrap();
         }
         
-        // Get proof folder and input path for the block
+        // Get proof folder and input file path for the block
         let proof_folder = format!("{}/{}", PROOF_FOLDER, block_number);
         let input_file = format!("{}/{}.bin", INPUT_FOLDER, block_number);
 
         let result = (|| async {
+            // Get block data
             let block = rpc_provider
                 .get_block(block_number).await?
                 .ok_or_else(|| anyhow::anyhow!("Block {} not found", block_number))?;
 
-            // Proof queued while generating the input file
+            // Report to EthProofs that the proof is queued while generating the input file
             if ethproofs_submit {
                 ethproofs_client.proof_queued(ethproofs_cluster_id, block_number).await?;
             }
@@ -122,7 +127,7 @@ async fn main() -> Result<()> {
             let input_file_time = generate_input_file(block_number).await?;
             info!("Input file generated for block number {}, time: {}s", block_number, input_file_time / 1000);
 
-            // Generate the proof
+            // Report to EthProof that we are generating the proof
             if ethproofs_submit {
                 ethproofs_client.proof_proving(ethproofs_cluster_id, block_number).await?;
             }

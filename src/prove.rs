@@ -10,6 +10,7 @@ use tar::Builder;
 
 use crate::{INPUT_FOLDER, LOG_FOLDER, PROGRAM_FOLDER, PROOF_FOLDER};
 
+/// Generate the input file for the given block number and return the time taken in milliseconds and the number of cycles
 pub async fn generate_proof(block_number: u64, no_distributed: bool) -> Result<(u128, u64)> {
     let mut rng = rand::rng();
 
@@ -57,6 +58,7 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool) -> Result<(
     }
 }
 
+/// Get the proof files for the given block number, compress them into a .tar.gz buffer and return it as base64 encoded string
 pub fn get_proof_b64(block_number: u64) -> Result<String> {
     // List of files to include in the archive
     let files = [

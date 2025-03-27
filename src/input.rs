@@ -8,6 +8,7 @@ use url::Url;
 
 use crate::INPUT_FOLDER;
 
+/// Generate the input file for the given block number and return the time taken in milliseconds
 pub async fn generate_input_file(block_number: u64) -> Result<u128>{
     // Load RPC URL from environment variable
     let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
