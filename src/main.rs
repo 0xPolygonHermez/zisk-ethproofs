@@ -1,6 +1,6 @@
 use std::env;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use dotenv::dotenv;
 use ethers::providers::{Middleware, Provider, Ws};
@@ -17,7 +17,7 @@ use telegram::{send_telegram_alert, AlertType};
 
 // Constants
 const INPUT_FOLDER: &str = "input";
-const PROOF_FOLDER: &str = "proof";
+const OUTPUT_FOLDER: &str = "output";
 const PROGRAM_FOLDER: &str = "program";
 const LOG_FOLDER: &str = "log";
 
@@ -41,8 +41,12 @@ struct CliArgs {
     disable_distributed: bool,
 
     /// Keep input file
-    #[arg(short, long)]
+    #[arg(short = 'i', long)]
     keep_input: bool,
+
+    /// Keep ouput folder
+    #[arg(short = 'o', long)]
+    keep_output: bool,
 }
 
 #[tokio::main]
@@ -86,7 +90,7 @@ async fn main() -> Result<()> {
 
     loop {
         let mut block_number: u64 = 0;
-        let rpc_provider = Provider::<Ws>::connect(rpc_ws_url.clone()).await?;
+        let rpc_provider = Provider::<Ws>::connect(rpc_ws_url.clone()).await.context("Failed to connect to WS RPC provider")?;
 
         if args.test_block.is_none() {
             // Subscribe to new block headers on Ethereum Mainnet
@@ -110,7 +114,7 @@ async fn main() -> Result<()> {
         }
         
         // Get proof folder and input file path for the block
-        let proof_folder = format!("{}/{}", PROOF_FOLDER, block_number);
+        let proof_folder = format!("{}/{}", OUTPUT_FOLDER, block_number);
         let input_file = format!("{}/{}.bin", INPUT_FOLDER, block_number);
 
         let result = (|| async {
@@ -133,20 +137,20 @@ async fn main() -> Result<()> {
             }
 
             info!("Generating proof for block number {}", block_number);
-            let (proving_time, cycles) = generate_proof(block_number, args.disable_distributed).await?;
-            info!("Proof generated for block number {}, proving_time: {}s, cycles: {}", block_number, proving_time / 1000, cycles);
+            let result = generate_proof(block_number, args.disable_distributed).await?;
+            info!("Proof generated for block number {}, proving_time: {}s, cycles: {}", block_number, result.time / 1000, result.cycles);
 
             // Submit the proof to EthProofs
             let proof_base64 = get_proof_b64(block_number)?;
             if ethproofs_submit {
-                ethproofs_client.proof_proved(ethproofs_cluster_id, block_number, proving_time, cycles, proof_base64, "verifier".to_string()).await?;
+                ethproofs_client.proof_proved(ethproofs_cluster_id, block_number, result.time, result.cycles, proof_base64, result.id).await?;
             }
 
             info!("Proof submitted to ethproofs for block number {}", block_number);
             if args.block_submit_alert {
                 send_telegram_alert(
                     &format!("Proof submitted for block number {}, txs: {}, gas: {}, cycles: {}, proving_time: {}s",
-                    block_number, block.transactions.len(), block.gas_used, cycles, proving_time / 1000),
+                    block_number, block.transactions.len(), block.gas_used, result.cycles, result.time / 1000),
                     AlertType::Success
                 ).await?;
             }
@@ -155,8 +159,10 @@ async fn main() -> Result<()> {
         })().await;
 
         // Clean up
-        if let Err(e) = std::fs::remove_dir_all(&proof_folder) {
-            warn!("Failed to remove proof folder {}, error: {}", proof_folder, e);
+        if !args.keep_output {
+            if let Err(e) = std::fs::remove_dir_all(&proof_folder) {
+                warn!("Failed to remove proof folder {}, error: {}", proof_folder, e);
+            }
         }
         if !args.keep_input {
             if let Err(e) = std::fs::remove_file(&input_file) {
