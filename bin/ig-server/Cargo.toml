@@ -1,0 +1,26 @@
+[package]
+name = "ig-server"
+version = "0.1.0"
+edition = "2021"
+description = ""
+
+[dependencies]
+alloy-provider.workspace = true
+anyhow.workspace = true
+bincode.workspace = true
+dotenv.workspace = true
+ethers.workspace = true
+env_logger.workspace = true
+log.workspace = true
+rsp-host-executor.workspace = true
+rsp-primitives.workspace = true
+rsp-provider.workspace = true
+rsp-rpc-db.workspace = true
+tokio.workspace = true
+tokio-tungstenite.workspace = true
+url.workspace = true
+
+tokio-util = "0.7"
+futures-util = "0.3"
+tokio-stream = "0.1"
+tokio-native-tls = "0.3"

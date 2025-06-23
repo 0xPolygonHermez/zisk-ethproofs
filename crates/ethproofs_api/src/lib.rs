@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 use url::Url;
 
 #[derive(Clone, Debug)]
-pub struct EthProofsClient {
+pub struct EthProofsApi {
     client: Client,
     url: String,
     token: String,
@@ -79,9 +79,9 @@ pub struct ProofId {
     proof_id: u64,
 }
 
-impl EthProofsClient {
+impl EthProofsApi {
     pub fn new(url: String, token: String) -> Self {
-        EthProofsClient {
+        EthProofsApi {
             client: Client::new(),
             url,
             token,

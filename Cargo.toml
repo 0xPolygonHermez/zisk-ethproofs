@@ -1,15 +1,18 @@
-[package]
-name = "zisk-ethproofs"
+[workspace]
+members = ["bin/ethproofs-client", "bin/ig-server"]
+exclude = []
+resolver = "2"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
-
-[workspace]
-members = [ 
-    "crates/ethproofs_client",
-]
+default-run = "ethproofs-client"
 
 [workspace.dependencies]
-alloy-provider = { version = "0.3", default-features = false, features = ["reqwest", "reqwest-rustls-tls"] }
+alloy-provider = { version = "0.14.0", default-features = false, features = [
+    "reqwest",
+    "reqwest-rustls-tls",
+] }
 anyhow = "1.0.97"
 base64 = "0.22.1"
 bincode = "1.3.3"
@@ -22,39 +25,18 @@ ethers = { version = "2.0", features = ["ws"] }
 log = "0.4.26"
 rand = "0.9.0"
 reqwest = { version = "0.12.15", features = ["json"] }
-rsp-host-executor = { git = "https://github.com/succinctlabs/rsp.git", rev="249b34ee0c5307b59dc48f1f45a474b04669c6c4" }
-rsp-client-executor ={ git = "https://github.com/succinctlabs/rsp.git", rev="249b34ee0c5307b59dc48f1f45a474b04669c6c4" }
+rsp-host-executor = { git = "https://github.com/succinctlabs/rsp.git", rev = "24dee6c7bb4081f44e7d232fc924a9e419ee4c88" }
+rsp-primitives = { git = "https://github.com/succinctlabs/rsp.git", rev = "24dee6c7bb4081f44e7d232fc924a9e419ee4c88" }
+rsp-provider = { git = "https://github.com/succinctlabs/rsp.git", rev = "24dee6c7bb4081f44e7d232fc924a9e419ee4c88" }
+rsp-rpc-db = { git = "https://github.com/succinctlabs/rsp.git", rev = "24dee6c7bb4081f44e7d232fc924a9e419ee4c88" }
 # rsp-host-executor = { path = "../rsp/crates/executor/host"}
 # rsp-client-executor = { path = "../rsp/crates/executor/client"}
 serde = "1.0.127"
 serde_json = "1.0.140"
 tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
+tokio-tungstenite = "0.21"
 url = "2.5.4"
 
-ethproofs-client = { path = "./crates/ethproofs_client" }
-
-[dependencies]
-alloy-provider.workspace = true
-anyhow.workspace = true
-base64.workspace = true
-bincode.workspace = true
-clap.workspace = true
-dotenv.workspace = true
-ethers.workspace = true
-env_logger.workspace = true
-flate2.workspace = true
-futures-util.workspace = true
-log.workspace = true
-rand.workspace = true
-reqwest.workspace = true
-rsp-host-executor.workspace = true
-rsp-client-executor.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-tar.workspace = true
-tokio.workspace = true
-url.workspace = true
-
-ethproofs-client.workspace = true
+ethproofs-api = { path = "./crates/ethproofs_api" }
 
