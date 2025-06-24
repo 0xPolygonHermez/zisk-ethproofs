@@ -8,6 +8,7 @@ use ethers::providers::{Middleware, Provider, Ws};
 use ethproofs_api::EthProofsApi;
 use futures_util::StreamExt;
 use log::{error, info, warn};
+use rand::rand_core::block;
 use tokio::fs::create_dir_all;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 
@@ -84,18 +85,12 @@ async fn main() -> Result<()> {
     let args = CliArgs::parse();
 
     // Determine if we should submit proofs to ethproofs
-    // let ethproofs_submit = !args.no_ethproofs;
-
-    // Modulus used to select the blocks to prove
-    // let block_modulus: u64 = env::var("BLOCK_MODULUS").unwrap_or("100".to_string()).parse().unwrap();
-
-    // RPC WebSocket URL
-    // let rpc_ws_url = env::var("RPC_WS_URL").expect("RPC_WS_URL must be set");
+    let ethproofs_submit = !args.no_ethproofs;
 
     // Initialize the EthProofsApi
     let ethproofs_api_url = env::var("ETHPROOFS_API_URL").expect("ETHPROOFS_API_URL must be set");
     let ethproofs_api_token = env::var("ETHPROOFS_API_TOKEN").expect("ETHPROOFS_API_TOKEN must be set");
-    // let ethproofs_client = EthProofsApi::new(ethproofs_api_url, ethproofs_api_token);
+    let ethproofs_client = EthProofsApi::new(ethproofs_api_url, ethproofs_api_token);
 
     // Cluster ID for the EthProofs API
     let ethproofs_cluster_id: u32 = env::var("ETHPROOFS_CLUSTER_ID")
@@ -106,11 +101,12 @@ async fn main() -> Result<()> {
     // Ensure output directory exists
     create_dir_all(OUTPUT_DIR).await.unwrap();
 
+    // Connect to the input generator server
     let (ws_stream, _) = connect_async(SERVER_URI)
         .await
         .expect("Failed to connect to WebSocket server");
 
-    info!("Connected to server at {}", SERVER_URI);
+    info!("Connected to input-gen-server at {}", SERVER_URI);
     let (_, mut reader) = ws_stream.split();
 
     let mut queued_start = std::time::Instant::now();
@@ -126,11 +122,17 @@ async fn main() -> Result<()> {
                 match args[0] {
                     "queued" => {
                         queued_start = std::time::Instant::now();
-                        info!("Received queued command for block {}", args[1]);
-                    // // Report to EthProofs that the proof is queued while generating the input file
-                    // if ethproofs_submit {
-                    //     ethproofs_client.proof_queued(ethproofs_cluster_id, block_number).await?;
-                    // }                        
+                        
+                        let block_number: u64 = args[1]
+                            .parse()
+                            .expect("Failed to parse block number from command queued");
+
+                        info!("Received queued command for block {}", block_number);
+
+                        // Report to EthProofs that the proof is queued while generating the input file
+                        if ethproofs_submit {
+                            ethproofs_client.proof_queued(ethproofs_cluster_id, block_number).await?;
+                        }                        
                     }
                     _ => {
                         error!("Unknown command received: {}", command);
@@ -142,32 +144,54 @@ async fn main() -> Result<()> {
                     let filepath = PathBuf::from(OUTPUT_DIR).join(filename);
                     match fs::write(&filepath, content) {
                         Ok(_) => info!("Received and saved input file: {}, time: {}ms", filepath.display(), queued_start.elapsed().as_millis()),
-                        Err(e) => error!("Failed to save input file {}: {}", filepath.display(), e),
+                        Err(e) => {
+                            error!("Failed to save input file {}: {}", filepath.display(), e);
+                            continue;
+                        }
                     }
 
-                    // // Report to EthProof that we are generating the proof
-                    // if ethproofs_submit {
-                    //     ethproofs_client.proof_proving(ethproofs_cluster_id, block_number).await?;
-                    // }
+                    // Get block number from filename
+                    let block_number = filepath.file_stem().unwrap().to_string_lossy().parse().map_err(|e| {
+                        error!("Failed to parse block number from filename {}, error: {}", filepath.display(), e);
+                        continue;
+                    });
 
-                    // info!("Generating proof for block number {}", block_number);
+                    // Report to EthProof that we are generating the proof
+                    if ethproofs_submit {
+                        ethproofs_client.proof_proving(ethproofs_cluster_id, block_number).await?;
+                    }
+
+                    info!("Generating proof for block number {}", block_number);
                     // let result = generate_proof(block_number, args.disable_distributed).await?;
                     // info!("Proof generated for block number {}, proving_time: {}s, cycles: {}", block_number, result.time / 1000, result.cycles);
 
                     // // Submit the proof to EthProofs
-                    // let proof_base64 = get_proof_b64(block_number)?;
-                    // if ethproofs_submit {
-                    //     ethproofs_client.proof_proved(ethproofs_cluster_id, block_number, result.time, result.cycles, proof_base64, result.id).await?;
-                    // }
+                    let proof_base64 = get_proof_b64(block_number)?;
+                    if ethproofs_submit {
+                        ethproofs_client.proof_proved(ethproofs_cluster_id, block_number, result.time, result.cycles, proof_base64, result.id).await?;
+                        info!("Proof submitted to ethproofs for block number {}", block_number);
+                    }
 
-                    // info!("Proof submitted to ethproofs for block number {}", block_number);
+                    // Send success alert to Telegram if enabled
                     // if args.block_submit_alert {
                     //     send_telegram_alert(
                     //         &format!("Proof submitted for block number {}, txs: {}, gas: {}, cycles: {}, proving_time: {}s",
                     //         block_number, block.transactions.len(), block.gas_used, result.cycles, result.time / 1000),
                     //         AlertType::Success
                     //     ).await?;
-                    // }                    
+                    // }     
+
+                    // Clean up
+                    if !args.keep_output {
+                        if let Err(e) = std::fs::remove_dir_all(&proof_folder) {
+                            warn!("Failed to remove proof folder {}, error: {}", proof_folder, e);
+                        }
+                    }
+                    if !args.keep_input {
+                        if let Err(e) = std::fs::remove_file(&filepath) {
+                            warn!("Failed to remove input file {}, error: {}", filepath.to_string_lossy(), e);
+                        }
+                    }                                   
                 } else {
                     error!("Malformed message received");
                 }

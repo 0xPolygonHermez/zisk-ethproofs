@@ -3674,30 +3674,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ig-server"
-version = "0.1.0"
-dependencies = [
- "alloy-provider",
- "anyhow",
- "bincode",
- "dotenv",
- "env_logger",
- "ethers",
- "futures-util",
- "log",
- "rsp-host-executor",
- "rsp-primitives",
- "rsp-provider",
- "rsp-rpc-db",
- "tokio",
- "tokio-native-tls",
- "tokio-stream",
- "tokio-tungstenite 0.21.0",
- "tokio-util",
- "url",
-]
-
-[[package]]
 name = "impl-codec"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3783,6 +3759,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "879f10e63c20629ecabbb64a8010319738c66a5cd0c29b02d63d272b03751d01"
 dependencies = [
  "generic-array 0.14.7",
+]
+
+[[package]]
+name = "input-gen-server"
+version = "0.1.0"
+dependencies = [
+ "alloy-provider",
+ "anyhow",
+ "bincode",
+ "dotenv",
+ "env_logger",
+ "ethers",
+ "futures-util",
+ "log",
+ "rsp-host-executor",
+ "rsp-primitives",
+ "rsp-provider",
+ "rsp-rpc-db",
+ "tokio",
+ "tokio-native-tls",
+ "tokio-stream",
+ "tokio-tungstenite 0.21.0",
+ "tokio-util",
+ "url",
 ]
 
 [[package]]

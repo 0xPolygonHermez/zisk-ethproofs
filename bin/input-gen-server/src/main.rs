@@ -18,11 +18,10 @@ use tokio::{
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 use url::Url;
 
-const INPUTS_FOLDER: &str = "./inputs";
 const WS_ADDR: &str = "0.0.0.0:8765";
 
 /// Generate the input file for the given block number and return the time taken in milliseconds
-pub async fn generate_input_file(block_number: u64) -> Result<u128> {
+pub async fn generate_input_file(block_number: u64, inputs_folder: String) -> Result<u128> {
     // Load RPC URL from environment variable
     let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
 
@@ -50,7 +49,7 @@ pub async fn generate_input_file(block_number: u64) -> Result<u128> {
         .expect("Failed to execute client");
 
     // Create the inputs folder if it doesn't exist
-    let input_folder = Path::new(INPUTS_FOLDER);
+    let input_folder = Path::new(&inputs_folder);
     std::fs::create_dir_all(input_folder)?;
 
     // Serialize the client input to a binary file
@@ -63,8 +62,10 @@ pub async fn generate_input_file(block_number: u64) -> Result<u128> {
     Ok(input_file_time)
 }
 
-async fn input_file_generator(tx: Sender<String>) -> Result<()> {
+/// Listens for new blocks on the Ethereum network and generates input files for them
+async fn block_listener(tx: Sender<String>) -> Result<()> {
     let rpc_ws_url = env::var("RPC_WS_URL").expect("RPC_WS_URL must be set");
+    let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or("inputs".to_string());
     let block_modulus: u64 = env::var("BLOCK_MODULUS")
         .unwrap_or("100".to_string())
         .parse()
@@ -112,7 +113,7 @@ async fn input_file_generator(tx: Sender<String>) -> Result<()> {
                 block.gas_used
             );
 
-            let input_file_time = generate_input_file(block_number).await?;
+            let input_file_time = generate_input_file(block_number, inputs_folder.clone()).await?;
             info!(
                 "Input file generated for block {}, time: {}ms",
                 block_number,
@@ -132,6 +133,8 @@ async fn input_file_generator(tx: Sender<String>) -> Result<()> {
 
 /// Handles a single WebSocket client connection
 async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
+    let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or("inputs".to_string());
+
     let ws_stream = match accept_async(stream).await {
         Ok(ws) => ws,
         Err(e) => {
@@ -164,7 +167,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
             ["input", file] => {
                 info!("Sending input file: {}", file);
 
-                let filepath = PathBuf::from(INPUTS_FOLDER).join(&file);
+                let filepath = PathBuf::from(&inputs_folder).join(&file);
                 match fs::read(&filepath) {
                     Ok(content) => {
                         let payload = format!("{}\n", command)
@@ -201,7 +204,7 @@ async fn main() {
 
     // Check if LOG_RUST is set; if not, set it to "info"
     if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "ig_server=info");
+        std::env::set_var("RUST_LOG", "input_gen_server=info");
     }
 
     // Initialize the logger
@@ -216,7 +219,7 @@ async fn main() {
     // Launch eth block input file generator
     let tx_clone = tx.clone();
     task::spawn(async move {
-        let _ = input_file_generator(tx_clone).await;
+        let _ = block_listener(tx_clone).await;
     });
 
     // Start listening for WebSocket clients
