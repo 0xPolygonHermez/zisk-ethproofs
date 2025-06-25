@@ -8,7 +8,7 @@ use log::info;
 use serde::Deserialize;
 use tar::Builder;
 
-use crate::{INPUT_FOLDER, LOG_FOLDER, OUTPUT_FOLDER, PROGRAM_FOLDER};
+use crate::{LOG_FOLDER, OUTPUT_FOLDER, PROGRAM_FOLDER};
 
 #[derive(Debug, Deserialize)]
 pub struct ProofResult {
@@ -27,13 +27,13 @@ where
 }
 
 /// Generate the input file for the given block number and return the time taken in milliseconds and the number of cycles
-pub async fn generate_proof(block_number: u64, no_distributed: bool) -> Result<ProofResult> {
+pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folder: String) -> Result<ProofResult> {
     let elf_file = format!(
         "{}/{}",
         PROGRAM_FOLDER,
         env::var("ELF_FILE").expect("ELF_FILE must be set")
     );
-    let input_file = format!("{}/{}.bin", INPUT_FOLDER, block_number);
+    let input_file = format!("{}/{}.bin", input_folder, block_number);
     let output_folder = format!("{}/{}", OUTPUT_FOLDER, block_number);
 
     // Create proof and log folders if they don't exist

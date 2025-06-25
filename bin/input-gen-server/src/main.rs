@@ -170,7 +170,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                 let filepath = PathBuf::from(&inputs_folder).join(&file);
                 match fs::read(&filepath) {
                     Ok(content) => {
-                        let payload = format!("{}\n", command)
+                        let payload = format!("{}\n", file)
                             .into_bytes()
                             .into_iter()
                             .chain(content)
