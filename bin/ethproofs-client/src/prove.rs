@@ -1,6 +1,6 @@
 use std::{env, fs::File, io::BufReader, path::Path, process::Command};
 
-use anyhow::{Context, Ok, Result};
+use anyhow::{Ok, Result};
 use base64::{engine::general_purpose, Engine};
 use flate2::write::GzEncoder;
 use flate2::Compression;
