@@ -56,7 +56,7 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
         )
     } else {
         format!(
-            "mpirun --bind-to none -np {} -x OMP_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -a -y > {} 2>&1",
+            "mpirun --allow-run-as-root --bind-to none -np {} -x OMP_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -a -y > {} 2>&1",
             num_processes, num_threads, elf_file, input_file, output_folder, log_path
         )
     };
