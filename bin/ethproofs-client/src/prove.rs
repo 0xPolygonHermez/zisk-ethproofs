@@ -69,15 +69,15 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
         .status()
         .with_context(|| format!("Failed to execute command: {}", command))?;
 
-    if !status.success() {
-        Err(anyhow!("Error generating proof for block number {}", block_number))
-    } else {
+    // if !status.success() {
+    //     Err(anyhow!("Error generating proof for block number {}", block_number))
+    // } else {
         let file = File::open(format!("{}/result.json", output_folder))?;
         let reader = BufReader::new(file);
         let proof_result: ProofResult = serde_json::from_reader(reader)?;
 
         Ok(proof_result)
-    }
+    // }
 
     // let output = Command::new("sh").arg("-c").arg(command).output()?;
 
