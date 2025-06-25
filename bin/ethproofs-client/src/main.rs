@@ -1,21 +1,17 @@
 use std::env;
 use std::{fs, path::PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Parser;
 use dotenv::dotenv;
-use ethers::providers::{Middleware, Provider, Ws};
 use ethproofs_api::EthProofsApi;
 use futures_util::StreamExt;
 use log::{error, info, warn};
-use rand::rand_core::block;
 use tokio::fs::create_dir_all;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 
-mod input;
 mod prove;
 mod telegram;
-use input::generate_input_file;
 use prove::{generate_proof, get_proof_b64};
 use telegram::{send_telegram_alert, AlertType};
 

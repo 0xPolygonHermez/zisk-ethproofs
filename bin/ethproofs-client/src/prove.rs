@@ -1,6 +1,6 @@
 use std::{env, fs::File, io::BufReader, path::Path, process::Command};
 
-use anyhow::{anyhow, Context, Ok, Result};
+use anyhow::{Context, Ok, Result};
 use base64::{engine::general_purpose, Engine};
 use flate2::write::GzEncoder;
 use flate2::Compression;
@@ -61,33 +61,15 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
         )
     };
 
-    let status = Command::new("sh")
-        .arg("-c")
-        .arg(command.clone())
-        .stdout(std::process::Stdio::inherit())
-        .stderr(std::process::Stdio::inherit())
-        .status()
-        .with_context(|| format!("Failed to execute command: {}", command))?;
+    let _output = Command::new("sh").arg("-c").arg(command).output()?;
 
-    // if !status.success() {
-    //     Err(anyhow!("Error generating proof for block number {}", block_number))
-    // } else {
+    // Check if the command was successful
+    // if output.status.success() {
         let file = File::open(format!("{}/result.json", output_folder))?;
         let reader = BufReader::new(file);
         let proof_result: ProofResult = serde_json::from_reader(reader)?;
 
         Ok(proof_result)
-    // }
-
-    // let output = Command::new("sh").arg("-c").arg(command).output()?;
-
-    // // Check if the command was successful
-    // if output.status.success() {
-    //     let file = File::open(format!("{}/result.json", output_folder))?;
-    //     let reader = BufReader::new(file);
-    //     let proof_result: ProofResult = serde_json::from_reader(reader)?;
-
-    //     Ok(proof_result)
     // } else {
     //     Err(anyhow!(
     //         "Error generating proof for block number {}, check log file {}",
