@@ -101,11 +101,12 @@ async fn main() -> Result<()> {
 
     let input_gen_server_url = env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
     // Connect to the input generator server
+    info!("Connecting to input-gen-server at {}", input_gen_server_url);
     let (ws_stream, _) = connect_async(input_gen_server_url.clone())
         .await
         .expect("Failed to connect to WebSocket server");
 
-    info!("Connected to input-gen-server at {}", input_gen_server_url);
+    info!("Connected to input-gen-server");
     let (_, mut reader) = ws_stream.split();
 
     let mut queued_start = std::time::Instant::now();
@@ -191,7 +192,7 @@ async fn main() -> Result<()> {
                     }     
 
                     let proof_folder = format!("{}/{}", OUTPUT_FOLDER, block_number);
-                    
+
                     // Clean up
                     if !args.keep_output {
                         if let Err(e) = std::fs::remove_dir_all(&proof_folder) {

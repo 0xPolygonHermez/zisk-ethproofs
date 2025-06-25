@@ -102,7 +102,7 @@ async fn block_listener(tx: Sender<String>) -> Result<()> {
                 .ok_or_else(|| anyhow::anyhow!("Block {} not found", block_number))?;
 
             if tx.send(format!("queued {}", block_number)).is_err() {
-                warn!("No active receivers, skipping generate input file for block {}", block_number);
+                info!("No active receivers, skipping generate input file for block {}", block_number);
                 return Ok::<(), anyhow::Error>(());
             }
 
