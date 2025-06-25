@@ -21,7 +21,7 @@ use telegram::{send_telegram_alert, AlertType};
 
 // Constants
 const OUTPUT_FOLDER: &str = "output";
-const PROGRAM_FOLDER: &str = "program";
+const PROGRAM_FOLDER: &str = "elf";
 const LOG_FOLDER: &str = "log";
 const DEFAULT_UPLOAD_FOLDER: &str = "upload_inputs";
 
