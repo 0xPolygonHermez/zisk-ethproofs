@@ -145,13 +145,8 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
 
     info!("Client connected");
     let (mut ws_sender, _) = ws_stream.split();
-    let mut sent_files = HashSet::new();
 
     while let Ok(command) = rx.recv().await {
-        if sent_files.contains(&command) {
-            continue;
-        }
-
         let args: Vec<&str> = command.split_whitespace().collect();
 
         match args.as_slice() {
@@ -181,11 +176,10 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                             break;
                         }
 
-                        info!("Input file sent to client: {}", command);
-                        sent_files.insert(command);
+                        info!("Input file sent to client: {}", file);
                     }
                     Err(e) => {
-                        error!("Error reading input file {}: {}", command, e);
+                        error!("Error reading input file {}: {}", file, e);
                     }
                 }                
             }
