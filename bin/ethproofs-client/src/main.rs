@@ -105,7 +105,6 @@ async fn main() -> Result<()> {
         .await
         .expect("Failed to connect to WebSocket server");
 
-
     info!("Connected to input-gen-server at {}", input_gen_server_url);
     let (_, mut reader) = ws_stream.split();
 
@@ -170,32 +169,35 @@ async fn main() -> Result<()> {
                         ethproofs_client.proof_proving(ethproofs_cluster_id, block_number).await?;
                     }
 
-                    // info!("Generating proof for block number {}", block_number);
-                    // let result = generate_proof(block_number, args.disable_distributed).await?;
-                    // info!("Proof generated for block number {}, proving_time: {}s, cycles: {}", block_number, result.time / 1000, result.cycles);
+                    info!("Generating proof for block number {}", block_number);
+                    let result = generate_proof(block_number, args.disable_distributed, upload_folder.clone()).await?;
+                    info!("Proof generated for block number {}, proving_time: {}s, cycles: {}", block_number, result.time / 1000, result.cycles);
 
-                    // // Submit the proof to EthProofs
-                    // let proof_base64 = get_proof_b64(block_number)?;
-                    // if ethproofs_submit {
-                    //     ethproofs_client.proof_proved(ethproofs_cluster_id, block_number, result.time, result.cycles, proof_base64, result.id).await?;
-                    //     info!("Proof submitted to ethproofs for block number {}", block_number);
-                    // }
+                    // Submit the proof to EthProofs
+                    let proof_base64 = get_proof_b64(block_number)?;
+                    if ethproofs_submit {
+                        ethproofs_client.proof_proved(ethproofs_cluster_id, block_number, result.time, result.cycles, proof_base64, result.id).await?;
+                        info!("Proof submitted to ethproofs for block number {}", block_number);
+                    }
 
                     // Send success alert to Telegram if enabled
-                    // if args.block_submit_alert {
-                    //     send_telegram_alert(
-                    //         &format!("Proof submitted for block number {}, txs: {}, gas: {}, cycles: {}, proving_time: {}s",
-                    //         block_number, block.transactions.len(), block.gas_used, result.cycles, result.time / 1000),
-                    //         AlertType::Success
-                    //     ).await?;
-                    // }     
+                    if args.block_submit_alert {
+                        // TODO: Log txs and mgas for the block
+                        send_telegram_alert(
+                            &format!("Proof submitted for block number {}, cycles: {}, proving_time: {}s",
+                            block_number, result.cycles, result.time / 1000),
+                            AlertType::Success
+                        ).await?;
+                    }     
 
+                    let proof_folder = format!("{}/{}", OUTPUT_FOLDER, block_number);
+                    
                     // Clean up
-                    // if !args.keep_output {
-                    //     if let Err(e) = std::fs::remove_dir_all(&proof_folder) {
-                    //         warn!("Failed to remove proof folder {}, error: {}", proof_folder, e);
-                    //     }
-                    // }
+                    if !args.keep_output {
+                        if let Err(e) = std::fs::remove_dir_all(&proof_folder) {
+                            warn!("Failed to remove proof folder {}, error: {}", proof_folder, e);
+                        }
+                    }
                     if !args.keep_input {
                         if let Err(e) = std::fs::remove_file(&filepath) {
                             warn!("Failed to remove input file {}, error: {}", filepath.to_string_lossy(), e);
