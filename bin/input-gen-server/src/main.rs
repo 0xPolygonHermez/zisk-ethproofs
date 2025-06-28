@@ -83,16 +83,16 @@ async fn block_listener(tx: Sender<String>) -> Result<()> {
         while let Some(block) = stream.next().await {
             if let Some(number) = block.number {
                 block_number = number.as_u64();
-                info!("Received block number {}", block_number);
             } else {
                 warn!("Received block without number, skipping...");
                 continue;
             }
 
             if block_number % block_modulus == 0 {
+                info!("Received block number {}, processing...", block_number);
                 break;
             } else {
-                info!("Skipping block number: {}", block_number);
+                info!("Received block number {}, skipping...", block_number);
             }
         }
 

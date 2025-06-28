@@ -74,7 +74,7 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
         println!("{}", line);
         captured_output.push(format!("{}\n", line));
 
-        if line.contains("Vadcop Final proof was verified") {
+        if line.contains("PROVE SUMMARY") {
             proved = true;
         }
     }
