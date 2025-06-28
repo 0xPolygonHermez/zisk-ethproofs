@@ -1,6 +1,6 @@
-use std::{env, fs::File, io::BufReader, path::Path, process::Command};
+use std::{env, fs::{File, create_dir_all}, io::{BufRead, BufReader, Write}, path::Path, process::{Command,Stdio}};
 
-use anyhow::{Ok, Result};
+use anyhow::{anyhow, Ok, Result};
 use base64::{engine::general_purpose, Engine};
 use flate2::write::GzEncoder;
 use flate2::Compression;
@@ -26,7 +26,6 @@ where
     std::result::Result::Ok((f.trunc() * 1000.0) as u128)
 }
 
-/// Generate the input file for the given block number and return the time taken in milliseconds and the number of cycles
 pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folder: String) -> Result<ProofResult> {
     let elf_file = format!(
         "{}/{}",
@@ -36,47 +35,64 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
     let input_file = format!("{}/{}.bin", input_folder, block_number);
     let output_folder = format!("{}/{}", OUTPUT_FOLDER, block_number);
 
-    // Create proof and log folders if they don't exist
-    std::fs::create_dir_all(Path::new(OUTPUT_FOLDER))?;
-    std::fs::create_dir_all(Path::new(LOG_FOLDER))?;
+    create_dir_all(Path::new(OUTPUT_FOLDER))?;
+    create_dir_all(Path::new(LOG_FOLDER))?;
 
     let num_processes =
         env::var("DISTRIBUTED_PROVE_PROCESSES").expect("DISTRIBUTED_PROVE_PROCESSES must be set");
     let num_threads =
         env::var("DISTRIBUTED_PROVE_THREADS").expect("DISTRIBUTED_PROVE_THREADS must be set");
 
-    // Generate path for the log file
-    let log_path = format!("{}/{}.log", LOG_FOLDER, block_number);
-
     let command = if no_distributed {
         info!("Generating proof without distributed proving");
         format!(
-            "cargo-zisk prove -e {} -i {} -o {} -a -y > {} 2>&1",
-            elf_file, input_file, output_folder, log_path
+            "cargo-zisk prove -e {} -i {} -o {} -a -u",
+            elf_file, input_file, output_folder
         )
     } else {
         format!(
-            "mpirun --allow-run-as-root --bind-to none -np {} -x OMP_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -a -y > {} 2>&1",
-            num_processes, num_threads, elf_file, input_file, output_folder, log_path
+            "mpirun --allow-run-as-root --bind-to none -np {} -x OMP_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -a -u",
+            num_processes, num_threads, elf_file, input_file, output_folder
         )
     };
 
-    let _output = Command::new("sh").arg("-c").arg(command).output()?;
+    let mut child = Command::new("sh")
+        .arg("-c")
+        .arg(command)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::inherit())
+        .spawn()?;
 
-    // Check if the command was successful
-    // if output.status.success() {
+    let stdout = child.stdout.take().expect("Failed to capture stdout");
+    let reader = BufReader::new(stdout);
+
+    let mut proved = false;
+    let mut captured_output = Vec::new();
+
+    for line in reader.lines() {
+        let line = line?;
+        println!("{}", line);
+        captured_output.push(format!("{}\n", line));
+
+        if line.contains("Vadcop Final proof was verified") {
+            proved = true;
+        }
+    }
+
+    let _status = child.wait()?; // No usamos el exit code para decidir éxito
+
+    if proved {
         let file = File::open(format!("{}/result.json", output_folder))?;
         let reader = BufReader::new(file);
         let proof_result: ProofResult = serde_json::from_reader(reader)?;
-
         Ok(proof_result)
-    // } else {
-    //     Err(anyhow!(
-    //         "Error generating proof for block number {}, check log file {}",
-    //         block_number,
-    //         log_path
-    //     ))
-    // }
+    } else {
+        let log_path = format!("{}/{}.log", LOG_FOLDER, block_number);
+        let mut log_file = File::create(&log_path)?;
+        write!(log_file, "{}", captured_output.concat())?;
+
+        Err(anyhow!("Proof verification failed for block number {}. Log saved at {}", block_number, log_path))
+    }
 }
 
 /// Get the proof files for the given block number, compress them into a .tar.gz buffer and return it as base64 encoded string
