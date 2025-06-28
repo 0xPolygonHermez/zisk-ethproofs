@@ -111,7 +111,7 @@ impl EthProofsApi {
             }
 
             debug!("Ethproofs API request attempt {}/{} failed, retrying in {}ms...", attempt, Self::MAX_RETRIES, Self::RETRY_DELAY_MS);
-            sleep(Duration::from_millis(Self::RETRY_DELAY_MS * attempt)).await;
+            sleep(Duration::from_millis(Self::RETRY_DELAY_MS * attempt as u64)).await;
         }
 
         Err(last_err)
