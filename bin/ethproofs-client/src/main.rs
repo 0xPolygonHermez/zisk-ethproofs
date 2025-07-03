@@ -19,7 +19,7 @@ use telegram::{send_telegram_alert, AlertType};
 const OUTPUT_FOLDER: &str = "output";
 const PROGRAM_FOLDER: &str = "elf";
 const LOG_FOLDER: &str = "log";
-const DEFAULT_UPLOAD_FOLDER: &str = "upload_inputs";
+const DEFAULT_UPLOAD_FOLDER: &str = "/workspace/zisk-ethproofs/bin/ethproofs-client/upload_inputs";
 
 // Command line arguments
 #[derive(Parser)]

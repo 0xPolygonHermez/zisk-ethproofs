@@ -1,11 +1,13 @@
-use std::{env, fs::{File, create_dir_all}, io::{BufRead, BufReader, Write}, path::Path, process::{Command,Stdio}};
+use std::{env, fs::{create_dir_all, File}, io::{BufRead, BufReader, Write}, net::TcpStream, path::Path, process::{Command,Stdio}};
 
-use anyhow::{anyhow, Ok, Result};
+use anyhow::{anyhow, Context, Ok, Result};
 use base64::{engine::general_purpose, Engine};
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use log::info;
 use serde::Deserialize;
+use serde_json::Value;
+use server::{ZiskRequest, ZiskResponse, ZiskStatusRequest};
 use tar::Builder;
 
 use crate::{LOG_FOLDER, OUTPUT_FOLDER, PROGRAM_FOLDER};
@@ -24,6 +26,57 @@ where
 {
     let f = f64::deserialize(deserializer)?;
     std::result::Result::Ok((f.trunc() * 1000.0) as u128)
+}
+
+pub async fn wait_prove_done() -> Result<()> {
+    let command = String::from("cargo-zisk prove-client status --port 6100");
+
+    let mut proved = false;
+    let start_time = std::time::Instant::now();
+
+    while !proved {
+        let mut child = Command::new("sh")
+            .arg("-c")
+            .arg(&command)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::inherit())
+            .spawn()?;
+
+        let stdout = child.stdout.take().expect("Failed to capture stdout");
+        let reader = BufReader::new(stdout);
+
+        let mut captured_output = Vec::new();
+
+        for line in reader.lines() {
+            let line = line?;
+            println!("{}", line);
+            captured_output.push(format!("{}\n", line));
+
+            if let Some(start_idx) = line.find('{') {
+                let json_str = &line[start_idx..];
+
+                info!("Received JSON: {}", json_str);
+                if let std::result::Result::Ok(json) = serde_json::from_str::<Value>(json_str) {
+                    let node = json.get("node").and_then(|n| n.as_u64());
+                    let result = json.get("result").and_then(|r| r.as_str());
+                    let code = json.get("code").and_then(|c| c.as_u64());
+
+                    info!("Parsed JSON: node: {:?}, result: {:?}, code: {:?}", node, result, code);
+                    if node == Some(0) && result == Some("idle") && code == Some(0) {
+                        info!("Proof generated for block");
+                        proved = true;
+                        return Ok(());
+                    }
+                }            
+            }        
+        }
+
+        if start_time.elapsed().as_secs() > 300 {
+            return Err(anyhow!("Proof generation timed out after 300 seconds"));
+        }
+    }
+
+    Ok(())    
 }
 
 pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folder: String) -> Result<ProofResult> {
@@ -50,9 +103,13 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
             elf_file, input_file, output_folder
         )
     } else {
+        // format!(
+        //     "mpirun --allow-run-as-root --bind-to none -np {} -x OMP_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -a -u",
+        //     num_processes, num_threads, elf_file, input_file, output_folder
+        // )
         format!(
-            "mpirun --allow-run-as-root --bind-to none -np {} -x OMP_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -a -u",
-            num_processes, num_threads, elf_file, input_file, output_folder
+            "mpirun --allow-run-as-root --bind-to none -np {} -x OMP_NUM_THREADS={} cargo-zisk prove-client prove -i {} -a --port 6100 -p {}",
+            num_processes, num_threads, input_file, block_number
         )
     };
 
@@ -66,7 +123,7 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
     let stdout = child.stdout.take().expect("Failed to capture stdout");
     let reader = BufReader::new(stdout);
 
-    let mut proved = false;
+    let mut proving = false;
     let mut captured_output = Vec::new();
 
     for line in reader.lines() {
@@ -74,15 +131,40 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
         println!("{}", line);
         captured_output.push(format!("{}\n", line));
 
-        if line.contains("PROVE SUMMARY") {
-            proved = true;
+        if let Some(start_idx) = line.find('{') {
+            let json_str = &line[start_idx..];
+
+            info!("Received JSON: {}", json_str);
+            if let std::result::Result::Ok(json) = serde_json::from_str::<Value>(json_str) {
+                let node = json.get("node").and_then(|n| n.as_u64());
+                let result = json.get("result").and_then(|r| r.as_str());
+                let code = json.get("code").and_then(|c| c.as_u64());
+
+                info!("Parsed JSON: node: {:?}, result: {:?}, code: {:?}", node, result, code);
+                if node == Some(0) && result == Some("in_progress") && code == Some(0) {
+                    info!("Proof generation accepted for block number {}", block_number);
+                    proving = true;
+                    break;
+                }
+            }
         }
     }
 
-    let _status = child.wait()?; // No usamos el exit code para decidir éxito
+    if !proving {
+        return Err(anyhow!("Failed to start proof generation for block number {}", block_number));
+    }
 
-    if proved {
-        let file = File::open(format!("{}/result.json", output_folder))?;
+    let _status = child.wait()?;
+
+    wait_prove_done().await?;
+
+    if proving {
+        let file = File::open(format!("{}/result.json", output_folder))
+            .context(format!(
+                "Failed to open result.json for block number {}",
+                block_number
+            ))?;
+
         let reader = BufReader::new(file);
         let proof_result: ProofResult = serde_json::from_reader(reader)?;
         Ok(proof_result)
@@ -100,10 +182,11 @@ pub fn get_proof_b64(block_number: u64) -> Result<String> {
     // List of files to include in the archive
     let files = [
         format!(
-            "{}/{}/proofs/vadcop_final_proof.json",
+            "{}/{}/vadcop_final_proof.bin",
             OUTPUT_FOLDER, block_number
         ),
-        format!("{}/{}/publics.json", OUTPUT_FOLDER, block_number),
+        // TODO: Uncomment when we have publics.json
+        //format!("{}/{}/publics.json", OUTPUT_FOLDER, block_number),
     ];
 
     // Create an in-memory buffer to hold the .tar.gz data
