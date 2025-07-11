@@ -1,5 +1,6 @@
 use std::{env, fs::{create_dir_all, File}, io::{BufRead, BufReader, Write}, net::TcpStream, path::Path, process::{Command,Stdio}};
-
+use std::thread;
+use std::time::Duration;
 use anyhow::{anyhow, Context, Ok, Result};
 use base64::{engine::general_purpose, Engine};
 use flate2::write::GzEncoder;
@@ -59,10 +60,10 @@ pub async fn wait_prove_done() -> Result<()> {
                 if let std::result::Result::Ok(json) = serde_json::from_str::<Value>(json_str) {
                     let node = json.get("node").and_then(|n| n.as_u64());
                     let result = json.get("result").and_then(|r| r.as_str());
-                    let code = json.get("code").and_then(|c| c.as_u64());
+                    let status = json.get("status").and_then(|c| c.as_str());
 
-                    info!("Parsed JSON: node: {:?}, result: {:?}, code: {:?}", node, result, code);
-                    if node == Some(0) && result == Some("idle") && code == Some(0) {
+                    info!("Parsed JSON: node: {:?}, result: {:?}, status: {:?}", node, result, status);
+                    if node == Some(0) && result == Some("ok") && status == Some("idle") {
                         info!("Proof generated for block");
                         proved = true;
                         return Ok(());
@@ -74,6 +75,8 @@ pub async fn wait_prove_done() -> Result<()> {
         if start_time.elapsed().as_secs() > 300 {
             return Err(anyhow!("Proof generation timed out after 300 seconds"));
         }
+
+        thread::sleep(Duration::from_secs(1));
     }
 
     Ok(())    
@@ -108,8 +111,8 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
         //     num_processes, num_threads, elf_file, input_file, output_folder
         // )
         format!(
-            "mpirun --allow-run-as-root --bind-to none -np {} -x OMP_NUM_THREADS={} cargo-zisk prove-client prove -i {} -a --port 6100 -p {}",
-            num_processes, num_threads, input_file, block_number
+            "cargo-zisk prove-client prove -i {} -a --port 6100 -p {}",
+            num_processes, num_threads, num_threads, input_file, block_number
         )
     };
 
@@ -156,6 +159,7 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
 
     let _status = child.wait()?;
 
+    info!("Waiting for proof generation to complete for block number {}", block_number);
     wait_prove_done().await?;
 
     if proving {
