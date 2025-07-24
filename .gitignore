@@ -1,8 +1,9 @@
 /target
-/log
+log
 /input
 /proof
 /inputs
 upload_inputs
 inputs
 tmp
+output

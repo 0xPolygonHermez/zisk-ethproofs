@@ -40,6 +40,10 @@ struct CliArgs {
     #[arg(short, long)]
     disable_distributed: bool,
 
+    /// Disable use of ZisK server for proof generation
+    #[arg(short = 's', long)]
+    no_server: bool,
+
     /// Keep input file
     #[arg(short = 'i', long)]
     keep_input: bool,
@@ -167,7 +171,7 @@ async fn main() -> Result<()> {
                     }
 
                     info!("Generating proof for block number {}", block_number);
-                    let result = generate_proof(block_number, args.disable_distributed, upload_folder.clone()).await?;
+                    let result = generate_proof(block_number, args.disable_distributed, args.no_server, upload_folder.clone()).await?;
                     info!("Proof generated for block number {}, proving_time: {}s, cycles: {}", block_number, result.time / 1000, result.cycles);
 
                     // Submit the proof to EthProofs

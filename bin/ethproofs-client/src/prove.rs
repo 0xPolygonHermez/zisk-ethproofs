@@ -1,15 +1,11 @@
-use std::{env, fs::{create_dir_all, File}, io::{BufRead, BufReader, Write}, net::TcpStream, path::Path, process::{Command,Stdio}};
+use std::{env, fs::{self, create_dir_all, File}, io::{BufRead, BufReader, Write}, path::Path, process::{Command,Stdio}};
 use std::thread;
 use std::time::Duration;
 use anyhow::{anyhow, Context, Ok, Result};
 use base64::{engine::general_purpose, Engine};
-use flate2::write::GzEncoder;
-use flate2::Compression;
 use log::info;
 use serde::Deserialize;
 use serde_json::Value;
-use server::{ZiskRequest, ZiskResponse, ZiskStatusRequest};
-use tar::Builder;
 
 use crate::{LOG_FOLDER, OUTPUT_FOLDER, PROGRAM_FOLDER};
 
@@ -32,10 +28,9 @@ where
 pub async fn wait_prove_done() -> Result<()> {
     let command = String::from("cargo-zisk prove-client status --port 6100");
 
-    let mut proved = false;
     let start_time = std::time::Instant::now();
 
-    while !proved {
+    loop {
         let mut child = Command::new("sh")
             .arg("-c")
             .arg(&command)
@@ -64,8 +59,6 @@ pub async fn wait_prove_done() -> Result<()> {
 
                     info!("Parsed JSON: node: {:?}, result: {:?}, status: {:?}", node, result, status);
                     if node == Some(0) && result == Some("ok") && status == Some("idle") {
-                        info!("Proof generated for block");
-                        proved = true;
                         return Ok(());
                     }
                 }            
@@ -78,11 +71,9 @@ pub async fn wait_prove_done() -> Result<()> {
 
         thread::sleep(Duration::from_secs(1));
     }
-
-    Ok(())    
 }
 
-pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folder: String) -> Result<ProofResult> {
+pub async fn generate_proof(block_number: u64, no_distributed: bool, no_server: bool, input_folder: String) -> Result<ProofResult> {
     let elf_file = format!(
         "{}/{}",
         PROGRAM_FOLDER,
@@ -106,16 +97,22 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
             elf_file, input_file, output_folder
         )
     } else {
-        // format!(
-        //     "mpirun --allow-run-as-root --bind-to none -np {} -x OMP_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -a -u",
-        //     num_processes, num_threads, elf_file, input_file, output_folder
-        // )
-        format!(
-            "cargo-zisk prove-client prove -i {} -a --port 6100 -p {}",
-            num_processes, num_threads, num_threads, input_file, block_number
-        )
+        if no_server {
+            info!("Generating proof with distributed proving without server");
+            format!(
+                "mpirun --allow-run-as-root --bind-to none -np {} -x OMP_NUM_THREADS={} -x RAYON_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -a -u",
+                num_processes, num_threads, num_threads, elf_file, input_file, output_folder
+            )
+        } else {
+            info!("Generating proof with distributed proving using server");
+            format!(
+                "mpirun --allow-run-as-root --bind-to none -np {} cargo-zisk prove-client prove -i {} -a --port 6100 -p {} -o {}",
+                num_processes, input_file, block_number, output_folder
+            )
+        }
     };
 
+    let start = std::time::Instant::now();
     let mut child = Command::new("sh")
         .arg("-c")
         .arg(command)
@@ -161,9 +158,10 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
 
     info!("Waiting for proof generation to complete for block number {}", block_number);
     wait_prove_done().await?;
+    info!("Proof generated for block number {}, time: {}ms", block_number, start.elapsed().as_millis());
 
     if proving {
-        let file = File::open(format!("{}/result.json", output_folder))
+        let file = File::open(format!("{}/{}-result.json", output_folder, block_number))
             .context(format!(
                 "Failed to open result.json for block number {}",
                 block_number
@@ -181,36 +179,13 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, input_folde
     }
 }
 
-/// Get the proof files for the given block number, compress them into a .tar.gz buffer and return it as base64 encoded string
+/// Get the proof file for the given block number and return it as base64 encoded string
 pub fn get_proof_b64(block_number: u64) -> Result<String> {
-    // List of files to include in the archive
-    let files = [
-        format!(
-            "{}/{}/vadcop_final_proof.bin",
-            OUTPUT_FOLDER, block_number
-        ),
-        // TODO: Uncomment when we have publics.json
-        //format!("{}/{}/publics.json", OUTPUT_FOLDER, block_number),
-    ];
-
-    // Create an in-memory buffer to hold the .tar.gz data
-    let mut buffer = Vec::new();
-    let gz_encoder = GzEncoder::new(&mut buffer, Compression::default());
-    let mut tar_builder = Builder::new(gz_encoder);
-
-    // Add each file to the tar archive, using only its filename in the archive
-    for file_path in &files {
-        let path = Path::new(file_path);
-        tar_builder.append_path_with_name(path, path.file_name().unwrap())?;
-    }
-
-    // Finalize the tar archive
-    tar_builder.finish()?;
-    let gz_encoder = tar_builder.into_inner()?; // Get the GzEncoder back
-    gz_encoder.finish()?; // Finalize the gzip compression
-
-    // Encode the resulting .tar.gz buffer as base64
+    let start = std::time::Instant::now();
+    let proof_file = format!("{}/{}/{}-vadcop_final_proof.bin", OUTPUT_FOLDER, block_number, block_number);
+    let buffer = fs::read(proof_file)?;
     let base64_encoded = general_purpose::STANDARD.encode(&buffer);
+    info!("Proof file for block number {} encoded to base64 in {}ms", block_number, start.elapsed().as_millis());
 
     Ok(base64_encoded)
 }
