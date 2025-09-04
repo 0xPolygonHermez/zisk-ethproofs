@@ -1,9 +1,12 @@
 use std::env;
 use std::{fs, path::PathBuf};
+use std::io::Write;
 
 use anyhow::Result;
 use clap::Parser;
+use chrono::Utc;
 use dotenv::dotenv;
+use env_logger::{Builder, Env};
 use ethproofs_api::EthProofsApi;
 use futures_util::StreamExt;
 use log::{error, info, warn};
@@ -73,7 +76,18 @@ async fn main() -> Result<()> {
     }
 
     // Initialize the logger
-    env_logger::init();
+    Builder::from_env(Env::default())
+        .format(|buf, record| {
+            let timestamp = Utc::now().format("%Y-%m-%dT%H:%M:%S%.6fZ");
+            writeln!(
+                buf,
+                "{} [{}] - {}",
+                timestamp,
+                record.level(),
+                record.args()
+            )
+        })
+        .init();
 
     // Load environment variables from .env file
     dotenv().ok();
@@ -95,7 +109,7 @@ async fn main() -> Result<()> {
         .parse()
         .expect("ETHPROOFS_CLUSTER_ID must be a valid u32");
 
-    let upload_folder = env::var("UPLOAD_FOLDER").unwrap_or(DEFAULT_UPLOAD_FOLDER.to_string());       
+    let upload_folder = env::var("UPLOAD_FOLDER").unwrap_or(DEFAULT_UPLOAD_FOLDER.to_string());
     // Ensure output directory exists
     create_dir_all(&upload_folder).await.unwrap();
 
@@ -122,7 +136,7 @@ async fn main() -> Result<()> {
                 match args[0] {
                     "queued" => {
                         queued_start = std::time::Instant::now();
-                        
+
                         let block_number: u64 = args[1]
                             .parse()
                             .expect("Failed to parse block number from command queued");
@@ -132,7 +146,7 @@ async fn main() -> Result<()> {
                         // Report to EthProofs that the proof is queued while generating the input file
                         if ethproofs_submit {
                             ethproofs_client.proof_queued(ethproofs_cluster_id, block_number).await?;
-                        }                        
+                        }
                     }
                     _ => {
                         error!("Unknown command received: {}", command);
@@ -143,7 +157,7 @@ async fn main() -> Result<()> {
                 if let Some((filename, content)) = parse_message(&payload) {
                     let filepath = PathBuf::from(&upload_folder).join(filename);
                     match fs::write(&filepath, content) {
-                        Ok(_) => info!("Received and saved input file: {}, time: {}ms", filepath.display(), queued_start.elapsed().as_millis()),
+                        Ok(_) => info!("Received and saved input file: {}, time: {} ms", filepath.display(), queued_start.elapsed().as_millis()),
                         Err(e) => {
                             error!("Failed to save input file {}, error: {}", filepath.display(), e);
                             continue;
@@ -167,7 +181,9 @@ async fn main() -> Result<()> {
 
                     // Report to EthProof that we are generating the proof
                     if ethproofs_submit {
+                        let start = std::time::Instant::now();
                         ethproofs_client.proof_proving(ethproofs_cluster_id, block_number).await?;
+                        debug!("Report proving state for block number {}, request_time: {} ms", block_number, start.elapsed().as_millis());
                     }
 
                     info!("Generating proof for block number {}", block_number);
@@ -177,8 +193,9 @@ async fn main() -> Result<()> {
                     // Submit the proof to EthProofs
                     let proof_base64 = get_proof_b64(block_number)?;
                     if ethproofs_submit {
+                        let start = std::time::Instant::now();
                         ethproofs_client.proof_proved(ethproofs_cluster_id, block_number, result.time, result.cycles, proof_base64, result.id).await?;
-                        info!("Proof submitted to ethproofs for block number {}", block_number);
+                        debug!("Proof submitted to ethproofs for block number {}, submit_time: {} ms", block_number, start.elapsed().as_millis());
                     }
 
                     // Send success alert to Telegram if enabled
@@ -189,7 +206,7 @@ async fn main() -> Result<()> {
                             block_number, result.cycles, result.time / 1000),
                             AlertType::Success
                         ).await?;
-                    }     
+                    }
 
                     let proof_folder = format!("{}/{}", OUTPUT_FOLDER, block_number);
 
@@ -203,7 +220,7 @@ async fn main() -> Result<()> {
                         if let Err(e) = std::fs::remove_file(&filepath) {
                             warn!("Failed to remove input file {}, error: {}", filepath.to_string_lossy(), e);
                         }
-                    }                                   
+                    }
                 } else {
                     error!("Malformed message received");
                 }

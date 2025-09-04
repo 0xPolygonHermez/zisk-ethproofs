@@ -3,7 +3,7 @@ use std::thread;
 use std::time::Duration;
 use anyhow::{anyhow, Context, Ok, Result};
 use base64::{engine::general_purpose, Engine};
-use log::info;
+use log::{debug, info};
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -31,6 +31,7 @@ pub async fn wait_prove_done() -> Result<()> {
     let start_time = std::time::Instant::now();
 
     loop {
+        debug!("Executing command: {}", command);
         let mut child = Command::new("sh")
             .arg("-c")
             .arg(&command)
@@ -51,18 +52,18 @@ pub async fn wait_prove_done() -> Result<()> {
             if let Some(start_idx) = line.find('{') {
                 let json_str = &line[start_idx..];
 
-                info!("Received JSON: {}", json_str);
+                debug!("Received JSON: {}", json_str);
                 if let std::result::Result::Ok(json) = serde_json::from_str::<Value>(json_str) {
                     let node = json.get("node").and_then(|n| n.as_u64());
                     let result = json.get("result").and_then(|r| r.as_str());
                     let status = json.get("status").and_then(|c| c.as_str());
 
-                    info!("Parsed JSON: node: {:?}, result: {:?}, status: {:?}", node, result, status);
+                    debug!("Parsed JSON: node: {:?}, result: {:?}, status: {:?}", node, result, status);
                     if node == Some(0) && result == Some("ok") && status == Some("idle") {
                         return Ok(());
                     }
-                }            
-            }        
+                }
+            }
         }
 
         if start_time.elapsed().as_secs() > 300 {
@@ -113,15 +114,18 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, no_server: 
     };
 
     let start = std::time::Instant::now();
+    debug!("Starting proof generation for block number {} with command: {}", block_number, command);
     let mut child = Command::new("sh")
         .arg("-c")
         .arg(command)
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .spawn()?;
+    debug!("Proof generation command started for block number {}", block_number);
 
     let stdout = child.stdout.take().expect("Failed to capture stdout");
     let reader = BufReader::new(stdout);
+    debug!("Waiting for proof generation to start for block number {}", block_number);
 
     let mut proving = false;
     let mut captured_output = Vec::new();

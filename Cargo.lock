@@ -2888,6 +2888,7 @@ dependencies = [
  "anyhow",
  "base64 0.22.1",
  "bincode",
+ "chrono",
  "clap",
  "dotenv",
  "env_logger",

@@ -7,3 +7,7 @@ upload_inputs
 inputs
 tmp
 output
+*.log
+.env
+prod.env
+staging.env

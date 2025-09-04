@@ -9,6 +9,7 @@ alloy-provider.workspace = true
 anyhow.workspace = true
 base64.workspace = true
 bincode.workspace = true
+chrono.workspace = true
 clap.workspace = true
 dotenv.workspace = true
 ethers.workspace = true
