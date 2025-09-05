@@ -96,18 +96,20 @@ async fn main() -> Result<()> {
     let args = CliArgs::parse();
 
     // Determine if we should submit proofs to ethproofs
-    let ethproofs_submit = !args.no_ethproofs;
+    let mut ethproofs_client: Option<EthProofsApi> = None;
+    let mut ethproofs_cluster_id = 0_u32;
+    if !args.no_ethproofs {
+        // Initialize the EthProofsApi
+        let ethproofs_api_url = env::var("ETHPROOFS_API_URL").expect("ETHPROOFS_API_URL must be set");
+        let ethproofs_api_token = env::var("ETHPROOFS_API_TOKEN").expect("ETHPROOFS_API_TOKEN must be set");
+        ethproofs_client = Some(EthProofsApi::new(ethproofs_api_url, ethproofs_api_token));
 
-    // Initialize the EthProofsApi
-    let ethproofs_api_url = env::var("ETHPROOFS_API_URL").expect("ETHPROOFS_API_URL must be set");
-    let ethproofs_api_token = env::var("ETHPROOFS_API_TOKEN").expect("ETHPROOFS_API_TOKEN must be set");
-    let ethproofs_client = EthProofsApi::new(ethproofs_api_url, ethproofs_api_token);
-
-    // Cluster ID for the EthProofs API
-    let ethproofs_cluster_id: u32 = env::var("ETHPROOFS_CLUSTER_ID")
-        .expect("ETHPROOFS_CLUSTER_ID must be set")
-        .parse()
-        .expect("ETHPROOFS_CLUSTER_ID must be a valid u32");
+        // Cluster ID for the EthProofs API
+        ethproofs_cluster_id = env::var("ETHPROOFS_CLUSTER_ID")
+            .expect("ETHPROOFS_CLUSTER_ID must be set")
+            .parse()
+            .expect("ETHPROOFS_CLUSTER_ID must be a valid u32");
+    }
 
     let upload_folder = env::var("UPLOAD_FOLDER").unwrap_or(DEFAULT_UPLOAD_FOLDER.to_string());
     // Ensure output directory exists
@@ -144,8 +146,8 @@ async fn main() -> Result<()> {
                         info!("Received queued command for block {}", block_number);
 
                         // Report to EthProofs that the proof is queued while generating the input file
-                        if ethproofs_submit {
-                            ethproofs_client.proof_queued(ethproofs_cluster_id, block_number).await?;
+                        if let Some(client) = &ethproofs_client {
+                            client.proof_queued(ethproofs_cluster_id, block_number).await?;
                         }
                     }
                     _ => {
@@ -180,9 +182,9 @@ async fn main() -> Result<()> {
                     };
 
                     // Report to EthProof that we are generating the proof
-                    if ethproofs_submit {
+                    if let Some(client) = &ethproofs_client {
                         let start = std::time::Instant::now();
-                        ethproofs_client.proof_proving(ethproofs_cluster_id, block_number).await?;
+                        client.proof_proving(ethproofs_cluster_id, block_number).await?;
                         debug!("Report proving state for block number {}, request_time: {} ms", block_number, start.elapsed().as_millis());
                     }
 
@@ -192,9 +194,9 @@ async fn main() -> Result<()> {
 
                     // Submit the proof to EthProofs
                     let proof_base64 = get_proof_b64(block_number)?;
-                    if ethproofs_submit {
+                    if let Some(client) = &ethproofs_client {
                         let start = std::time::Instant::now();
-                        ethproofs_client.proof_proved(ethproofs_cluster_id, block_number, result.time, result.cycles, proof_base64, result.id).await?;
+                        client.proof_proved(ethproofs_cluster_id, block_number, result.time, result.cycles, proof_base64, result.id).await?;
                         debug!("Proof submitted to ethproofs for block number {}, submit_time: {} ms", block_number, start.elapsed().as_millis());
                     }
 

@@ -40,4 +40,3 @@ url = "2.5.4"
 
 ethproofs-api = { path = "./crates/ethproofs_api" }
 
-server = { path = "/root/work/zisk/server" }

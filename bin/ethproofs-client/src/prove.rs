@@ -92,11 +92,19 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, no_server: 
         env::var("DISTRIBUTED_PROVE_THREADS").expect("DISTRIBUTED_PROVE_THREADS must be set");
 
     let command = if no_distributed {
-        info!("Generating proof without distributed proving");
-        format!(
-            "cargo-zisk prove -e {} -i {} -o {} -a -u",
-            elf_file, input_file, output_folder
-        )
+        if no_server {
+            info!("Generating proof without distributed proving");
+            format!(
+                "cargo-zisk prove -e {} -i {} -o {} -a -u",
+                elf_file, input_file, output_folder
+            )
+        } else {
+            info!("Generating proof without distributed proving using server");
+            format!(
+                "cargo-zisk prove-client prove -i {} -a --port 6100 -p {} -o {}",
+                input_file, block_number, output_folder
+            )
+        }
     } else {
         if no_server {
             info!("Generating proof with distributed proving without server");
