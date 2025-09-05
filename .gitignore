@@ -1,4 +1,13 @@
 /target
-/log
+log
 /input
 /proof
+/inputs
+upload_inputs
+inputs
+tmp
+output
+*.log
+.env
+prod.env
+staging.env
