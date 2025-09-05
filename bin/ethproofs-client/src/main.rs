@@ -9,7 +9,7 @@ use dotenv::dotenv;
 use env_logger::{Builder, Env};
 use ethproofs_api::EthProofsApi;
 use futures_util::StreamExt;
-use log::{error, info, warn};
+use log::{error, info, warn, debug};
 use tokio::fs::create_dir_all;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 
