@@ -140,7 +140,7 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, no_server: 
 
     for line in reader.lines() {
         let line = line?;
-        println!("{}", line);
+        debug!("{}", line);
         captured_output.push(format!("{}\n", line));
 
         if let Some(start_idx) = line.find('{') {
@@ -194,10 +194,10 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, no_server: 
 /// Get the proof file for the given block number and return it as base64 encoded string
 pub fn get_proof_b64(block_number: u64) -> Result<String> {
     let start = std::time::Instant::now();
-    let proof_file = format!("{}/{}/{}-vadcop_final_proof.bin", OUTPUT_FOLDER, block_number, block_number);
+    let proof_file = format!("{}/{}/{}-vadcop_final_proof.compressed.bin", OUTPUT_FOLDER, block_number, block_number);
     let buffer = fs::read(proof_file)?;
     let base64_encoded = general_purpose::STANDARD.encode(&buffer);
-    info!("Proof file for block number {} encoded to base64 in {}ms", block_number, start.elapsed().as_millis());
+    info!("Compressed proof file for block number {} encoded to base64 in {}ms", block_number, start.elapsed().as_millis());
 
     Ok(base64_encoded)
 }
