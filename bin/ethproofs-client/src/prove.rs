@@ -90,33 +90,35 @@ pub async fn generate_proof(block_number: u64, no_distributed: bool, no_server: 
         env::var("DISTRIBUTED_PROVE_PROCESSES").expect("DISTRIBUTED_PROVE_PROCESSES must be set");
     let num_threads =
         env::var("DISTRIBUTED_PROVE_THREADS").expect("DISTRIBUTED_PROVE_THREADS must be set");
+    let prove_params =
+        env::var("PROVE_PARAMS").unwrap_or_default();
 
     let command = if no_distributed {
         if no_server {
             info!("Generating proof without distributed proving");
             format!(
-                "cargo-zisk prove -e {} -i {} -o {} -a -u",
-                elf_file, input_file, output_folder
+                "cargo-zisk prove -e {} -i {} -o {} -a -u {}",
+                elf_file, input_file, output_folder, prove_params
             )
         } else {
             info!("Generating proof without distributed proving using server");
             format!(
-                "cargo-zisk prove-client prove -i {} -a --port 6100 -p {} -o {}",
-                input_file, block_number, output_folder
+                "cargo-zisk prove-client prove -i {} -a --port 6100 -p {} -o {} {}",
+                input_file, block_number, output_folder, prove_params
             )
         }
     } else {
         if no_server {
             info!("Generating proof with distributed proving without server");
             format!(
-                "mpirun --allow-run-as-root --bind-to none -np {} -x OMP_NUM_THREADS={} -x RAYON_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -a -u",
-                num_processes, num_threads, num_threads, elf_file, input_file, output_folder
+                "mpirun --allow-run-as-root --bind-to none -np {} -x OMP_NUM_THREADS={} -x RAYON_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -a -u {}",
+                num_processes, num_threads, num_threads, elf_file, input_file, output_folder, prove_params
             )
         } else {
             info!("Generating proof with distributed proving using server");
             format!(
-                "mpirun --allow-run-as-root --bind-to none -np {} cargo-zisk prove-client prove -i {} -a --port 6100 -p {} -o {}",
-                num_processes, input_file, block_number, output_folder
+                "mpirun --allow-run-as-root --bind-to none -np {} cargo-zisk prove-client prove -i {} -a --port 6100 -p {} -o {} {}",
+                num_processes, input_file, block_number, output_folder, prove_params
             )
         }
     };
