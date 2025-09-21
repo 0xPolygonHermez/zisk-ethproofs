@@ -8,10 +8,13 @@ use chrono::Utc;
 use dotenv::dotenv;
 use env_logger::{Builder, Env};
 use ethproofs_api::EthProofsApi;
-use futures_util::StreamExt;
+use futures_util::{StreamExt, SinkExt};
 use log::{error, info, warn, debug};
 use tokio::fs::create_dir_all;
-use tokio_tungstenite::{connect_async, tungstenite::Message};
+use tokio::time::{self, Duration, Instant};
+use tokio_tungstenite::{connect_async, WebSocketStream, MaybeTlsStream};
+use tokio_tungstenite::tungstenite::Message;
+use tokio::net::TcpStream;
 
 mod prove;
 mod telegram;
@@ -22,7 +25,10 @@ use telegram::{send_telegram_alert, AlertType};
 const OUTPUT_FOLDER: &str = "output";
 const PROGRAM_FOLDER: &str = "elf";
 const LOG_FOLDER: &str = "log";
-const DEFAULT_UPLOAD_FOLDER: &str = "/workspace/zisk-ethproofs/bin/ethproofs-client/upload_inputs";
+const DEFAULT_UPLOAD_FOLDER: &str = "upload_inputs";
+
+const PING_INTERVAL: Duration = Duration::from_secs(15);
+const IDLE_TIMEOUT: Duration  = Duration::from_secs(30 * 60); // 30 min
 
 // Command line arguments
 #[derive(Parser)]
@@ -65,6 +71,11 @@ fn parse_message(data: &[u8]) -> Option<(&str, &[u8])> {
     Some((name_str, content))
 }
 
+async fn connect_ws(url: &str) -> anyhow::Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
+    let (ws, _) = connect_async(url).await?;
+    Ok(ws)
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // Load environment variables from .env file
@@ -79,18 +90,9 @@ async fn main() -> Result<()> {
     Builder::from_env(Env::default())
         .format(|buf, record| {
             let timestamp = Utc::now().format("%Y-%m-%dT%H:%M:%S%.6fZ");
-            writeln!(
-                buf,
-                "{} [{}] - {}",
-                timestamp,
-                record.level(),
-                record.args()
-            )
+            writeln!(buf, "{} [{}] - {}", timestamp, record.level(), record.args())
         })
         .init();
-
-    // Load environment variables from .env file
-    dotenv().ok();
 
     // Parse the command line arguments
     let args = CliArgs::parse();
@@ -116,124 +118,188 @@ async fn main() -> Result<()> {
     create_dir_all(&upload_folder).await.unwrap();
 
     let input_gen_server_url = env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
-    // Connect to the input generator server
-    info!("Connecting to input-gen-server at {}", input_gen_server_url);
-    let (ws_stream, _) = connect_async(input_gen_server_url.clone())
-        .await
-        .expect("Failed to connect to WebSocket server");
 
-    info!("Connected to input-gen-server");
-    let (_, mut reader) = ws_stream.split();
+    // Loop to connect (re-connect) to the input generator server
+    let mut attempt: u32 = 0;
+    'reconnect: loop {
+        info!("Connecting to input-gen-server at {}", input_gen_server_url);
 
-    let mut queued_start = std::time::Instant::now();
-    while let Some(Ok(msg)) = reader.next().await {
-        match msg {
-            Message::Text(command) => {
-                let args = command.split_whitespace().collect::<Vec<&str>>();
-                if args.is_empty() {
-                    error!("Received empty command");
-                    continue;
-                }
-
-                match args[0] {
-                    "queued" => {
-                        queued_start = std::time::Instant::now();
-
-                        let block_number: u64 = args[1]
-                            .parse()
-                            .expect("Failed to parse block number from command queued");
-
-                        info!("Received queued command for block {}", block_number);
-
-                        // Report to EthProofs that the proof is queued while generating the input file
-                        if let Some(client) = &ethproofs_client {
-                            client.proof_queued(ethproofs_cluster_id, block_number).await?;
-                        }
-                    }
-                    _ => {
-                        error!("Unknown command received: {}", command);
-                    }
-                }
+        let ws_stream = match connect_ws(&input_gen_server_url).await {
+            Ok(s) => {
+                info!("Connected to input-gen-server");
+                attempt = 0; // reset backoff on successful connection
+                s
             }
-            Message::Binary(payload) => {
-                if let Some((filename, content)) = parse_message(&payload) {
-                    let filepath = PathBuf::from(&upload_folder).join(filename);
-                    match fs::write(&filepath, content) {
-                        Ok(_) => info!("Received and saved input file: {}, time: {} ms", filepath.display(), queued_start.elapsed().as_millis()),
-                        Err(e) => {
-                            error!("Failed to save input file {}, error: {}", filepath.display(), e);
-                            continue;
-                        }
-                    }
+            Err(e) => {
+                let backoff_ms = 1_000u64.saturating_mul(2u64.saturating_pow(attempt.min(6))); // 1s,2s,4s,...,64s
+                warn!("Connect failed: {e}. Retrying in {} ms", backoff_ms);
+                time::sleep(Duration::from_millis(backoff_ms)).await;
+                attempt = attempt.saturating_add(1);
+                continue 'reconnect;
+            }
+        };
 
-                    // Get block number from filename
-                    let block_number = match filepath.file_stem() {
-                        Some(stem) => match stem.to_string_lossy().parse::<u64>() {
-                            Ok(num) => num,
-                            Err(_) => {
-                                error!("Failed to parse block number from input filename {}", filepath.display());
+        let (mut writer, mut reader) = ws_stream.split();
+
+        // Heartbeat + idle tracking
+        let mut ping_ticker = time::interval(PING_INTERVAL);
+        let mut last_activity = Instant::now(); // se actualiza SOLO con tráfico entrante
+
+        let mut queued_start = std::time::Instant::now();
+
+        loop {
+            tokio::select! {
+                // 1) Reading messages from server
+                next = reader.next() => {
+                    #[allow(unreachable_patterns)]
+                    match next {
+                        Some(Ok(Message::Text(command))) => {
+                            last_activity = Instant::now();
+
+                            let args_text = command.split_whitespace().collect::<Vec<&str>>();
+                            if args_text.is_empty() {
+                                error!("Received empty command");
                                 continue;
                             }
+
+                            match args_text[0] {
+                                "queued" => {
+                                    queued_start = std::time::Instant::now();
+
+                                    let block_number: u64 = args_text[1]
+                                        .parse()
+                                        .expect("Failed to parse block number from command queued");
+
+                                    info!("Received queued command for block {}", block_number);
+
+                                    if let Some(client) = &ethproofs_client {
+                                        client.proof_queued(ethproofs_cluster_id, block_number).await?;
+                                    }
+                                }
+                                _ => {
+                                    error!("Unknown command received: {}", command);
+                                }
+                            }
                         }
+
+                        Some(Ok(Message::Binary(payload))) => {
+                            last_activity = Instant::now();
+
+                            if let Some((filename, content)) = parse_message(&payload) {
+                                let filepath = PathBuf::from(&upload_folder).join(filename);
+                                match fs::write(&filepath, content) {
+                                    Ok(_) => info!("Received and saved input file: {}, time: {} ms", filepath.display(), queued_start.elapsed().as_millis()),
+                                    Err(e) => { error!("Failed to save input file {}, error: {}", filepath.display(), e); continue; }
+                                }
+
+                                // Get block number from filename
+                                let block_number = match filepath.file_stem() {
+                                    Some(stem) => match stem.to_string_lossy().parse::<u64>() {
+                                        Ok(num) => num,
+                                        Err(_) => {
+                                            error!("Failed to parse block number from input filename {}", filepath.display());
+                                            continue;
+                                        }
+                                    }
+                                    None => {
+                                        error!("Failed to get block number from filename {}", filepath.display());
+                                        continue;
+                                    }
+                                };
+
+                                // Report to EthProofs that we are generating the proof
+                                if let Some(client) = &ethproofs_client {
+                                    let start = std::time::Instant::now();
+                                    client.proof_proving(ethproofs_cluster_id, block_number).await?;
+                                    debug!("Report proving state for block number {}, request_time: {} ms", block_number, start.elapsed().as_millis());
+                                }
+
+                                info!("Generating proof for block number {}", block_number);
+                                let result = generate_proof(block_number, args.disable_distributed, args.no_server, upload_folder.clone()).await?;
+                                info!("Proof generated for block number {}, proving_time: {}s, cycles: {}", block_number, result.time / 1000, result.cycles);
+
+                                // Submit the proof to EthProofs
+                                let proof_base64 = get_proof_b64(block_number)?;
+                                if let Some(client) = &ethproofs_client {
+                                    let start = std::time::Instant::now();
+                                    client.proof_proved(ethproofs_cluster_id, block_number, result.time, result.cycles, proof_base64, result.id).await?;
+                                    debug!("Proof submitted to ethproofs for block number {}, submit_time: {} ms", block_number, start.elapsed().as_millis());
+                                }
+
+                                // Send success alert to Telegram if enabled
+                                if args.block_submit_alert {
+                                    // TODO: Log txs and mgas for the block
+                                    send_telegram_alert(
+                                        &format!("Proof submitted for block number {}, cycles: {}, proving_time: {}s",
+                                        block_number, result.cycles, result.time / 1000),
+                                        AlertType::Success
+                                    ).await?;
+                                }
+
+                                let proof_folder = format!("{}/{}", OUTPUT_FOLDER, block_number);
+
+                                // Clean up
+                                if !args.keep_output {
+                                    if let Err(e) = std::fs::remove_dir_all(&proof_folder) {
+                                        warn!("Failed to remove proof folder {}, error: {}", proof_folder, e);
+                                    }
+                                }
+                                if !args.keep_input {
+                                    if let Err(e) = std::fs::remove_file(&filepath) {
+                                        warn!("Failed to remove input file {}, error: {}", filepath.to_string_lossy(), e);
+                                    }
+                                }
+                            } else {
+                                error!("Malformed message received");
+                            }
+                        }
+
+                        Some(Ok(Message::Close(frame))) => {
+                            warn!("Server closed connection: {:?}", frame);
+                            break;
+                        }
+
+                        // Ignore other message types
+                        Some(Ok(other)) => {
+                            last_activity = Instant::now();
+                            debug!("Ignoring unhandled WS message: {:?}", other);
+                        }
+
+                        Some(Err(e)) => {
+                            warn!("WebSocket error: {e}");
+                            break;
+                        }
+
                         None => {
-                            error!("Failed to get block number from filename {}", filepath.display());
-                            continue;
-                        }
-                    };
-
-                    // Report to EthProof that we are generating the proof
-                    if let Some(client) = &ethproofs_client {
-                        let start = std::time::Instant::now();
-                        client.proof_proving(ethproofs_cluster_id, block_number).await?;
-                        debug!("Report proving state for block number {}, request_time: {} ms", block_number, start.elapsed().as_millis());
-                    }
-
-                    info!("Generating proof for block number {}", block_number);
-                    let result = generate_proof(block_number, args.disable_distributed, args.no_server, upload_folder.clone()).await?;
-                    info!("Proof generated for block number {}, proving_time: {}s, cycles: {}", block_number, result.time / 1000, result.cycles);
-
-                    // Submit the proof to EthProofs
-                    let proof_base64 = get_proof_b64(block_number)?;
-                    if let Some(client) = &ethproofs_client {
-                        let start = std::time::Instant::now();
-                        client.proof_proved(ethproofs_cluster_id, block_number, result.time, result.cycles, proof_base64, result.id).await?;
-                        debug!("Proof submitted to ethproofs for block number {}, submit_time: {} ms", block_number, start.elapsed().as_millis());
-                    }
-
-                    // Send success alert to Telegram if enabled
-                    if args.block_submit_alert {
-                        // TODO: Log txs and mgas for the block
-                        send_telegram_alert(
-                            &format!("Proof submitted for block number {}, cycles: {}, proving_time: {}s",
-                            block_number, result.cycles, result.time / 1000),
-                            AlertType::Success
-                        ).await?;
-                    }
-
-                    let proof_folder = format!("{}/{}", OUTPUT_FOLDER, block_number);
-
-                    // Clean up
-                    if !args.keep_output {
-                        if let Err(e) = std::fs::remove_dir_all(&proof_folder) {
-                            warn!("Failed to remove proof folder {}, error: {}", proof_folder, e);
+                            warn!("WebSocket stream ended");
+                            break;
                         }
                     }
-                    if !args.keep_input {
-                        if let Err(e) = std::fs::remove_file(&filepath) {
-                            warn!("Failed to remove input file {}, error: {}", filepath.to_string_lossy(), e);
-                        }
+                }
+
+                // 2) Heartbeat: semd Ping each PING_INTERVAL
+                _ = ping_ticker.tick() => {
+                    if let Err(e) = writer.send(Message::Ping(Vec::new())).await {
+                        warn!("Failed to send Ping: {e}");
+                        break; // reconectar si ni siquiera podemos escribir
+                    } else {
+                        debug!("Ping sent");
                     }
-                } else {
-                    error!("Malformed message received");
+                }
+
+                // 3) Watchdog: if no incoming messages for IDLE_TIMEOUT, reconnect
+                _ = time::sleep_until(last_activity + IDLE_TIMEOUT) => {
+                    warn!("Idle timeout: no input file received in {:?}", IDLE_TIMEOUT);
+                    break; // reconnect
                 }
             }
-            _ => {
-                error!("Received unsupported message type: {:?}", msg);
-            }
         }
+
+        // Backoff before reconnecting
+        let backoff_ms = 1_000u64.saturating_mul(2u64.saturating_pow(attempt.min(6))); // 1s..64s
+        warn!("Reconnecting in {} ms...", backoff_ms);
+        time::sleep(Duration::from_millis(backoff_ms)).await;
+        attempt = attempt.saturating_add(1);
+        continue 'reconnect;
     }
-
-    info!("Server connection closed.");
-
-    Ok(())
 }
