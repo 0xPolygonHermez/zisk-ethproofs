@@ -31,4 +31,4 @@ tokio-tungstenite.workspace = true
 url.workspace = true
 
 ethproofs-api.workspace = true
-server.workspace = true
+
