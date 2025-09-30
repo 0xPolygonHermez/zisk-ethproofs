@@ -25,7 +25,7 @@ use telegram::{send_telegram_alert, AlertType};
 const OUTPUT_FOLDER: &str = "output";
 const PROGRAM_FOLDER: &str = "elf";
 const LOG_FOLDER: &str = "log";
-const DEFAULT_UPLOAD_FOLDER: &str = "upload_inputs";
+const DEFAULT_INPUTS_FOLDER: &str = "upload_inputs";
 
 const PING_INTERVAL: Duration = Duration::from_secs(15);
 const IDLE_TIMEOUT: Duration  = Duration::from_secs(30 * 60); // 30 min
@@ -113,9 +113,9 @@ async fn main() -> Result<()> {
             .expect("ETHPROOFS_CLUSTER_ID must be a valid u32");
     }
 
-    let upload_folder = env::var("UPLOAD_FOLDER").unwrap_or(DEFAULT_UPLOAD_FOLDER.to_string());
+    let inputs_folder = env::var("UPLOAD_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
     // Ensure output directory exists
-    create_dir_all(&upload_folder).await.unwrap();
+    create_dir_all(&inputs_folder).await.unwrap();
 
     let input_gen_server_url = env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
 
@@ -186,7 +186,7 @@ async fn main() -> Result<()> {
                             last_activity = Instant::now();
 
                             if let Some((filename, content)) = parse_message(&payload) {
-                                let filepath = PathBuf::from(&upload_folder).join(filename);
+                                let filepath = PathBuf::from(&inputs_folder).join(filename);
                                 match fs::write(&filepath, content) {
                                     Ok(_) => info!("Received and saved input file: {}, time: {} ms", filepath.display(), queued_start.elapsed().as_millis()),
                                     Err(e) => { error!("Failed to save input file {}, error: {}", filepath.display(), e); continue; }
@@ -215,7 +215,7 @@ async fn main() -> Result<()> {
                                 }
 
                                 info!("Generating proof for block number {}", block_number);
-                                let result = generate_proof(block_number, args.disable_distributed, args.no_server, upload_folder.clone()).await?;
+                                let result = generate_proof(block_number, args.disable_distributed, args.no_server, inputs_folder.clone()).await?;
                                 info!("Proof generated for block number {}, proving_time: {}s, cycles: {}", block_number, result.time / 1000, result.cycles);
 
                                 // Submit the proof to EthProofs
