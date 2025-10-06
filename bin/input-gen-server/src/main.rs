@@ -18,7 +18,8 @@ use tokio::{
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 use url::Url;
 
-const WS_ADDR: &str = "0.0.0.0:8765";
+const WS_LISTEN_IP: &str = "0.0.0.0";
+const WS_DEFAULT_PORT: &str = "8765";
 
 /// Generate the input file for the given block number and return the time taken in milliseconds
 pub async fn generate_input_file(block_number: u64, inputs_folder: String) -> Result<u128> {
@@ -181,7 +182,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                     Err(e) => {
                         error!("Error reading input file {}: {}", file, e);
                     }
-                }                
+                }
             }
             _ => {
                 error!("Unknown command received: {}", command);
@@ -217,8 +218,10 @@ async fn main() {
     });
 
     // Start listening for WebSocket clients
-    let listener = TcpListener::bind(WS_ADDR).await.unwrap();
-    info!("WebSocket server listening on ws://{}", WS_ADDR);
+    let ws_port = env::var("WS_PORT").unwrap_or(WS_DEFAULT_PORT.to_string());
+    let ws_addr = format!("{}:{}", WS_LISTEN_IP, ws_port);
+    let listener = TcpListener::bind(ws_addr).await.unwrap();
+    info!("WebSocket server listening on ws://{}", ws_addr);
 
     while let Ok((stream, _)) = listener.accept().await {
         let tx_for_client = tx.clone();
