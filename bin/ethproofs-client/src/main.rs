@@ -1,4 +1,5 @@
 use std::env;
+use std::sync::{Arc, Mutex};
 use std::{fs, path::PathBuf};
 use std::io::Write;
 
@@ -7,19 +8,23 @@ use clap::Parser;
 use chrono::Utc;
 use dotenv::dotenv;
 use env_logger::{Builder, Env};
-use ethproofs_api::EthProofsApi;
 use futures_util::{StreamExt, SinkExt};
 use log::{error, info, warn, debug};
 use tokio::fs::create_dir_all;
 use tokio::time::{self, Duration, Instant};
+use tokio::task;
 use tokio_tungstenite::{connect_async, WebSocketStream, MaybeTlsStream};
 use tokio_tungstenite::tungstenite::Message;
 use tokio::net::TcpStream;
 
+mod api;
 mod prove;
 mod telegram;
+mod webhook;
+use api::EthProofsApi;
 use prove::{generate_proof, get_proof_b64};
 use telegram::{send_telegram_alert, AlertType};
+use webhook::start_webhook_server;
 
 // Constants
 const OUTPUT_FOLDER: &str = "output";
@@ -33,25 +38,21 @@ const IDLE_TIMEOUT: Duration  = Duration::from_secs(30 * 60); // 30 min
 // Command line arguments
 #[derive(Parser)]
 struct CliArgs {
-    /// Disable ethproofs integration, only prove blocks
-    #[arg(short, long)]
-    no_ethproofs: bool,
+    /// Enable submit proofs to ethproofs
+    #[arg(short = 's', long)]
+    submit_ethproofs: bool,
 
     /// Send telegram alert when block is submitted to ethproofs
-    #[arg(short, long)]
-    block_submit_alert: bool,
+    #[arg(short = 'a', long)]
+    submit_alert: bool,
 
     /// Test block number
-    #[arg(short, long)]
+    #[arg(short = 't', long)]
     test_block: Option<u64>,
 
     /// Disable distributed proving
-    #[arg(short, long)]
+    #[arg(short = 'd', long)]
     disable_distributed: bool,
-
-    /// Disable use of ZisK server for proof generation
-    #[arg(short = 's', long)]
-    no_server: bool,
 
     /// Keep input file
     #[arg(short = 'i', long)]
@@ -100,7 +101,7 @@ async fn main() -> Result<()> {
     // Determine if we should submit proofs to ethproofs
     let mut ethproofs_client: Option<EthProofsApi> = None;
     let mut ethproofs_cluster_id = 0_u32;
-    if !args.no_ethproofs {
+    if args.submit_ethproofs {
         // Initialize the EthProofsApi
         let ethproofs_api_url = env::var("ETHPROOFS_API_URL").expect("ETHPROOFS_API_URL must be set");
         let ethproofs_api_token = env::var("ETHPROOFS_API_TOKEN").expect("ETHPROOFS_API_TOKEN must be set");
@@ -116,6 +117,18 @@ async fn main() -> Result<()> {
     let inputs_folder = env::var("UPLOAD_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
     // Ensure output directory exists
     create_dir_all(&inputs_folder).await.unwrap();
+
+    // Shared the currently proving block number
+    let proving_block_shared = Arc::new(Mutex::new(0u64));
+
+    // Launch the webhook server
+    let proving_block_shared_for_webhook = Arc::clone(&proving_block_shared);
+    task::spawn(async move {
+        start_webhook_server(proving_block_shared_for_webhook).await;
+    });
+
+    info!("test proof");
+    let result = generate_proof(1, args.disable_distributed, inputs_folder.clone()).await?;
 
     let input_gen_server_url = env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
 
@@ -207,6 +220,10 @@ async fn main() -> Result<()> {
                                     }
                                 };
 
+                                let proving_block_shared_clone = Arc::clone(&proving_block_shared);
+                                let mut proving_block = proving_block_shared_clone.lock().unwrap();
+                                *proving_block = block_number;
+
                                 // Report to EthProofs that we are generating the proof
                                 if let Some(client) = &ethproofs_client {
                                     let start = std::time::Instant::now();
@@ -215,7 +232,7 @@ async fn main() -> Result<()> {
                                 }
 
                                 info!("Generating proof for block number {}", block_number);
-                                let result = generate_proof(block_number, args.disable_distributed, args.no_server, inputs_folder.clone()).await?;
+                                let result = generate_proof(block_number, args.disable_distributed, inputs_folder.clone()).await?;
                                 info!("Proof generated for block number {}, proving_time: {}s, cycles: {}", block_number, result.time / 1000, result.cycles);
 
                                 // Submit the proof to EthProofs
@@ -223,11 +240,11 @@ async fn main() -> Result<()> {
                                 if let Some(client) = &ethproofs_client {
                                     let start = std::time::Instant::now();
                                     client.proof_proved(ethproofs_cluster_id, block_number, result.time, result.cycles, proof_base64, result.id).await?;
-                                    debug!("Proof submitted to ethproofs for block number {}, submit_time: {} ms", block_number, start.elapsed().as_millis());
+                                    info!("Proof submitted to ethproofs for block number {}, submit_time: {} ms", block_number, start.elapsed().as_millis());
                                 }
 
                                 // Send success alert to Telegram if enabled
-                                if args.block_submit_alert {
+                                if args.submit_alert {
                                     // TODO: Log txs and mgas for the block
                                     send_telegram_alert(
                                         &format!("Proof submitted for block number {}, cycles: {}, proving_time: {}s",
@@ -277,11 +294,11 @@ async fn main() -> Result<()> {
                     }
                 }
 
-                // 2) Heartbeat: semd Ping each PING_INTERVAL
+                // 2) Heartbeat: send ping each PING_INTERVAL
                 _ = ping_ticker.tick() => {
                     if let Err(e) = writer.send(Message::Ping(Vec::new())).await {
                         warn!("Failed to send Ping: {e}");
-                        break; // reconectar si ni siquiera podemos escribir
+                        break; // reconnect
                     } else {
                         debug!("Ping sent");
                     }
@@ -296,7 +313,7 @@ async fn main() -> Result<()> {
         }
 
         // Backoff before reconnecting
-        let backoff_ms = 1_000u64.saturating_mul(2u64.saturating_pow(attempt.min(6))); // 1s..64s
+        let backoff_ms = 1_000u64.saturating_mul(2u64.saturating_pow(attempt.min(6))); // 1s,2s,4s,...,64s
         warn!("Reconnecting in {} ms...", backoff_ms);
         time::sleep(Duration::from_millis(backoff_ms)).await;
         attempt = attempt.saturating_add(1);

@@ -22,7 +22,7 @@ where
     D: serde::Deserializer<'de>,
 {
     let f = f64::deserialize(deserializer)?;
-    std::result::Result::Ok((f.trunc() * 1000.0) as u128)
+    std::result::Result::Ok((f * 1000.0) as u128)
 }
 
 pub async fn wait_prove_done() -> Result<()> {
@@ -46,7 +46,6 @@ pub async fn wait_prove_done() -> Result<()> {
 
         for line in reader.lines() {
             let line = line?;
-            println!("{}", line);
             captured_output.push(format!("{}\n", line));
 
             if let Some(start_idx) = line.find('{') {
@@ -74,53 +73,27 @@ pub async fn wait_prove_done() -> Result<()> {
     }
 }
 
-pub async fn generate_proof(block_number: u64, no_distributed: bool, no_server: bool, input_folder: String) -> Result<ProofResult> {
-    let elf_file = format!(
-        "{}/{}",
-        PROGRAM_FOLDER,
-        env::var("ELF_FILE").expect("ELF_FILE must be set")
-    );
-    let input_file = format!("{}/{}.bin", input_folder, block_number);
+pub async fn generate_proof(block_number: u64, disable_distributed: bool, input_folder: String) -> Result<ProofResult> {
+    let input_file = format!("{}.bin", block_number);
     let output_folder = format!("{}/{}", OUTPUT_FOLDER, block_number);
 
     create_dir_all(Path::new(OUTPUT_FOLDER))?;
     create_dir_all(Path::new(LOG_FOLDER))?;
 
-    let num_processes =
-        env::var("DISTRIBUTED_PROVE_PROCESSES").expect("DISTRIBUTED_PROVE_PROCESSES must be set");
-    let num_threads =
-        env::var("DISTRIBUTED_PROVE_THREADS").expect("DISTRIBUTED_PROVE_THREADS must be set");
-    let prove_params =
-        env::var("PROVE_PARAMS").unwrap_or_default();
+    let command = if disable_distributed {
+        info!("Generating proof without distributed proving");
 
-    let command = if no_distributed {
-        if no_server {
-            info!("Generating proof without distributed proving");
-            format!(
-                "cargo-zisk prove -e {} -i {} -o {} -a -u {}",
-                elf_file, input_file, output_folder, prove_params
-            )
-        } else {
-            info!("Generating proof without distributed proving using server");
-            format!(
-                "cargo-zisk prove-client prove -i {} -a --port 6100 -p {} -o {} {}",
-                input_file, block_number, output_folder, prove_params
-            )
-        }
+        let elf_file = format!("{}/{}", PROGRAM_FOLDER, env::var("ELF_FILE").expect("ELF_FILE must be set"));
+        let prove_params = env::var("PROVE_PARAMS").unwrap_or_default();
+
+        format!(
+            "cargo-zisk prove -e {} -i {} -o {} -a {}",
+            elf_file, input_file, output_folder, prove_params
+        )
     } else {
-        if no_server {
-            info!("Generating proof with distributed proving without server");
-            format!(
-                "mpirun --allow-run-as-root --bind-to none -np {} -x OMP_NUM_THREADS={} -x RAYON_NUM_THREADS={} cargo-zisk prove -e {} -i {} -o {} -a -u {}",
-                num_processes, num_threads, num_threads, elf_file, input_file, output_folder, prove_params
-            )
-        } else {
-            info!("Generating proof with distributed proving using server");
-            format!(
-                "mpirun --allow-run-as-root --bind-to none -np {} cargo-zisk prove-client prove -i {} -a --port 6100 -p {} -o {} {}",
-                num_processes, input_file, block_number, output_folder, prove_params
-            )
-        }
+        info!("Generating proof with distributed proving");
+        let compute_capacity = env::var("COMPUTE_CAPACITY").expect("COMPUTE_CAPACITY must be set");
+        format!("zisk-coordinator prove --input {} --compute-capacity {}", input_file, compute_capacity)
     };
 
     let start = std::time::Instant::now();

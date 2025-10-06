@@ -31,12 +31,8 @@ rsp-provider = { git = "https://github.com/succinctlabs/rsp.git", rev = "24dee6c
 rsp-rpc-db = { git = "https://github.com/succinctlabs/rsp.git", rev = "24dee6c7bb4081f44e7d232fc924a9e419ee4c88" }
 # rsp-host-executor = { path = "../rsp/crates/executor/host"}
 # rsp-client-executor = { path = "../rsp/crates/executor/client"}
-serde = "1.0.127"
-serde_json = "1.0.140"
 tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-
-ethproofs-api = { path = "./crates/ethproofs_api" }
 
