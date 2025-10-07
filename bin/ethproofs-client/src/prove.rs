@@ -1,18 +1,17 @@
-use std::{env, fs::{create_dir_all, File}, io::{BufRead, BufReader, Write}, path::Path, process::{Command,Stdio}};
+use std::{fs::{create_dir_all, File}, io::{BufRead, BufReader, Write}, path::Path, process::{Command,Stdio}};
 
 use anyhow::{anyhow, Ok, Result};
 use log::debug;
 
-use crate::{LOG_FOLDER, OUTPUT_FOLDER};
+use crate::{state::AppState, LOG_FOLDER, OUTPUT_FOLDER};
 
-pub async fn generate_proof(block_number: u64) -> Result<()> {
+pub async fn generate_proof(block_number: u64, state: AppState) -> Result<()> {
     let input_file = format!("{}.bin", block_number);
 
     create_dir_all(Path::new(OUTPUT_FOLDER))?;
     create_dir_all(Path::new(LOG_FOLDER))?;
 
-    let compute_capacity = env::var("COMPUTE_CAPACITY").expect("COMPUTE_CAPACITY must be set");
-    let command = format!("zisk-coordinator prove --input {} --compute-capacity {}", input_file, compute_capacity);
+    let command = format!("zisk-coordinator prove --input {} --compute-capacity {}", input_file, state.compute_capacity);
     debug!("Starting proof generation for block number {} with command: {}", block_number, command);
     let mut child = Command::new("sh")
         .arg("-c")
@@ -24,6 +23,8 @@ pub async fn generate_proof(block_number: u64) -> Result<()> {
     let stdout = child.stdout.take().expect("Failed to capture stdout");
     let reader = BufReader::new(stdout);
     debug!("Waiting for proof generation to start for block number {}", block_number);
+
+    let _status = child.wait()?;
 
     let mut captured_output = Vec::new();
     let mut job_id = None;
@@ -38,15 +39,15 @@ pub async fn generate_proof(block_number: u64) -> Result<()> {
         }
     }
 
-    let _status = child.wait()?;
-
     // If job_id is None, it means proof generation did not start successfully
     if job_id.is_none() {
         let log_path = format!("{}/{}.log", LOG_FOLDER, block_number);
         let mut log_file = File::create(&log_path)?;
         write!(log_file, "{}", captured_output.concat())?;
 
-        return Err(anyhow!("Failed to start proof generation for block number {}. Log saved at {}", block_number, log_path));
+        debug!("Proof generation failed to start for block number {}, log saved at {}", block_number, log_path);
+        //return Err(anyhow!("Failed to start proof generation for block number {}. Log saved at {}", block_number, log_path));
+        return Ok(());
     }
 
     debug!("Proof generation started for block number {}, job_id: {}", block_number, job_id.as_ref().unwrap());

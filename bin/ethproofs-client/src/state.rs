@@ -15,6 +15,7 @@ pub struct AppState {
     pub ethproofs_cluster_id: Option<u32>,
     pub inputs_folder: String,
     pub input_gen_server_url: String,
+    pub compute_capacity: u32,
 }
 
 impl AppState {
@@ -51,6 +52,14 @@ impl AppState {
         let input_gen_server_url = env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
         let proving_block = Arc::new(Mutex::new(0u64));
 
+        let compute_capacity = match env::var("COMPUTE_CAPACITY") {
+            Ok(capacity_str) => match capacity_str.parse::<u32>() {
+                Ok(capacity) => capacity,
+                Err(_) => panic!("COMPUTE_CAPACITY is not a valid value"),
+            },
+            Err(_) => panic!("COMPUTE_CAPACITY not set"),
+        };
+
         Self {
             cliargs,
             proving_block,
@@ -58,6 +67,7 @@ impl AppState {
             ethproofs_cluster_id,
             inputs_folder,
             input_gen_server_url,
+            compute_capacity,
         }
     }
 }

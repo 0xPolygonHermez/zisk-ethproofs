@@ -88,11 +88,13 @@ impl EthProofsApi {
     const RETRY_DELAY_MS: u64 = 500;
 
     pub fn new(url: String, token: String) -> Self {
-        EthProofsApi {
-            client: Client::new(),
-            url,
-            token,
-        }
+        let client = Client::builder()
+            .pool_idle_timeout(None)
+            .tcp_keepalive(Duration::from_secs(60))
+            .build()
+            .expect("Failed to build EthProofsApi client");
+
+        EthProofsApi { client, url, token }
     }
 
     async fn send_with_retries(&self, request: reqwest::RequestBuilder) -> Result<reqwest::Response> {

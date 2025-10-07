@@ -171,7 +171,7 @@ async fn main() -> Result<()> {
                                 }
 
                                 info!("Generating proof for block number {}", block_number);
-                                if let Err(e) = generate_proof(block_number).await {
+                                if let Err(e) = generate_proof(block_number, app_state.clone()).await {
                                     error!("Proof generation failed for block number {}, error: {}", block_number, e);
                                     continue;
                                 }
