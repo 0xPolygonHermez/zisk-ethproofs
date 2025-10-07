@@ -1,7 +1,8 @@
+use std::env;
+
 use anyhow::Result;
 use log::{debug, error};
 use reqwest::Client;
-use std::env;
 
 // Define the types of Telegran alerts that can be sent
 #[allow(dead_code)]

@@ -1,157 +1,119 @@
+use std::{env, net::SocketAddr};
 
-use log::{error, debug, info};
-use std::io::prelude::*;
-use std::net::{TcpListener, TcpStream};
-use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
-use zisk_common::save_proof;
+use anyhow::{anyhow, Result};
+use axum::{extract::State, http::StatusCode, extract::Path, response::{IntoResponse, Response}, routing::post, Json, Router};
+use base64::{Engine, engine::general_purpose};
+use log::{error, info, warn};
 use zisk_distributed_common::WebhookPayloadDto;
+use zstd::Encoder;
 
-fn handle_client(mut stream: TcpStream, proving_block_shared: Arc<Mutex<u64>>) {
-    let mut buf = Vec::new();
+use crate::{telegram::{send_telegram_alert, AlertType}, state::AppState};
+use crate::DEFAULT_INPUTS_FOLDER;
 
-    // Read headers until CRLFCRLF
-    let mut tmp = [0u8; 8192];
-    let headers_end: usize;
-    loop {
-        if let Some(pos) = buf.windows(4).position(|w| w == b"\r\n\r\n") {
-            headers_end = pos + 4;
-            break;
-        }
-        let n = match stream.read(&mut tmp) {
-            Ok(n) => n,
-            Err(e) => {
-                http_response(&mut stream, 400, "Bad Request: error reading headers");
-                error!("Bad Request: error reading headers: {e}");
-                return;
-            }
-        };
-        if n == 0 {
-            http_response(&mut stream, 400, "Bad Request: headers not complete");
-            error!("Bad Request: headers not complete");
-            return;
-        }
-        buf.extend_from_slice(&tmp[..n]);
+const DEFAULT_WEBHOOK_PORT: u16 = 8051;
+
+pub fn get_proof_b64(proof_data: &[u64]) -> Result<String> {
+    // Convert &[u64] to &[u8] without copying
+    let proof_bytes = bytemuck::cast_slice::<u64, u8>(proof_data);
+
+    let mut compressed = Vec::new();
+    {
+        // Compression level 1 (as in your original code)
+        let mut encoder = Encoder::new(&mut compressed, 1)?;
+        use std::io::Write;
+        encoder.write_all(proof_bytes)?;
+        encoder.finish()?;
     }
 
-    // Get header as lines
-    let (header_bytes, after_headers) = buf.split_at(headers_end);
-    let header_text = String::from_utf8_lossy(header_bytes);
-    let header_lines = header_text.split("\r\n");
-
-    // Get content length from headers
-    let mut content_length: Option<usize> = None;
-    for line in header_lines {
-        if line.is_empty() { continue; }
-        if let Some((k, v)) = line.split_once(':') {
-            let key = k.trim().to_ascii_lowercase();
-            let val = v.trim();
-            match key.as_str() {
-                "content-length" => content_length = val.parse::<usize>().ok(),
-                _ => {}
-            }
-        }
-    }
-
-    let Some(cl) = content_length else {
-        http_response(&mut stream, 411, "Length Required: missing Content-Length");
-        error!("Length Required: missing Content-Length");
-        return;
-    };
-
-    // Read exactly Content-Length bytes
-    let mut body = after_headers.to_vec();
-    while body.len() < cl {
-        let mut tmp = [0u8; 8192];
-        let n = match stream.read(&mut tmp) {
-            Ok(n) => n,
-            Err(e) => {
-                http_response(&mut stream, 400, "Bad Request: error reading body");
-                error!("Bad Request: error reading body: {e}");
-                return;
-            }
-        };
-        if n == 0 {
-            http_response(&mut stream, 400, "Bad Request: connection closed before body completed");
-            error!("Bad Request: connection closed before body completed");
-            return;
-        }
-        body.extend_from_slice(&tmp[..n]);
-        if body.len() > cl {
-            body.truncate(cl);
-            break;
-        }
-    }
-
-    // Deserialize JSON -> WebhookPayloadDto
-    info!("POST received: {} bytes", body.len());
-    let payload: WebhookPayloadDto = match serde_json::from_slice(&body) {
-        Ok(v) => v,
-        Err(e) => {
-            http_response(&mut stream, 400, "Bad Request: invalid JSON body");
-            error!("JSON deserialization failed: {e}");
-            return;
-        }
-    };
-
-    let proved_block = *proving_block_shared.lock().unwrap();
-    debug!("Block number: {}, job id: {}, success: {}, duration: {}, steps: {}", proved_block, payload.job_id, payload.success, payload.duration_ms, payload.executed_steps.unwrap_or(0));
-
-    match save_proof(payload.job_id.as_str(), PathBuf::from("./output"), &payload.proof.unwrap(), true) {
-        Ok(_) => http_response(&mut stream, 200, "OK"),
-        Err(e) => {
-            error!("Failed to save proof for job {}: {}", payload.job_id, e);
-            http_response(&mut stream, 500, "Internal Server Error: failed to save proof");
-        }
-    }
-
+    Ok(general_purpose::STANDARD.encode(&compressed))
 }
 
-/// Write HTTP response with given status and text message.
-fn http_response(stream: &mut TcpStream, status: u16, msg: &str) {
-    let body = msg.as_bytes();
+async fn webhook_handler(
+    Path(_job_id): Path<String>,
+    State(state): State<AppState>,
+    Json(payload): Json<WebhookPayloadDto>,
+) -> Response {
+    // Get shared block number
+    let proved_block = { *state.proving_block.lock().unwrap_or_else(|e| e.into_inner()) };
 
-    let status_text = match status {
-        200 => "OK",
-        400 => "Bad Request",
-        405 => "Method Not Allowed",
-        411 => "Length Required",
-        415 => "Unsupported Media Type",
-        501 => "Not Implemented",
-        _ => "OK",
-    };
+    if !payload.success {
+        error!("Failed proof for block number {}, job: {}", proved_block, payload.job_id);
+        return (StatusCode::OK, "OK").into_response();
+    }
 
-    let resp = format!(
-        "HTTP/1.1 {} {}\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-        status, status_text, body.len()
+    let proving_time_ms: u128 = payload.duration_ms.into();
+    let proving_cycles = payload.executed_steps.unwrap_or(0);
+
+    info!(
+        "Proof generated for block {}, proving_time: {}ms, cycles: {}, job: {}",
+        proved_block,
+        payload.duration_ms,
+        proving_cycles,
+        payload.job_id
     );
 
-    if let Err(e) = stream.write_all(resp.as_bytes()) {
-        error!("Failed to write HTTP response header: {}", e);
-        return;
-    };
-    if let Err(e) = stream.write_all(body) {
-        error!("Failed to write HTTP response body: {}", e);
-        return;
-    };
-    if let Err(e) = stream.flush() {
-        error!("Failed to flush HTTP response: {}", e);
-    };
-}
-
-pub async fn start_webhook_server(proving_block_shared: Arc<Mutex<u64>>) {
-    let listener = TcpListener::bind("0.0.0.0:8051").unwrap();
-    info!("Webhook server running at http://127.0.0.1:8051/");
-
-    // Accept incoming connections
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                handle_client(stream, Arc::clone(&proving_block_shared));
-            }
+    // Encode compressed proof to base64
+    let proof_base64 = match payload.proof.as_ref() {
+        Some(proof) => match get_proof_b64(proof) {
+            Ok(b64) => b64,
             Err(e) => {
-                error!("Connection failed: {}", e);
+                error!("Failed to get compressed proof in base64: {e}");
+                return (StatusCode::BAD_REQUEST, "Error getting compressing proof").into_response();
             }
+        },
+        None => return (StatusCode::BAD_REQUEST, "No proof data in payload").into_response(),
+    };
+
+    // Submit to EthProofs if enabled
+    if state.cliargs.submit_ethproofs {
+        let client = &state.ethproofs_client.unwrap();
+        let cluster_id = state.ethproofs_cluster_id.unwrap();
+        let start = std::time::Instant::now();
+        match client.proof_proved(cluster_id, proved_block, proving_time_ms, proving_cycles, proof_base64, payload.job_id.clone()).await {
+            Ok(_) => info!("Proof submitted to ethproofs for block {}, submit_time: {} ms", proved_block, start.elapsed().as_millis()),
+            Err(e) => error!("Failed to submit proof to ethproofs: {}", e),
         }
     }
+
+    // Send Telegram alert if enabled
+    if state.cliargs.submit_alert {
+        let msg = format!(
+            "Proof generated for block {}, proving_time: {}s, cycles: {}",
+            proved_block,
+            proving_time_ms,
+            proving_cycles,
+        );
+
+        if let Err(e) = send_telegram_alert(&msg, AlertType::Success).await {
+            warn!("Failed to send Telegram alert: {}", e);
+        }
+    }
+
+    // Clean up input file if not needed
+    if !state.cliargs.keep_input {
+        let inputs_folder = env::var("UPLOAD_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
+        let input_file_path = format!("{}/input_{}.json", inputs_folder, proved_block);
+        if let Err(e) = std::fs::remove_file(&input_file_path) {
+            warn!("Failed to remove input file {}, error: {}", input_file_path, e);
+        }
+    }
+
+    (StatusCode::OK, "OK").into_response()
+}
+
+pub async fn start_webhook_server(state: AppState) -> Result<()> {
+    let webhook_port = env::var("WEBHOOK_PORT").unwrap_or(DEFAULT_WEBHOOK_PORT.to_string());
+    let addr: SocketAddr = format!("127.0.0.1:{}", webhook_port)
+        .parse()
+        .map_err(|e| anyhow!("invalid bind addr: {e}"))?;
+
+    let app = Router::new()
+        .route("/:job_id", post(webhook_handler))
+        .with_state(state);
+
+    info!("Webhook server running at http://{}", addr);
+
+    axum::serve(tokio::net::TcpListener::bind(addr).await?, app)
+        .await
+        .map_err(|e| anyhow!("Webhookserver error: {e}"))
 }

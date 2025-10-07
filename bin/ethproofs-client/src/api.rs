@@ -1,8 +1,9 @@
+use std::time::Duration;
+
 use anyhow::{anyhow, Result};
 use log::debug;
 use reqwest::Client;
 use serde::{Serialize, Deserialize};
-use std::time::Duration;
 use tokio::time::sleep;
 use url::Url;
 
@@ -13,7 +14,7 @@ pub struct EthProofsApi {
     token: String,
 }
 
-
+#[allow(unused)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Cluster {
     id: u32,
@@ -25,6 +26,7 @@ pub struct Cluster {
     cluster_configuration: Vec<InstanceConfiguration>,
 }
 
+#[allow(unused)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SingleMachine {
     nickname: String,
@@ -117,6 +119,7 @@ impl EthProofsApi {
         Err(last_err)
     }
 
+    #[allow(unused)]
     pub async fn get_clusters(&self) -> Result<Vec<Cluster>> {
         let url = Url::parse(&format!("{}/clusters", self.url))?;
         debug!("get_clusters GET {}", url);
@@ -133,6 +136,7 @@ impl EthProofsApi {
         Ok(clusters)
     }
 
+    #[allow(unused)]
     pub async fn add_cluster(&self, cluster: Cluster) -> Result<u32> {
         let url = Url::parse(&format!("{}/clusters", self.url))?;
         debug!("add_cluster POST {}", url);
@@ -148,6 +152,7 @@ impl EthProofsApi {
         Ok(cluster_id)
     }
 
+    #[allow(unused)]
     pub async fn add_single_machine(&self, single_machine: SingleMachine) -> Result<u32> {
         let url = Url::parse(&format!("{}/single-machine", self.url))?;
         debug!("add_single_machine POST {}", url);
