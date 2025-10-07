@@ -80,7 +80,7 @@ async fn webhook_handler(
         let msg = format!(
             "Proof generated for block {}, proving_time: {}s, cycles: {}",
             proved_block,
-            proving_time_ms,
+            proving_time_ms / 1000,
             proving_cycles,
         );
 
@@ -92,7 +92,7 @@ async fn webhook_handler(
     // Clean up input file if not needed
     if !state.cliargs.keep_input {
         let inputs_folder = env::var("UPLOAD_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
-        let input_file_path = format!("{}/input_{}.json", inputs_folder, proved_block);
+        let input_file_path = format!("{}/{}.bin", inputs_folder, proved_block);
         if let Err(e) = std::fs::remove_file(&input_file_path) {
             warn!("Failed to remove input file {}, error: {}", input_file_path, e);
         }
