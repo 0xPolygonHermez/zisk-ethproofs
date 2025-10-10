@@ -72,8 +72,8 @@ async fn db_block_proofs_worker(
                 (?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 zisk_version = VALUES(zisk_version),
-                proving_time = VALUES(proving_time)
-                proof = VALUES(proof),
+                proving_time = VALUES(proving_time),
+                proof = VALUES(proof)
         "#;
 
     loop {
