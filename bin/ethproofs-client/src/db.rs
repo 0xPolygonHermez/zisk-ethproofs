@@ -1,5 +1,5 @@
 use std::time::Duration;
-use log::{debug, info};
+use log::{debug, error, info};
 use tokio::sync::mpsc;
 use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
 
@@ -85,7 +85,7 @@ async fn db_block_proofs_worker(
                     Some(block_proof) => {
                         debug!("Inserting DB block proof, block_number: {}", block_proof.block_number);
                         if let Err(e) = insert_with_retries(&pool, insert_sql, &block_proof, cfg.max_retries, cfg.base_backoff).await {
-                            eprintln!("Failed to insert DB block proof, error: {}, block_proof: {:?}", e, block_proof);
+                            error!("Failed to insert DB block proof, error: {}, block_number: {}", e, block_proof.block_number);
                         }
                     }
                     None => {
@@ -119,7 +119,10 @@ async fn insert_with_retries(
             Err(e) => {
                 attempt += 1;
 
+                error!("Failed to insert block proof into DB, error: {}, attempt: {}/{}", e, attempt, max_retries);
+
                 if attempt > max_retries {
+                    debug!("Max retries reached ({}) for inserting block proof into DB, giving up", max_retries);
                     return Err(e.into());
                 }
 
