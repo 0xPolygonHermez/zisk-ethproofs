@@ -11,7 +11,7 @@ pub struct CliArgs {
     #[arg(short = 'a', long)]
     pub submit_alert: bool,
 
-    // Insert block proofs into database
+    /// Insert block proofs into database
     #[arg(short = 'd', long)]
     pub insert_db: bool,
 
