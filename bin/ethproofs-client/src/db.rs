@@ -66,7 +66,7 @@ async fn db_block_proofs_worker(
 ) {
     let insert_sql =
         r#"
-            INSERT INTO blocks
+            INSERT INTO block_proofs
                 (block_number, zisk_version, proving_time, proof)
             VALUES
                 (?, ?, ?, ?)
