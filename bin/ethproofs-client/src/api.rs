@@ -91,6 +91,11 @@ impl EthProofsApi {
         let client = Client::builder()
             .pool_idle_timeout(None)
             .tcp_keepalive(Duration::from_secs(60))
+            .http2_keep_alive_while_idle(true)
+            .http2_keep_alive_interval(Duration::from_secs(30))
+            .http2_adaptive_window(true)
+            .pool_max_idle_per_host(8)
+            .tcp_nodelay(true)
             .build()
             .expect("Failed to build  client");
 
