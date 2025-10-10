@@ -119,12 +119,12 @@ async fn insert_with_retries(
             Err(e) => {
                 attempt += 1;
 
-                error!("Failed to insert block proof into DB, error: {}, attempt: {}/{}", e, attempt, max_retries);
-
                 if attempt > max_retries {
                     debug!("Max retries reached ({}) for inserting block proof into DB, giving up", max_retries);
                     return Err(e.into());
                 }
+
+                error!("Failed to insert block proof into DB, error: {}, attempt: {}/{}", e, attempt, max_retries);
 
                 let backoff = base_backoff.saturating_mul(2u32.saturating_pow((attempt - 1) as u32));
                 tokio::time::sleep(backoff.min(Duration::from_secs(5))).await;
