@@ -15,6 +15,7 @@ use tokio_tungstenite::tungstenite::Message;
 
 mod api;
 mod cliargs;
+mod db;
 mod prove;
 mod state;
 mod telegram;
@@ -58,7 +59,7 @@ async fn main() -> Result<()> {
         .init();
 
     // Initialize application state
-    let app_state = AppState::new();
+    let app_state = AppState::new().await;
 
     // Ensure output directory exists
     create_dir_all(&app_state.inputs_folder).await.unwrap();
@@ -70,6 +71,7 @@ async fn main() -> Result<()> {
             panic!("Webhook server exited with error: {}", e);
         }
     });
+
 
     // Loop to connect (re-connect) to the input generator server
     let mut attempt: u32 = 0;

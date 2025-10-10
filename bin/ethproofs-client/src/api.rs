@@ -92,7 +92,7 @@ impl EthProofsApi {
             .pool_idle_timeout(None)
             .tcp_keepalive(Duration::from_secs(60))
             .build()
-            .expect("Failed to build EthProofsApi client");
+            .expect("Failed to build  client");
 
         EthProofsApi { client, url, token }
     }
@@ -206,7 +206,7 @@ impl EthProofsApi {
         block_number: u64,
         time: u128,
         cycles: u64,
-        proof: String,
+        proof: &String,
         verifier_id: String
     ) -> Result<u64> {
         let url = Url::parse(&format!("{}/proofs/proved", self.url))?;
@@ -220,7 +220,7 @@ impl EthProofsApi {
                 cluster_id,
                 proving_time: time,
                 proving_cycles: cycles,
-                proof,
+                proof: proof.to_string(),
                 verifier_id,
             });
 

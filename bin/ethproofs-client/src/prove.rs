@@ -1,6 +1,6 @@
 use std::{fs::{create_dir_all, File}, io::{BufRead, BufReader, Write}, path::Path, process::{Command,Stdio}};
 
-use anyhow::{anyhow, Ok, Result};
+use anyhow::{Ok, Result};
 use log::debug;
 
 use crate::{state::AppState, LOG_FOLDER, OUTPUT_FOLDER};

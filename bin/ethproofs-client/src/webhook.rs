@@ -7,6 +7,7 @@ use log::{error, info, warn};
 use zisk_distributed_common::WebhookPayloadDto;
 use zstd::Encoder;
 
+use crate::db::{BlockProof};
 use crate::{telegram::{send_telegram_alert, AlertType}, state::AppState};
 use crate::DEFAULT_INPUTS_FOLDER;
 
@@ -41,7 +42,7 @@ async fn webhook_handler(
         return (StatusCode::OK, "OK").into_response();
     }
 
-    let proving_time_ms: u128 = payload.duration_ms.into();
+    let proving_time_ms: u32 = payload.duration_ms as u32;
     let proving_cycles = payload.executed_steps.unwrap_or(0);
 
     info!(
@@ -69,9 +70,27 @@ async fn webhook_handler(
         let client = &state.ethproofs_client.unwrap();
         let cluster_id = state.ethproofs_cluster_id.unwrap();
         let start = std::time::Instant::now();
-        match client.proof_proved(cluster_id, proved_block, proving_time_ms, proving_cycles, proof_base64, payload.job_id.clone()).await {
+        match client.proof_proved(cluster_id, proved_block, proving_time_ms as u128, proving_cycles, &proof_base64, payload.job_id.clone()).await {
             Ok(_) => info!("Proof submitted to ethproofs for block {}, submit_time: {} ms", proved_block, start.elapsed().as_millis()),
             Err(e) => error!("Failed to submit proof to ethproofs: {}", e),
+        }
+    }
+
+    if state.cliargs.insert_db {
+        if let Some(db) = &state.db_block_proofs {
+            let start = std::time::Instant::now();
+            let block_proof = BlockProof {
+                block_number: proved_block,
+                zisk_version: "0.12.0".to_string(),
+                proving_time: proving_time_ms as u32,
+                proof: proof_base64,
+            };
+            match db.enqueue(block_proof).await {
+                Ok(_) => info!("Proof inserted into DB for block {}, insert_time: {} ms", proved_block, start.elapsed().as_millis()),
+                Err(e) => error!("Failed to insert proof into DB: {}", e),
+            }
+        } else {
+            warn!("DB handle not initialized, cannot insert proof for block {}", proved_block);
         }
     }
 

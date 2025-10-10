@@ -4,7 +4,7 @@ use std::{env, sync::{Arc, Mutex}};
 use clap::Parser;
 use dotenv::dotenv;
 
-use crate::{api::EthProofsApi, DEFAULT_INPUTS_FOLDER};
+use crate::{api::EthProofsApi, db::{self, DbBlockProofs}, DEFAULT_INPUTS_FOLDER};
 use crate::cliargs::CliArgs;
 
 #[derive(Clone)]
@@ -16,10 +16,11 @@ pub struct AppState {
     pub inputs_folder: String,
     pub input_gen_server_url: String,
     pub compute_capacity: u32,
+    pub db_block_proofs: Option<DbBlockProofs>,
 }
 
 impl AppState {
-    pub fn new() -> Self {
+    pub async fn new() -> Self {
         // Load environment variables from .env file
         dotenv().ok();
 
@@ -60,6 +61,21 @@ impl AppState {
             Err(_) => panic!("COMPUTE_CAPACITY not set"),
         };
 
+        let db_dsn = if cliargs.insert_db {
+            match env::var("DB_DSN") {
+                Ok(dsn) => Some(dsn),
+                Err(_) => panic!("DB_DSN not set"),
+            }
+        } else {
+            None
+        };
+
+        let db_block_proofs = if let Some(dsn) = &db_dsn {
+            Some(db::DbBlockProofs::new(dsn, db::DbBlockProofsConfig::default()).await.expect("Failed to create DbBlockProofs"))
+        } else {
+            None
+        };
+
         Self {
             cliargs,
             proving_block,
@@ -68,6 +84,7 @@ impl AppState {
             inputs_folder,
             input_gen_server_url,
             compute_capacity,
+            db_block_proofs,
         }
     }
 }
