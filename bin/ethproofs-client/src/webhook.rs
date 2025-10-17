@@ -82,8 +82,10 @@ async fn webhook_handler(
             let block_proof = BlockProof {
                 block_number: proved_block,
                 zisk_version: "0.12.0".to_string(),
+                hardware: "128 vCPU, 512GB RAM, 1 RTX4090 GPU".to_string(),
                 proving_time: proving_time_ms as u32,
                 proof: proof_base64,
+                steps: proving_cycles,
             };
             match db.enqueue(block_proof).await {
                 Ok(_) => info!("Proof inserted into DB for block {}, insert_time: {} ms", proved_block, start.elapsed().as_millis()),

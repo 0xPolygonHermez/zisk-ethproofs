@@ -7,8 +7,10 @@ use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
 pub struct BlockProof {
     pub block_number: u64,    // NOT NULL, UNIQUE
     pub zisk_version: String, // varchar(255)
+    pub hardware: String,     // varchar(255)
     pub proof: String,        // LONGTEXT
     pub proving_time: u32,    // INT UNSIGNED
+    pub steps: u64,           // BIGINT UNSIGNED
 }
 
 /// Configuración del escritor.
@@ -67,12 +69,14 @@ async fn db_block_proofs_worker(
     let insert_sql =
         r#"
             INSERT INTO block_proofs
-                (block_number, zisk_version, proving_time, proof)
+                (block_number, zisk_version, hardware, proving_time, steps, proof)
             VALUES
-                (?, ?, ?, ?)
+                (?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 zisk_version = VALUES(zisk_version),
+                hardware = VALUES(hardware),
                 proving_time = VALUES(proving_time),
+                steps = VALUES(steps),
                 proof = VALUES(proof)
         "#;
 
@@ -109,7 +113,9 @@ async fn insert_with_retries(
         let res = sqlx::query(sql)
             .bind(block_proof.block_number)
             .bind(&block_proof.zisk_version)
-            .bind(block_proof.proving_time as i64)
+            .bind(&block_proof.hardware)
+            .bind(block_proof.proving_time as u64)
+            .bind(block_proof.steps)
             .bind(&block_proof.proof)
             .execute(pool)
             .await;
