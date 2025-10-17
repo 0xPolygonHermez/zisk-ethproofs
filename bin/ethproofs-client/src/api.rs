@@ -171,7 +171,7 @@ impl EthProofsApi {
 
         let response = self.send_with_retries(request).await?;
         let cluster_id: u32 = response.json().await?;
-        debug!("added single machine, id: {}, nickname: {}", cluster_id, single_machine.nickname);
+        debug!("Added single machine, id: {}, nickname: {}", cluster_id, single_machine.nickname);
         Ok(cluster_id)
     }
 
