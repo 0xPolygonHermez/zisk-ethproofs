@@ -38,6 +38,7 @@ pub async fn generate_input_file(guest: GuestProgram, block_number: u64, inputs_
 
     let input_path = input_folder.join(format!("{}.bin", block_number));
 
+    let start_input_gen = Instant::now();
     // Use spawn_blocking to handle the non-Send future
     let result = tokio::task::spawn_blocking(move || {
         let rt = tokio::runtime::Handle::current();
@@ -46,9 +47,12 @@ pub async fn generate_input_file(guest: GuestProgram, block_number: u64, inputs_
             input_builder.generate(block_number).await
         })
     }).await??;
+    info!("Input generation for block {} took {} ms", block_number, start_input_gen.elapsed().as_millis());
 
+    let save_file_start = Instant::now();
     let mut input_file = std::fs::File::create(&input_path)?;
     input_file.write_all(&result.input)?;
+    info!("Saving input file for block {} took {} ms", block_number, save_file_start.elapsed().as_millis());
 
     let input_file_time = start.elapsed().as_millis();
 
@@ -95,21 +99,12 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
         }
 
         if let Err(e) = async {
-            let block = rpc_provider
-                .get_block(block_number).await?
-                .ok_or_else(|| anyhow::anyhow!("Block {} not found", block_number))?;
-
             if tx.send(format!("queued {}", block_number)).is_err() {
                 info!("No active receivers, skipping input file generation for block {}", block_number);
                 return Ok::<(), anyhow::Error>(());
             }
 
-            info!(
-                "Generating input file for block {}, txs: {}, gas: {}",
-                block_number,
-                block.transactions.len(),
-                block.gas_used
-            );
+            info!("Generating input file for block {}", block_number);
 
             let input_file_time = generate_input_file(guest.clone(), block_number, inputs_folder.clone()).await?;
 
