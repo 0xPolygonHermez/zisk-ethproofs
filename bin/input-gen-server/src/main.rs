@@ -64,6 +64,9 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
         .parse()
         .expect("BLOCK_MODULUS must be a valid integer");
 
+    let mut total_input_time: u128 = 0;
+    let mut input_count: u64 = 0;
+
     loop {
         let mut block_number: u64 = 0;
         let rpc_provider = Provider::<Ws>::connect(rpc_ws_url.clone())
@@ -89,7 +92,7 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
             }
         }
 
-        if let Err(e) = (|| async {
+        if let Err(e) = async {
             let block = rpc_provider
                 .get_block(block_number).await?
                 .ok_or_else(|| anyhow::anyhow!("Block {} not found", block_number))?;
@@ -107,10 +110,15 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
             );
 
             let input_file_time = generate_input_file(guest.clone(), block_number, inputs_folder.clone()).await?;
+
+            total_input_time += input_file_time;
+            input_count += 1;
+
             info!(
-                "Input file generated for block {}, time: {}ms",
+                "Input file generated for block {}, time: {}ms, avg: {}ms",
                 block_number,
-                input_file_time
+                input_file_time,
+                total_input_time / input_count as u128
             );
 
             if tx.send(format!("input {}.bin", block_number)).is_err() {
@@ -118,7 +126,7 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
             }
 
             Ok::<(), anyhow::Error>(())
-        })().await {
+        }.await {
             error!("Error processing block {}, error: {:?}", block_number, e);
         }
     }
