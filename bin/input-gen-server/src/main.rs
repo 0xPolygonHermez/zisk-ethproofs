@@ -9,7 +9,6 @@ use log::{error, info, warn};
 use rsp_host_executor::EthHostExecutor;
 use rsp_primitives::genesis::Genesis;
 use rsp_provider::create_provider;
-use rsp_rpc_db::RpcDb;
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::broadcast::{self, Receiver, Sender},
@@ -31,7 +30,6 @@ pub async fn generate_input_file(block_number: u64, inputs_folder: String) -> Re
         Url::parse(rpc_url.as_str())
             .expect("Invalid RPC URL"),
     );
-    let rpc_db = RpcDb::new(provider.clone(), block_number - 1);
     let genesis = Genesis::Mainnet;
 
     let executor = EthHostExecutor::eth(
@@ -45,7 +43,7 @@ pub async fn generate_input_file(block_number: u64, inputs_folder: String) -> Re
 
     // Execute the host to get the client input
     let input = executor
-        .execute(block_number, &rpc_db, &provider, genesis.clone(), None, false)
+        .execute(block_number, &provider, genesis.clone(), None, false)
         .await
         .expect("Failed to execute client");
 
@@ -220,7 +218,7 @@ async fn main() {
     // Start listening for WebSocket clients
     let ws_port = env::var("WS_PORT").unwrap_or(WS_DEFAULT_PORT.to_string());
     let ws_addr = format!("{}:{}", WS_LISTEN_IP, ws_port);
-    let listener = TcpListener::bind(ws_addr).await.unwrap();
+    let listener = TcpListener::bind(&ws_addr).await.unwrap();
     info!("WebSocket server listening on ws://{}", ws_addr);
 
     while let Ok((stream, _)) = listener.accept().await {

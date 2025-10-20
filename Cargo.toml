@@ -8,7 +8,7 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace.dependencies]
-alloy-provider = { version = "0.14.0", default-features = false, features = [
+alloy-provider = { version = "1.0.37", default-features = false, features = [
     "reqwest",
     "reqwest-rustls-tls",
 ] }
@@ -25,14 +25,13 @@ ethers = { version = "2.0", features = ["ws"] }
 log = "0.4.26"
 rand = "0.9.0"
 reqwest = { version = "0.12.15", features = ["json"] }
-rsp-host-executor = { git = "https://github.com/succinctlabs/rsp.git", rev = "24dee6c7bb4081f44e7d232fc924a9e419ee4c88" }
-rsp-primitives = { git = "https://github.com/succinctlabs/rsp.git", rev = "24dee6c7bb4081f44e7d232fc924a9e419ee4c88" }
-rsp-provider = { git = "https://github.com/succinctlabs/rsp.git", rev = "24dee6c7bb4081f44e7d232fc924a9e419ee4c88" }
-rsp-rpc-db = { git = "https://github.com/succinctlabs/rsp.git", rev = "24dee6c7bb4081f44e7d232fc924a9e419ee4c88" }
+rsp-host-executor = { git = "https://github.com/succinctlabs/rsp.git", rev = "be2fe1274414a33cab9adb68825dc2eb029c7a4a", features = ["execution-witness"]  }
+rsp-primitives = { git = "https://github.com/succinctlabs/rsp.git", rev = "be2fe1274414a33cab9adb68825dc2eb029c7a4a" }
+rsp-provider = { git = "https://github.com/succinctlabs/rsp.git", rev = "be2fe1274414a33cab9adb68825dc2eb029c7a4a" }
+rsp-rpc-db = { git = "https://github.com/succinctlabs/rsp.git", rev = "be2fe1274414a33cab9adb68825dc2eb029c7a4a" }
 # rsp-host-executor = { path = "../rsp/crates/executor/host"}
 # rsp-client-executor = { path = "../rsp/crates/executor/client"}
 tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-
