@@ -64,6 +64,8 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
         .parse()
         .expect("BLOCK_MODULUS must be a valid integer");
 
+    let mut max_input_time: u128 = 0;
+    let mut min_input_time: u128 = u128::MAX;
     let mut total_input_time: u128 = 0;
     let mut input_count: u64 = 0;
 
@@ -114,11 +116,16 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
             total_input_time += input_file_time;
             input_count += 1;
 
+            max_input_time = max_input_time.max(input_file_time);
+            min_input_time = min_input_time.min(input_file_time);
+
             info!(
-                "Input file generated for block {}, time: {}ms, avg: {}ms",
+                "Input file generated for block {}, time: {}ms, avg: {}ms, max: {}ms, min: {}ms",
                 block_number,
                 input_file_time,
-                total_input_time / input_count as u128
+                total_input_time / input_count as u128,
+                max_input_time,
+                min_input_time
             );
 
             if tx.send(format!("input {}.bin", block_number)).is_err() {
