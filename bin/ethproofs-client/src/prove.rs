@@ -1,6 +1,6 @@
 use std::{fs::{create_dir_all, File}, io::{BufRead, BufReader, Write}, path::Path, process::{Command,Stdio}};
 
-use anyhow::{Ok, Result};
+use anyhow::{Ok, Result, anyhow};
 use log::debug;
 
 use crate::{state::AppState, LOG_FOLDER, OUTPUT_FOLDER};
@@ -46,8 +46,7 @@ pub async fn generate_proof(block_number: u64, state: AppState) -> Result<()> {
         write!(log_file, "{}", captured_output.concat())?;
 
         debug!("Proof generation failed to start for block number {}, log saved at {}", block_number, log_path);
-        //return Err(anyhow!("Failed to start proof generation for block number {}. Log saved at {}", block_number, log_path));
-        return Ok(());
+        return Err(anyhow!("Failed to start proof generation for block number {}. Log saved at {}", block_number, log_path));
     }
 
     debug!("Proof generation started for block number {}, job_id: {}", block_number, job_id.as_ref().unwrap());

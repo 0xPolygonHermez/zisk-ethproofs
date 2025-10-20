@@ -25,13 +25,8 @@ ethers = { version = "2.0", features = ["ws"] }
 log = "0.4.26"
 rand = "0.9.0"
 reqwest = { version = "0.12.15", features = ["json"] }
-rsp-host-executor = { git = "https://github.com/succinctlabs/rsp.git", rev = "be2fe1274414a33cab9adb68825dc2eb029c7a4a", features = ["execution-witness"]  }
-rsp-primitives = { git = "https://github.com/succinctlabs/rsp.git", rev = "be2fe1274414a33cab9adb68825dc2eb029c7a4a" }
-rsp-provider = { git = "https://github.com/succinctlabs/rsp.git", rev = "be2fe1274414a33cab9adb68825dc2eb029c7a4a" }
-rsp-rpc-db = { git = "https://github.com/succinctlabs/rsp.git", rev = "be2fe1274414a33cab9adb68825dc2eb029c7a4a" }
-# rsp-host-executor = { path = "../rsp/crates/executor/host"}
-# rsp-client-executor = { path = "../rsp/crates/executor/client"}
 tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
+input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "feature/update_rsp"}

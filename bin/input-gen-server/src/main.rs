@@ -1,60 +1,54 @@
+use std::io::Write;
 use std::{fs, path::PathBuf};
-use std::{env, path::Path, time::Instant, sync::Arc};
+use std::{env, path::Path, time::Instant};
 
 use anyhow::{Context, Result};
+use clap::Parser;
 use dotenv::dotenv;
 use ethers::providers::{Middleware, Provider, Ws};
 use futures_util::{SinkExt, StreamExt};
+use input::{GuestProgram, Network};
 use log::{error, info, warn};
-use rsp_host_executor::EthHostExecutor;
-use rsp_primitives::genesis::Genesis;
-use rsp_provider::create_provider;
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::broadcast::{self, Receiver, Sender},
     task,
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message};
-use url::Url;
 
 const WS_LISTEN_IP: &str = "0.0.0.0";
 const WS_DEFAULT_PORT: &str = "8765";
 
-/// Generate the input file for the given block number and return the time taken in milliseconds
-pub async fn generate_input_file(block_number: u64, inputs_folder: String) -> Result<u128> {
-    // Load RPC URL from environment variable
-    let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
+#[derive(Debug, Clone, Parser)]
+pub struct InputGenServerArgs {
+    #[clap(long, short)]
+    pub guest: GuestProgram,
+}
 
-    // Create the RPC provider and database.
-    let provider = create_provider(
-        Url::parse(rpc_url.as_str())
-            .expect("Invalid RPC URL"),
-    );
-    let genesis = Genesis::Mainnet;
-
-    let executor = EthHostExecutor::eth(
-        Arc::new(
-            (&genesis).try_into().expect("Failed to convert genesis block into the required type"),
-        ),
-        None,
-    );
-
+/// Generate the rsp input file for the given block number and return the time taken in milliseconds
+pub async fn generate_input_file(guest: GuestProgram, block_number: u64, inputs_folder: String) -> Result<u128> {
     let start = Instant::now();
 
-    // Execute the host to get the client input
-    let input = executor
-        .execute(block_number, &provider, genesis.clone(), None, false)
-        .await
-        .expect("Failed to execute client");
+    // Load RPC URL from environment variable
+    let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
 
     // Create the inputs folder if it doesn't exist
     let input_folder = Path::new(&inputs_folder);
     std::fs::create_dir_all(input_folder)?;
 
-    // Serialize the client input to a binary file
     let input_path = input_folder.join(format!("{}.bin", block_number));
-    let mut input_file = std::fs::File::create(input_path.clone())?;
-    bincode::serialize_into(&mut input_file, &input)?;
+
+    // Use spawn_blocking to handle the non-Send future
+    let result = tokio::task::spawn_blocking(move || {
+        let rt = tokio::runtime::Handle::current();
+        rt.block_on(async move {
+            let input_builder = input::build_input_generator(guest, &rpc_url, Some(Network::Mainnet));
+            input_builder.generate(block_number).await
+        })
+    }).await??;
+
+    let mut input_file = std::fs::File::create(&input_path)?;
+    input_file.write_all(&result.input)?;
 
     let input_file_time = start.elapsed().as_millis();
 
@@ -62,7 +56,7 @@ pub async fn generate_input_file(block_number: u64, inputs_folder: String) -> Re
 }
 
 /// Listens for new blocks on the Ethereum network and generates input files for them
-async fn block_listener(tx: Sender<String>) -> Result<()> {
+async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
     let rpc_ws_url = env::var("RPC_WS_URL").expect("RPC_WS_URL must be set");
     let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or("inputs".to_string());
     let block_modulus: u64 = env::var("BLOCK_MODULUS")
@@ -112,7 +106,7 @@ async fn block_listener(tx: Sender<String>) -> Result<()> {
                 block.gas_used
             );
 
-            let input_file_time = generate_input_file(block_number, inputs_folder.clone()).await?;
+            let input_file_time = generate_input_file(guest.clone(), block_number, inputs_folder.clone()).await?;
             info!(
                 "Input file generated for block {}, time: {}ms",
                 block_number,
@@ -206,13 +200,15 @@ async fn main() {
     // Load environment variables from .env file
     dotenv().ok();
 
+    let args = InputGenServerArgs::parse();
+
     // Create broadcast channel for sending input file names to clients
     let (tx, _) = broadcast::channel::<String>(100);
 
     // Launch eth block input file generator
     let tx_clone = tx.clone();
     task::spawn(async move {
-        let _ = block_listener(tx_clone).await;
+        let _ = block_listener(args.guest, tx_clone).await;
     });
 
     // Start listening for WebSocket clients
