@@ -11,6 +11,7 @@ use crate::cliargs::CliArgs;
 pub struct AppState {
     pub cliargs: CliArgs,
     pub proving_block: Arc<Mutex<u64>>,
+    pub next_proving_block: Arc<Mutex<u64>>,
     pub ethproofs_client: Option<EthProofsApi>,
     pub ethproofs_cluster_id: Option<u32>,
     pub inputs_folder: String,
@@ -52,6 +53,7 @@ impl AppState {
         let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
         let input_gen_server_url = env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
         let proving_block = Arc::new(Mutex::new(0u64));
+        let next_proving_block = Arc::new(Mutex::new(0u64));
 
         let compute_capacity = match env::var("COMPUTE_CAPACITY") {
             Ok(capacity_str) => match capacity_str.parse::<u32>() {
@@ -79,6 +81,7 @@ impl AppState {
         Self {
             cliargs,
             proving_block,
+            next_proving_block,
             ethproofs_client,
             ethproofs_cluster_id,
             inputs_folder,

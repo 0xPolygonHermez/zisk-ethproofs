@@ -163,6 +163,13 @@ async fn main() -> Result<()> {
 
                                 let proving_block_shared_clone = Arc::clone(&app_state.proving_block);
                                 let mut proving_block = proving_block_shared_clone.lock().unwrap();
+                                if *proving_block != 0 {
+                                    warn!("Already proving block {}, saving next block {}", *proving_block, block_number);
+                                    let next_proving_block_shared_clone = Arc::clone(&app_state.next_proving_block);
+                                    let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
+                                    *next_proving_block = block_number;
+                                    continue;
+                                }
                                 *proving_block = block_number;
 
                                 // Report to EthProofs that we are generating the proof

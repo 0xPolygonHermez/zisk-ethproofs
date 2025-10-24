@@ -7,7 +7,7 @@ use log::{error, info, warn};
 use zisk_distributed_common::WebhookPayloadDto;
 use zstd::Encoder;
 
-use crate::db::{BlockProof};
+use crate::{db::BlockProof, prove::generate_proof};
 use crate::{telegram::{send_telegram_alert, AlertType}, state::AppState};
 use crate::DEFAULT_INPUTS_FOLDER;
 
@@ -34,8 +34,12 @@ async fn webhook_handler(
     State(state): State<AppState>,
     Json(payload): Json<WebhookPayloadDto>,
 ) -> Response {
-    // Get shared block number
-    let proved_block = { *state.proving_block.lock().unwrap_or_else(|e| e.into_inner()) };
+    let proved_block: u64;
+    {
+        let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+        proved_block = *proving_block;
+        *proving_block = 0;
+    }
 
     if !payload.success {
         error!("Failed proof for block number {}, job: {}", proved_block, payload.job_id);
@@ -67,6 +71,7 @@ async fn webhook_handler(
 
     // Submit to EthProofs if enabled
     if state.cliargs.submit_ethproofs {
+        let state = state.clone();
         let client = &state.ethproofs_client.unwrap();
         let cluster_id = state.ethproofs_cluster_id.unwrap();
         let start = std::time::Instant::now();
@@ -94,6 +99,19 @@ async fn webhook_handler(
         } else {
             warn!("DB handle not initialized, cannot insert proof for block {}", proved_block);
         }
+    }
+
+    let mut next_block_number: u64 = 0;
+    {
+        let mut next_proving_block = state.next_proving_block.lock().unwrap_or_else(|e| e.into_inner());
+        if *next_proving_block != 0 {
+            next_block_number = *next_proving_block;
+            *next_proving_block = 0;
+        }
+    }
+
+    if let Err(e) = generate_proof(next_block_number, state.clone()).await {
+        error!("Proof generation failed for next block number {}, error: {}", next_block_number, e);
     }
 
     // Send Telegram alert if enabled
