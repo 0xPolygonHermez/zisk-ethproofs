@@ -138,6 +138,14 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
 async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
     let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or("inputs".to_string());
 
+    match stream.set_nodelay(true) {
+        Ok(_) => (),
+        Err(e) => {
+            error!("Failed to set TCP_NODELAY: {}", e);
+            return;
+        }
+    }
+
     let ws_stream = match accept_async(stream).await {
         Ok(ws) => ws,
         Err(e) => {
@@ -164,6 +172,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
             }
             ["input", file] => {
                 info!("Sending input file: {}", file);
+                let start_send = Instant::now();
 
                 let filepath = PathBuf::from(&inputs_folder).join(&file);
                 match fs::read(&filepath) {
@@ -179,7 +188,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                             break;
                         }
 
-                        info!("Input file sent to client: {}", file);
+                        info!("Input file sent to client: {}, time: {}", file, start_send.elapsed().as_millis());
                     }
                     Err(e) => {
                         error!("Error reading input file {}: {}", file, e);
