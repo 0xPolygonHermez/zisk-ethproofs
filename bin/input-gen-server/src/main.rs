@@ -188,7 +188,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                             break;
                         }
 
-                        info!("Input file sent to client: {}, time: {}", file, start_send.elapsed().as_millis());
+                        info!("Input file sent to client: {}, time: {}ms", file, start_send.elapsed().as_millis());
                     }
                     Err(e) => {
                         error!("Error reading input file {}: {}", file, e);
