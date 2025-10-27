@@ -18,20 +18,17 @@ Copy the `example.env` file to `.env`, then edit it to set the required variable
 | `TELEGRAM_BOT_TOKEN`         | Telegram Bot API token for sending alerts. Alerts are disabled if undefined | No       | –       |
 | `TELEGRAM_CHAT_ID`           | Telegram chat ID where alerts will be sent. Alerts are disabled if undefined| No       | –       |
 
-## Install
+## Install and run
 
 To install Zisk-ethproofs, use the following command:
 ```bash
-cargo install --path .
+make build
 ```
 
-## Run
+Then, run the ZisK prover on the port `6100` and the resulting binaries:
 
-To run Zisk-Ethproofs and start submitting block proofs to Ethproofs, use the following command:
-
-```bash
-zisk-ethproofs
-```
+- `./target/release/ethproofs-client`
+- `./target/release/input-gen-server`
 
 ### Command-line flags
 
