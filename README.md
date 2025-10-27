@@ -2,7 +2,7 @@
 
 ## Setup
 
-Copy the `example.env` file to `.env`, then edit it to set the required variables:
+Set the following environment variables in `config.env`:
 
 | Variable                     | Description                                                                 | Required | Default |
 |------------------------------|-----------------------------------------------------------------------------|----------|---------|
