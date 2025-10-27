@@ -3,6 +3,7 @@ use std::{env, sync::{Arc, Mutex}};
 
 use clap::Parser;
 use dotenv::dotenv;
+use log::warn;
 
 use crate::{api::EthProofsApi, db::{self, DbBlockProofs}, DEFAULT_INPUTS_FOLDER};
 use crate::cliargs::CliArgs;
@@ -88,6 +89,15 @@ impl AppState {
             input_gen_server_url,
             compute_capacity,
             db_block_proofs,
+        }
+    }
+
+    pub fn delete_input_file(&self, block_number: u64) {
+        if !self.cliargs.keep_input {
+            let input_file_path = format!("{}/{}.bin", &self.inputs_folder, block_number);
+            if let Err(e) = std::fs::remove_file(&input_file_path) {
+                warn!("Failed to remove input file {}, error: {}", input_file_path, e);
+            }
         }
     }
 }

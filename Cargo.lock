@@ -1749,7 +1749,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "edca88bc138befd0323b20752846e6587272d3b03b0343c8ea28a6f819e6e71f"
 dependencies = [
  "async-trait",
- "axum-core",
+ "axum-core 0.4.5",
  "axum-macros",
  "bytes",
  "futures-util",
@@ -1759,7 +1759,7 @@ dependencies = [
  "hyper 1.7.0",
  "hyper-util",
  "itoa",
- "matchit",
+ "matchit 0.7.3",
  "memchr",
  "mime",
  "percent-encoding",
@@ -1775,6 +1775,31 @@ dependencies = [
  "tower-layer",
  "tower-service",
  "tracing",
+]
+
+[[package]]
+name = "axum"
+version = "0.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a18ed336352031311f4e0b4dd2ff392d4fbb370777c9d18d7fc9d7359f73871"
+dependencies = [
+ "axum-core 0.5.5",
+ "bytes",
+ "futures-util",
+ "http 1.3.1",
+ "http-body 1.0.1",
+ "http-body-util",
+ "itoa",
+ "matchit 0.8.4",
+ "memchr",
+ "mime",
+ "percent-encoding",
+ "pin-project-lite",
+ "serde_core",
+ "sync_wrapper 1.0.2",
+ "tower 0.5.2",
+ "tower-layer",
+ "tower-service",
 ]
 
 [[package]]
@@ -1796,6 +1821,24 @@ dependencies = [
  "tower-layer",
  "tower-service",
  "tracing",
+]
+
+[[package]]
+name = "axum-core"
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59446ce19cd142f8833f856eb31f3eb097812d1479ab224f54d72428ca21ea22"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "http 1.3.1",
+ "http-body 1.0.1",
+ "http-body-util",
+ "mime",
+ "pin-project-lite",
+ "sync_wrapper 1.0.2",
+ "tower-layer",
+ "tower-service",
 ]
 
 [[package]]
@@ -1932,7 +1975,7 @@ dependencies = [
  "bitflags 2.9.4",
  "cexpr",
  "clang-sys",
- "itertools 0.10.5",
+ "itertools 0.13.0",
  "log",
  "prettyplease",
  "proc-macro2",
@@ -1952,7 +1995,7 @@ dependencies = [
  "bitflags 2.9.4",
  "cexpr",
  "clang-sys",
- "itertools 0.10.5",
+ "itertools 0.13.0",
  "log",
  "prettyplease",
  "proc-macro2",
@@ -2335,8 +2378,8 @@ dependencies = [
 
 [[package]]
 name = "circuit"
-version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.12.1#81d02a6cb8bc33a3fa03c8c9ec1c08d65407c286"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.13.0#30c0a57399ce40c8a314d6bc7cfe34d59b403288"
 
 [[package]]
 name = "clang-sys"
@@ -2736,7 +2779,7 @@ dependencies = [
 [[package]]
 name = "curves"
 version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.12.1#c35e282339765eb02dcf2be080501a22cddec8a9"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.13.0#1a803fd9ab26b896cfaf062afba0f57210198416"
 dependencies = [
  "fields",
  "num-bigint 0.4.6",
@@ -3620,7 +3663,7 @@ dependencies = [
  "tokio",
  "tracing",
  "walkdir",
- "yansi",
+ "yansi 0.5.1",
 ]
 
 [[package]]
@@ -3629,7 +3672,7 @@ version = "0.1.0"
 dependencies = [
  "alloy-provider",
  "anyhow",
- "axum",
+ "axum 0.7.9",
  "base64 0.22.1",
  "bincode",
  "bytemuck",
@@ -3649,9 +3692,11 @@ dependencies = [
  "tar",
  "tokio",
  "tokio-tungstenite 0.21.0",
+ "tonic 0.14.2",
  "url",
  "zisk-common",
  "zisk-distributed-common",
+ "zisk-distributed-grpc-api",
  "zstd 0.13.3",
 ]
 
@@ -3757,7 +3802,7 @@ dependencies = [
 [[package]]
 name = "fields"
 version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.12.1#c35e282339765eb02dcf2be080501a22cddec8a9"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.13.0#1a803fd9ab26b896cfaf062afba0f57210198416"
 dependencies = [
  "num-bigint 0.4.6",
  "paste",
@@ -5071,8 +5116,8 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "lib-c"
-version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.12.1#81d02a6cb8bc33a3fa03c8c9ec1c08d65407c286"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.13.0#30c0a57399ce40c8a314d6bc7cfe34d59b403288"
 
 [[package]]
 name = "libc"
@@ -5220,6 +5265,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
 
 [[package]]
+name = "matchit"
+version = "0.8.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
+
+[[package]]
 name = "md-5"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5320,6 +5371,12 @@ dependencies = [
  "build-probe-mpi",
  "cc",
 ]
+
+[[package]]
+name = "multimap"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d87ecb2933e8aeadb3e3a02b828fed80a7528047e68b4f424523a0981a3a084"
 
 [[package]]
 name = "native-tls"
@@ -6333,7 +6390,7 @@ dependencies = [
 [[package]]
 name = "pil-std-lib"
 version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.12.1#c35e282339765eb02dcf2be080501a22cddec8a9"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.13.0#1a803fd9ab26b896cfaf062afba0f57210198416"
 dependencies = [
  "colored",
  "fields",
@@ -6447,8 +6504,8 @@ dependencies = [
 
 [[package]]
 name = "precompiles-helpers"
-version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.12.1#81d02a6cb8bc33a3fa03c8c9ec1c08d65407c286"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.13.0#30c0a57399ce40c8a314d6bc7cfe34d59b403288"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -6554,7 +6611,7 @@ dependencies = [
 [[package]]
 name = "proofman"
 version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.12.1#c35e282339765eb02dcf2be080501a22cddec8a9"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.13.0#1a803fd9ab26b896cfaf062afba0f57210198416"
 dependencies = [
  "blake3",
  "borsh",
@@ -6587,13 +6644,15 @@ dependencies = [
 [[package]]
 name = "proofman-common"
 version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.12.1#c35e282339765eb02dcf2be080501a22cddec8a9"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.13.0#1a803fd9ab26b896cfaf062afba0f57210198416"
 dependencies = [
  "borsh",
+ "colored",
  "crossbeam-channel",
  "crossbeam-queue",
  "env",
  "fields",
+ "lazy_static",
  "libloading",
  "mpi",
  "num_cpus",
@@ -6607,12 +6666,13 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "transcript",
+ "yansi 1.0.1",
 ]
 
 [[package]]
 name = "proofman-hints"
 version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.12.1#c35e282339765eb02dcf2be080501a22cddec8a9"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.13.0#1a803fd9ab26b896cfaf062afba0f57210198416"
 dependencies = [
  "fields",
  "proofman-common",
@@ -6624,7 +6684,7 @@ dependencies = [
 [[package]]
 name = "proofman-macros"
 version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.12.1#c35e282339765eb02dcf2be080501a22cddec8a9"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.13.0#1a803fd9ab26b896cfaf062afba0f57210198416"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6635,7 +6695,7 @@ dependencies = [
 [[package]]
 name = "proofman-starks-lib-c"
 version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.12.1#c35e282339765eb02dcf2be080501a22cddec8a9"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.13.0#1a803fd9ab26b896cfaf062afba0f57210198416"
 dependencies = [
  "crossbeam-channel",
  "tracing",
@@ -6644,7 +6704,7 @@ dependencies = [
 [[package]]
 name = "proofman-util"
 version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.12.1#c35e282339765eb02dcf2be080501a22cddec8a9"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.13.0#1a803fd9ab26b896cfaf062afba0f57210198416"
 dependencies = [
  "colored",
  "fields",
@@ -6655,7 +6715,7 @@ dependencies = [
 [[package]]
 name = "proofman-verifier"
 version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.12.1#c35e282339765eb02dcf2be080501a22cddec8a9"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.13.0#1a803fd9ab26b896cfaf062afba0f57210198416"
 dependencies = [
  "bytemuck",
  "fields",
@@ -6690,7 +6750,39 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2796faa41db3ec313a31f7624d9286acf277b52de526150b7e69f3debf891ee5"
 dependencies = [
  "bytes",
- "prost-derive",
+ "prost-derive 0.13.5",
+]
+
+[[package]]
+name = "prost"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7231bd9b3d3d33c86b58adbac74b5ec0ad9f496b19d22801d773636feaa95f3d"
+dependencies = [
+ "bytes",
+ "prost-derive 0.14.1",
+]
+
+[[package]]
+name = "prost-build"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac6c3320f9abac597dcbc668774ef006702672474aad53c6d596b62e487b40b1"
+dependencies = [
+ "heck 0.5.0",
+ "itertools 0.14.0",
+ "log",
+ "multimap",
+ "once_cell",
+ "petgraph",
+ "prettyplease",
+ "prost 0.14.1",
+ "prost-types",
+ "pulldown-cmark",
+ "pulldown-cmark-to-cmark",
+ "regex",
+ "syn 2.0.106",
+ "tempfile",
 ]
 
 [[package]]
@@ -6700,10 +6792,52 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.10.5",
+ "itertools 0.14.0",
  "proc-macro2",
  "quote",
  "syn 2.0.106",
+]
+
+[[package]]
+name = "prost-derive"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9120690fafc389a67ba3803df527d0ec9cbbc9cc45e4cc20b332996dfb672425"
+dependencies = [
+ "anyhow",
+ "itertools 0.14.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
+]
+
+[[package]]
+name = "prost-types"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9b4db3d6da204ed77bb26ba83b6122a73aeb2e87e25fbf7ad2e84c4ccbf8f72"
+dependencies = [
+ "prost 0.14.1",
+]
+
+[[package]]
+name = "pulldown-cmark"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e8bbe1a966bd2f362681a44f6edce3c2310ac21e4d5067a6e7ec396297a6ea0"
+dependencies = [
+ "bitflags 2.9.4",
+ "memchr",
+ "unicase",
+]
+
+[[package]]
+name = "pulldown-cmark-to-cmark"
+version = "21.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5b6a0769a491a08b31ea5c62494a8f144ee0987d86d670a8af4df1e1b7cde75"
+dependencies = [
+ "pulldown-cmark",
 ]
 
 [[package]]
@@ -7883,8 +8017,8 @@ dependencies = [
 
 [[package]]
 name = "riscv"
-version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.12.1#81d02a6cb8bc33a3fa03c8c9ec1c08d65407c286"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.13.0#30c0a57399ce40c8a314d6bc7cfe34d59b403288"
 dependencies = [
  "elf",
 ]
@@ -8987,7 +9121,7 @@ checksum = "e3552cda9c153e7604ba9ec53822214e32975dc9e484eff832ccddbc018524fb"
 dependencies = [
  "bincode",
  "ctrlc",
- "prost",
+ "prost 0.13.5",
  "serde",
  "sp1-core-machine",
  "sp1-prover",
@@ -9269,7 +9403,7 @@ dependencies = [
  "p3-baby-bear",
  "p3-field",
  "p3-fri",
- "prost",
+ "prost 0.13.5",
  "reqwest 0.12.23",
  "reqwest-middleware",
  "rustls 0.23.32",
@@ -9288,7 +9422,7 @@ dependencies = [
  "tempfile",
  "thiserror 1.0.69",
  "tokio",
- "tonic",
+ "tonic 0.12.3",
  "tracing",
  "twirp-rs",
 ]
@@ -10206,7 +10340,7 @@ checksum = "877c5b330756d856ffcc4553ab34a5684481ade925ecc54bcd1bf02b1d0d4d52"
 dependencies = [
  "async-stream",
  "async-trait",
- "axum",
+ "axum 0.7.9",
  "base64 0.22.1",
  "bytes",
  "h2 0.4.12",
@@ -10218,7 +10352,7 @@ dependencies = [
  "hyper-util",
  "percent-encoding",
  "pin-project",
- "prost",
+ "prost 0.13.5",
  "rustls-native-certs 0.8.2",
  "rustls-pemfile 2.2.0",
  "socket2 0.5.10",
@@ -10229,6 +10363,74 @@ dependencies = [
  "tower-layer",
  "tower-service",
  "tracing",
+]
+
+[[package]]
+name = "tonic"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eb7613188ce9f7df5bfe185db26c5814347d110db17920415cf2fbcad85e7203"
+dependencies = [
+ "async-trait",
+ "axum 0.8.6",
+ "base64 0.22.1",
+ "bytes",
+ "h2 0.4.12",
+ "http 1.3.1",
+ "http-body 1.0.1",
+ "http-body-util",
+ "hyper 1.7.0",
+ "hyper-timeout",
+ "hyper-util",
+ "percent-encoding",
+ "pin-project",
+ "socket2 0.6.0",
+ "sync_wrapper 1.0.2",
+ "tokio",
+ "tokio-stream",
+ "tower 0.5.2",
+ "tower-layer",
+ "tower-service",
+ "tracing",
+]
+
+[[package]]
+name = "tonic-build"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c40aaccc9f9eccf2cd82ebc111adc13030d23e887244bc9cfa5d1d636049de3"
+dependencies = [
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
+]
+
+[[package]]
+name = "tonic-prost"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "66bd50ad6ce1252d87ef024b3d64fe4c3cf54a86fb9ef4c631fdd0ded7aeaa67"
+dependencies = [
+ "bytes",
+ "prost 0.14.1",
+ "tonic 0.14.2",
+]
+
+[[package]]
+name = "tonic-prost-build"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4a16cba4043dc3ff43fcb3f96b4c5c154c64cbd18ca8dce2ab2c6a451d058a2"
+dependencies = [
+ "prettyplease",
+ "proc-macro2",
+ "prost-build",
+ "prost-types",
+ "quote",
+ "syn 2.0.106",
+ "tempfile",
+ "tonic-build",
 ]
 
 [[package]]
@@ -10259,9 +10461,12 @@ checksum = "d039ad9159c98b70ecfd540b2573b97f7f52c3e8d9f8ad57a24b916a536975f9"
 dependencies = [
  "futures-core",
  "futures-util",
+ "indexmap 2.11.1",
  "pin-project-lite",
+ "slab",
  "sync_wrapper 1.0.2",
  "tokio",
+ "tokio-util",
  "tower-layer",
  "tower-service",
  "tracing",
@@ -10410,7 +10615,7 @@ dependencies = [
 [[package]]
 name = "transcript"
 version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.12.1#c35e282339765eb02dcf2be080501a22cddec8a9"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.13.0#1a803fd9ab26b896cfaf062afba0f57210198416"
 dependencies = [
  "proofman-starks-lib-c",
 ]
@@ -10486,12 +10691,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27dfcc06b8d9262bc2d4b8d1847c56af9971a52dd8a0076876de9db763227d0d"
 dependencies = [
  "async-trait",
- "axum",
+ "axum 0.7.9",
  "futures",
  "http 1.3.1",
  "http-body-util",
  "hyper 1.7.0",
- "prost",
+ "prost 0.13.5",
  "reqwest 0.12.23",
  "serde",
  "serde_json",
@@ -10530,6 +10735,12 @@ name = "unarray"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eaea85b334db583fe3274d12b4cd1880032beab409c0d774be044d4480ab9a94"
+
+[[package]]
+name = "unicase"
+version = "2.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75b844d17643ee918803943289730bec8aac480150456169e647ed0b576ba539"
 
 [[package]]
 name = "unicode-bidi"
@@ -10642,6 +10853,7 @@ checksum = "2f87b8aa10b915a06587d0dec516c282ff295b475d94abf425d62b57710070a2"
 dependencies = [
  "getrandom 0.3.3",
  "js-sys",
+ "serde",
  "wasm-bindgen",
 ]
 
@@ -11384,7 +11596,7 @@ checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
 [[package]]
 name = "witness"
 version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.12.1#c35e282339765eb02dcf2be080501a22cddec8a9"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.13.0#1a803fd9ab26b896cfaf062afba0f57210198416"
 dependencies = [
  "colored",
  "fields",
@@ -11450,6 +11662,12 @@ name = "yansi"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09041cd90cf85f7f8b2df60c646f853b7f535ce68f85244eb6731cf89fa498ec"
+
+[[package]]
+name = "yansi"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 
 [[package]]
 name = "yoke"
@@ -11591,8 +11809,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-common"
-version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.12.1#81d02a6cb8bc33a3fa03c8c9ec1c08d65407c286"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.13.0#30c0a57399ce40c8a314d6bc7cfe34d59b403288"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -11613,12 +11831,11 @@ dependencies = [
 
 [[package]]
 name = "zisk-core"
-version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.12.1#81d02a6cb8bc33a3fa03c8c9ec1c08d65407c286"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.13.0#30c0a57399ce40c8a314d6bc7cfe34d59b403288"
 dependencies = [
  "elf",
  "fields",
- "generic-array 0.14.7",
  "indexmap 2.11.1",
  "json",
  "lib-c",
@@ -11636,12 +11853,13 @@ dependencies = [
 [[package]]
 name = "zisk-distributed-common"
 version = "0.1.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.12.1#81d02a6cb8bc33a3fa03c8c9ec1c08d65407c286"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.13.0#30c0a57399ce40c8a314d6bc7cfe34d59b403288"
 dependencies = [
  "anyhow",
  "borsh",
  "chrono",
  "proofman",
+ "proofman-common",
  "serde",
  "serde_json",
  "thiserror 2.0.17",
@@ -11652,10 +11870,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "zisk-pil"
-version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.12.1#81d02a6cb8bc33a3fa03c8c9ec1c08d65407c286"
+name = "zisk-distributed-grpc-api"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.13.0#30c0a57399ce40c8a314d6bc7cfe34d59b403288"
 dependencies = [
+ "chrono",
+ "prost 0.14.1",
+ "prost-types",
+ "serde",
+ "serde_json",
+ "tonic 0.14.2",
+ "tonic-prost",
+ "tonic-prost-build",
+ "tracing",
+ "uuid 1.18.1",
+ "zisk-distributed-common",
+]
+
+[[package]]
+name = "zisk-pil"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.13.0#30c0a57399ce40c8a314d6bc7cfe34d59b403288"
+dependencies = [
+ "fields",
  "proofman",
  "proofman-common",
  "proofman-macros",
@@ -11666,8 +11903,8 @@ dependencies = [
 
 [[package]]
 name = "ziskos"
-version = "0.12.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.12.1#81d02a6cb8bc33a3fa03c8c9ec1c08d65407c286"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.13.0#30c0a57399ce40c8a314d6bc7cfe34d59b403288"
 dependencies = [
  "cfg-if",
  "getrandom 0.2.16",

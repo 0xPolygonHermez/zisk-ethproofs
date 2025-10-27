@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, path::Path};
 use std::io::Write;
 
 use anyhow::Result;
@@ -61,8 +61,10 @@ async fn main() -> Result<()> {
     // Initialize application state
     let app_state = AppState::new().await;
 
-    // Ensure output directory exists
-    create_dir_all(&app_state.inputs_folder).await.unwrap();
+    // Ensure input, output, and log directories exist
+    create_dir_all(&app_state.inputs_folder).await?;
+    create_dir_all(Path::new(OUTPUT_FOLDER)).await?;
+    create_dir_all(Path::new(LOG_FOLDER)).await?;
 
     // Launch the webhook server
     let state_clone = app_state.clone();
@@ -71,7 +73,6 @@ async fn main() -> Result<()> {
             panic!("Webhook server exited with error: {}", e);
         }
     });
-
 
     // Loop to connect (re-connect) to the input generator server
     let mut attempt: u32 = 0;
@@ -140,6 +141,7 @@ async fn main() -> Result<()> {
                             last_activity = Instant::now();
 
                             if let Some((filename, content)) = parse_message(&payload) {
+                                // Received input file, save it
                                 let filepath = PathBuf::from(&app_state.inputs_folder).join(filename);
                                 match fs::write(&filepath, content) {
                                     Ok(_) => info!("Received and saved input file: {}, time: {} ms", filepath.display(), queued_start.elapsed().as_millis()),
@@ -161,30 +163,27 @@ async fn main() -> Result<()> {
                                     }
                                 };
 
+
+                                // Check if already proving a block
                                 let proving_block_shared_clone = Arc::clone(&app_state.proving_block);
                                 let mut proving_block = proving_block_shared_clone.lock().unwrap();
                                 if *proving_block != 0 {
-                                    warn!("Already proving block {}, saving next block {}", *proving_block, block_number);
+                                    warn!("⚠️  Already proving block, saving next block {}", block_number);
                                     let next_proving_block_shared_clone = Arc::clone(&app_state.next_proving_block);
                                     let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
                                     *next_proving_block = block_number;
                                     continue;
                                 }
-                                *proving_block = block_number;
 
-                                // Report to EthProofs that we are generating the proof
-                                if let Some(client) = &app_state.ethproofs_client {
-                                    let start = std::time::Instant::now();
-                                    client.proof_proving(app_state.ethproofs_cluster_id.unwrap(), block_number).await?;
-                                    debug!("Report proving state for block number {}, request_time: {} ms", block_number, start.elapsed().as_millis());
-                                }
-
-                                info!("Generating proof for block number {}", block_number);
+                                // Generate proof
                                 if let Err(e) = generate_proof(block_number, app_state.clone()).await {
                                     error!("Proof generation failed for block number {}, error: {}", block_number, e);
+                                    // Clean up input file if not needed
+                                    app_state.delete_input_file(block_number);
                                     continue;
+                                } else {
+                                    *proving_block = block_number;
                                 }
-                                info!("Proof generation started for block number {}", block_number);
                             } else {
                                 error!("Malformed message received");
                             }

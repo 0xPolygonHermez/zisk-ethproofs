@@ -1,55 +1,54 @@
-use std::{fs::{create_dir_all, File}, io::{BufRead, BufReader, Write}, path::Path, process::{Command,Stdio}};
-
 use anyhow::{Ok, Result, anyhow};
-use log::debug;
+use tonic::transport::Channel;
+use log::{debug, info};
+use zisk_distributed_grpc_api::{LaunchProofRequest, zisk_distributed_api_client::ZiskDistributedApiClient};
 
-use crate::{state::AppState, LOG_FOLDER, OUTPUT_FOLDER};
+use crate::state::AppState;
 
 pub async fn generate_proof(block_number: u64, state: AppState) -> Result<()> {
+    info!("🔄 Generating proof for block number {}", block_number);
+
+    // Report to EthProofs that we are generating the proof
+    if let Some(client) = state.ethproofs_client {
+        let start = std::time::Instant::now();
+        client.proof_proving(state.ethproofs_cluster_id.unwrap(), block_number).await?;
+        debug!("Report proving state for block number {}, request_time: {} ms", block_number, start.elapsed().as_millis());
+    }
+
+    // Prepare input file
     let input_file = format!("{}.bin", block_number);
 
-    create_dir_all(Path::new(OUTPUT_FOLDER))?;
-    create_dir_all(Path::new(LOG_FOLDER))?;
+    // Connect to the coordinator
+    let coordinator_url = "http://localhost:50051".to_string(); // TODO: Make configurable
+    debug!("Connecting to coordinator on {}", coordinator_url);
 
-    let command = format!("zisk-coordinator prove --input {} --compute-capacity {}", input_file, state.compute_capacity);
-    debug!("Starting proof generation for block number {} with command: {}", block_number, command);
-    let mut child = Command::new("sh")
-        .arg("-c")
-        .arg(command)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::inherit())
-        .spawn()?;
+    let channel = Channel::from_shared(coordinator_url)?.connect().await?;
+    let mut client = ZiskDistributedApiClient::new(channel);
 
-    let stdout = child.stdout.take().expect("Failed to capture stdout");
-    let reader = BufReader::new(stdout);
-    debug!("Waiting for proof generation to start for block number {}", block_number);
+    // Build request
+    let launch_proof_request = LaunchProofRequest {
+        block_id: "0x1234567890abcdef".into(), // TODO! Placeholder block ID
+        compute_capacity: state.compute_capacity,
+        input_path: input_file,
+        simulated_node: None,
+    };
 
-    let _status = child.wait()?;
+    // Make the coordinator prove request
+    info!("Sending coordinator request for block {} with {} compute units", block_number, state.compute_capacity);
+    let response = client.launch_proof(launch_proof_request).await?;
 
-    let mut captured_output = Vec::new();
-    let mut job_id = None;
-    for line in reader.lines() {
-        let line = line?;
-        debug!("{}", line);
-        captured_output.push(format!("{}\n", line));
-
-        let prefix = "Proof job started successfully with job_id:";
-        if let Some(pos) = line.find(prefix) {
-            job_id = Some(line[pos + prefix.len()..].trim().to_string());
+    // Handle response
+    match response.into_inner().result {
+        Some(zisk_distributed_grpc_api::launch_proof_response::Result::JobId(job_id)) => {
+            info!("Proof generation started for block number {}, job_id: {}", block_number, job_id);
+        }
+        Some(zisk_distributed_grpc_api::launch_proof_response::Result::Error(error)) => {
+            return Err(anyhow!("Proof job failed: {} - {}", error.code, error.message));
+        }
+        None => {
+            return Err(anyhow!("Received empty response from coordinator"));
         }
     }
-
-    // If job_id is None, it means proof generation did not start successfully
-    if job_id.is_none() {
-        let log_path = format!("{}/{}.log", LOG_FOLDER, block_number);
-        let mut log_file = File::create(&log_path)?;
-        write!(log_file, "{}", captured_output.concat())?;
-
-        debug!("Proof generation failed to start for block number {}, log saved at {}", block_number, log_path);
-        return Err(anyhow!("Failed to start proof generation for block number {}. Log saved at {}", block_number, log_path));
-    }
-
-    debug!("Proof generation started for block number {}, job_id: {}", block_number, job_id.as_ref().unwrap());
 
     Ok(())
 }

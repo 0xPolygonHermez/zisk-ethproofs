@@ -1,7 +1,7 @@
 use std::{env, net::SocketAddr};
 
 use anyhow::{anyhow, Result};
-use axum::{extract::State, http::StatusCode, extract::Path, response::{IntoResponse, Response}, routing::post, Json, Router};
+use axum::{extract::State, http::StatusCode, extract::Path, response::IntoResponse, routing::post, Json, Router};
 use base64::{Engine, engine::general_purpose};
 use log::{error, info, warn};
 use zisk_distributed_common::WebhookPayloadDto;
@@ -9,7 +9,6 @@ use zstd::Encoder;
 
 use crate::{db::BlockProof, prove::generate_proof};
 use crate::{telegram::{send_telegram_alert, AlertType}, state::AppState};
-use crate::DEFAULT_INPUTS_FOLDER;
 
 const DEFAULT_WEBHOOK_PORT: u16 = 8051;
 
@@ -29,20 +28,24 @@ pub fn get_proof_b64(proof_data: &[u64]) -> Result<String> {
     Ok(general_purpose::STANDARD.encode(&compressed))
 }
 
+#[axum::debug_handler]
 async fn webhook_handler(
     Path(_job_id): Path<String>,
     State(state): State<AppState>,
     Json(payload): Json<WebhookPayloadDto>,
-) -> Response {
-    let proved_block: u64;
-    {
-        let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
-        proved_block = *proving_block;
-        *proving_block = 0;
-    }
+) -> impl IntoResponse {
+    // Read and capture the current proving block in atomic scope
+    let proved_block: u64 = {
+        let proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+        *proving_block
+    };
 
+    // Check if proof generation was successful
     if !payload.success {
-        error!("Failed proof for block number {}, job: {}", proved_block, payload.job_id);
+        match payload.error {
+            Some(err) => error!("❌  Failed proof for block number {}, job: {}, error: {}-{}", proved_block, payload.job_id, err.code, err.message),
+            None => error!("❌  Failed proof for block number {}, job: {}", proved_block, payload.job_id),
+        }
         return (StatusCode::OK, "OK").into_response();
     }
 
@@ -50,12 +53,49 @@ async fn webhook_handler(
     let proving_cycles = payload.executed_steps.unwrap_or(0);
 
     info!(
-        "Proof generated for block {}, proving_time: {}ms, cycles: {}, job: {}",
+        "✅  Proof generated for block {}, proving_time: {}ms, cycles: {}, job: {}",
         proved_block,
         payload.duration_ms,
         proving_cycles,
         payload.job_id
     );
+
+    // Get next_block_number in atomic scope
+    let next_block_number: u64 = {
+        let mut next_proving_block = state.next_proving_block.lock().unwrap_or_else(|e| e.into_inner());
+        if *next_proving_block != 0 {
+            let next = *next_proving_block;
+            *next_proving_block = 0;
+            next
+        } else {
+            0
+        }
+    };
+
+    // Check and start proof generation for next block if set
+    if next_block_number != 0 {
+        // Set proving_block to next_block_number in atomic scope
+        {
+            let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+            *proving_block = next_block_number;
+        }
+
+        if let Err(e) = generate_proof(next_block_number, state.clone()).await {
+            // If generation failed, reset proving_block in atomic scope
+            {
+                let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+                *proving_block = 0;
+            }
+            error!("Proof generation failed for next block number {}, error: {}", next_block_number, e);
+
+            // Clean up input file if not needed
+            state.delete_input_file(next_block_number);
+        }
+    } else {
+        // Reset proving_block
+        let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+        *proving_block = 0;
+    }
 
     // Encode compressed proof to base64
     let proof_base64 = match payload.proof.as_ref() {
@@ -81,6 +121,7 @@ async fn webhook_handler(
         }
     }
 
+    // Insert into DB if enabled
     if state.cliargs.insert_db {
         if let Some(db) = &state.db_block_proofs {
             let start = std::time::Instant::now();
@@ -101,19 +142,6 @@ async fn webhook_handler(
         }
     }
 
-    let mut next_block_number: u64 = 0;
-    {
-        let mut next_proving_block = state.next_proving_block.lock().unwrap_or_else(|e| e.into_inner());
-        if *next_proving_block != 0 {
-            next_block_number = *next_proving_block;
-            *next_proving_block = 0;
-        }
-    }
-
-    if let Err(e) = generate_proof(next_block_number, state.clone()).await {
-        error!("Proof generation failed for next block number {}, error: {}", next_block_number, e);
-    }
-
     // Send Telegram alert if enabled
     if state.cliargs.submit_alert {
         let msg = format!(
@@ -128,14 +156,8 @@ async fn webhook_handler(
         }
     }
 
-    // Clean up input file if not needed
-    if !state.cliargs.keep_input {
-        let inputs_folder = env::var("UPLOAD_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
-        let input_file_path = format!("{}/{}.bin", inputs_folder, proved_block);
-        if let Err(e) = std::fs::remove_file(&input_file_path) {
-            warn!("Failed to remove input file {}, error: {}", input_file_path, e);
-        }
-    }
+    // Delete input file if not needed
+    state.delete_input_file(proved_block);
 
     (StatusCode::OK, "OK").into_response()
 }
