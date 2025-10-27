@@ -86,7 +86,7 @@ async fn webhook_handler(
                 let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
                 *proving_block = 0;
             }
-            error!("Proof generation failed for next block number {}, error: {}", next_block_number, e);
+            error!("❌  Proof generation failed for next block number {}, error: {}", next_block_number, e);
 
             // Clean up input file if not needed
             state.delete_input_file(next_block_number);
