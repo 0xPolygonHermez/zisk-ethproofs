@@ -27,7 +27,7 @@ pub async fn generate_proof(block_number: u64, state: AppState) -> Result<()> {
 
     // Build request
     let launch_proof_request = LaunchProofRequest {
-        block_id: "0x1234567890abcdef".into(), // TODO! Placeholder block ID
+        block_id: block_number.to_string(),
         compute_capacity: state.compute_capacity,
         input_path: input_file,
         simulated_node: None,
