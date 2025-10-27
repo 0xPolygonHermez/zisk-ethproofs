@@ -3,7 +3,7 @@ use std::time::Duration;
 use anyhow::{anyhow, Result};
 use log::debug;
 use reqwest::Client;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use tokio::time::sleep;
 use url::Url;
 
@@ -102,7 +102,10 @@ impl EthProofsApi {
         EthProofsApi { client, url, token }
     }
 
-    async fn send_with_retries(&self, request: reqwest::RequestBuilder) -> Result<reqwest::Response> {
+    async fn send_with_retries(
+        &self,
+        request: reqwest::RequestBuilder,
+    ) -> Result<reqwest::Response> {
         let mut last_err = anyhow!("Ethproofs API request Unknown error");
 
         for attempt in 1..=Self::MAX_RETRIES {
@@ -111,7 +114,8 @@ impl EthProofsApi {
                     if resp.status().is_success() {
                         return Ok(resp);
                     } else {
-                        last_err = anyhow!("Ethproofs API request error, status code {}", resp.status());
+                        last_err =
+                            anyhow!("Ethproofs API request error, status code {}", resp.status());
                     }
                 }
                 Err(e) => {
@@ -119,7 +123,12 @@ impl EthProofsApi {
                 }
             }
 
-            debug!("Ethproofs API request attempt {}/{} failed, retrying in {}ms...", attempt, Self::MAX_RETRIES, Self::RETRY_DELAY_MS);
+            debug!(
+                "Ethproofs API request attempt {}/{} failed, retrying in {}ms...",
+                attempt,
+                Self::MAX_RETRIES,
+                Self::RETRY_DELAY_MS
+            );
             sleep(Duration::from_millis(Self::RETRY_DELAY_MS * attempt as u64)).await;
         }
 
@@ -131,9 +140,7 @@ impl EthProofsApi {
         let url = Url::parse(&format!("{}/clusters", self.url))?;
         debug!("get_clusters GET {}", url);
 
-        let request = self.client
-            .get(url)
-            .bearer_auth(&self.token);
+        let request = self.client.get(url).bearer_auth(&self.token);
 
         let response = self.send_with_retries(request).await?;
         let clusters: Vec<Cluster> = response.json().await?;
@@ -148,10 +155,7 @@ impl EthProofsApi {
         let url = Url::parse(&format!("{}/clusters", self.url))?;
         debug!("add_cluster POST {}", url);
 
-        let request = self.client
-            .post(url)
-            .bearer_auth(&self.token)
-            .json(&cluster);
+        let request = self.client.post(url).bearer_auth(&self.token).json(&cluster);
 
         let response = self.send_with_retries(request).await?;
         let cluster_id: u32 = response.json().await?;
@@ -164,10 +168,7 @@ impl EthProofsApi {
         let url = Url::parse(&format!("{}/single-machine", self.url))?;
         debug!("add_single_machine POST {}", url);
 
-        let request = self.client
-            .post(url)
-            .bearer_auth(&self.token)
-            .json(&single_machine);
+        let request = self.client.post(url).bearer_auth(&self.token).json(&single_machine);
 
         let response = self.send_with_retries(request).await?;
         let cluster_id: u32 = response.json().await?;
@@ -179,14 +180,18 @@ impl EthProofsApi {
         let url = Url::parse(&format!("{}/proofs/queued", self.url))?;
         debug!("proof_queued POST {}", url);
 
-        let request = self.client
+        let request = self
+            .client
             .post(url)
             .bearer_auth(&self.token)
             .json(&ProofQueued { cluster_id, block_number });
 
         let response = self.send_with_retries(request).await?;
         let proof_id: ProofId = response.json().await?;
-        debug!("Proof queued, id: {}, block_number: {}, cluster_id: {}", proof_id.proof_id, block_number, cluster_id);
+        debug!(
+            "Proof queued, id: {}, block_number: {}, cluster_id: {}",
+            proof_id.proof_id, block_number, cluster_id
+        );
         Ok(proof_id.proof_id)
     }
 
@@ -194,14 +199,18 @@ impl EthProofsApi {
         let url = Url::parse(&format!("{}/proofs/proving", self.url))?;
         debug!("proof_proving POST {}", url);
 
-        let request = self.client
+        let request = self
+            .client
             .post(url)
             .bearer_auth(&self.token)
             .json(&ProofProving { cluster_id, block_number });
 
         let response = self.send_with_retries(request).await?;
         let proof_id: ProofId = response.json().await?;
-        debug!("Proof proving, id: {}, block_number: {}, cluster_id: {}", proof_id.proof_id, block_number, cluster_id);
+        debug!(
+            "Proof proving, id: {}, block_number: {}, cluster_id: {}",
+            proof_id.proof_id, block_number, cluster_id
+        );
         Ok(proof_id.proof_id)
     }
 
@@ -212,26 +221,26 @@ impl EthProofsApi {
         time: u128,
         cycles: u64,
         proof: &String,
-        verifier_id: String
+        verifier_id: String,
     ) -> Result<u64> {
         let url = Url::parse(&format!("{}/proofs/proved", self.url))?;
         debug!("proof_proved POST {}", url);
 
-        let request = self.client
-            .post(url)
-            .bearer_auth(&self.token)
-            .json(&ProofProved {
-                block_number,
-                cluster_id,
-                proving_time: time,
-                proving_cycles: cycles,
-                proof: proof.to_string(),
-                verifier_id,
-            });
+        let request = self.client.post(url).bearer_auth(&self.token).json(&ProofProved {
+            block_number,
+            cluster_id,
+            proving_time: time,
+            proving_cycles: cycles,
+            proof: proof.to_string(),
+            verifier_id,
+        });
 
         let response = self.send_with_retries(request).await?;
         let proof_id: ProofId = response.json().await?;
-        debug!("Proof proved, id: {}, block_number: {}, cluster_id: {}", proof_id.proof_id, block_number, cluster_id);
+        debug!(
+            "Proof proved, id: {}, block_number: {}, cluster_id: {}",
+            proof_id.proof_id, block_number, cluster_id
+        );
         Ok(proof_id.proof_id)
     }
 }

@@ -1,12 +1,18 @@
-
-use std::{env, sync::{Arc, Mutex}};
+use std::{
+    env,
+    sync::{Arc, Mutex},
+};
 
 use clap::Parser;
 use dotenv::dotenv;
 use log::warn;
 
-use crate::{api::EthProofsApi, db::{self, DbBlockProofs}, DEFAULT_INPUTS_FOLDER};
 use crate::cliargs::CliArgs;
+use crate::{
+    api::EthProofsApi,
+    db::{self, DbBlockProofs},
+    DEFAULT_INPUTS_FOLDER,
+};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -52,7 +58,8 @@ impl AppState {
         };
 
         let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
-        let input_gen_server_url = env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
+        let input_gen_server_url =
+            env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
         let proving_block = Arc::new(Mutex::new(0u64));
         let next_proving_block = Arc::new(Mutex::new(0u64));
 
@@ -74,7 +81,11 @@ impl AppState {
         };
 
         let db_block_proofs = if let Some(dsn) = &db_dsn {
-            Some(db::DbBlockProofs::new(dsn, db::DbBlockProofsConfig::default()).await.expect("Failed to create DbBlockProofs"))
+            Some(
+                db::DbBlockProofs::new(dsn, db::DbBlockProofsConfig::default())
+                    .await
+                    .expect("Failed to create DbBlockProofs"),
+            )
         } else {
             None
         };

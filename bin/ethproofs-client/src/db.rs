@@ -1,7 +1,7 @@
-use std::time::Duration;
 use log::{debug, error, info};
-use tokio::sync::mpsc;
 use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
+use std::time::Duration;
+use tokio::sync::mpsc;
 
 #[derive(Debug, Clone)]
 pub struct BlockProof {
@@ -53,10 +53,13 @@ impl DbBlockProofs {
 
         let _ = tokio::spawn(db_block_proofs_worker(pool, rx, cfg));
 
-        Ok(Self {tx,})
+        Ok(Self { tx })
     }
 
-    pub async fn enqueue(&self, block_proof: BlockProof) -> Result<(), tokio::sync::mpsc::error::SendError<BlockProof>> {
+    pub async fn enqueue(
+        &self,
+        block_proof: BlockProof,
+    ) -> Result<(), tokio::sync::mpsc::error::SendError<BlockProof>> {
         self.tx.send(block_proof).await
     }
 }
@@ -66,8 +69,7 @@ async fn db_block_proofs_worker(
     mut rx: mpsc::Receiver<BlockProof>,
     cfg: DbBlockProofsConfig,
 ) {
-    let insert_sql =
-        r#"
+    let insert_sql = r#"
             INSERT INTO block_proofs
                 (block_number, zisk_version, hardware, proving_time, steps, proof)
             VALUES
@@ -126,13 +128,20 @@ async fn insert_with_retries(
                 attempt += 1;
 
                 if attempt > max_retries {
-                    debug!("Max retries reached ({}) for inserting block proof into DB, giving up", max_retries);
+                    debug!(
+                        "Max retries reached ({}) for inserting block proof into DB, giving up",
+                        max_retries
+                    );
                     return Err(e.into());
                 }
 
-                error!("Failed to insert block proof into DB, error: {}, attempt: {}/{}", e, attempt, max_retries);
+                error!(
+                    "Failed to insert block proof into DB, error: {}, attempt: {}/{}",
+                    e, attempt, max_retries
+                );
 
-                let backoff = base_backoff.saturating_mul(2u32.saturating_pow((attempt - 1) as u32));
+                let backoff =
+                    base_backoff.saturating_mul(2u32.saturating_pow((attempt - 1) as u32));
                 tokio::time::sleep(backoff.min(Duration::from_secs(5))).await;
             }
         }

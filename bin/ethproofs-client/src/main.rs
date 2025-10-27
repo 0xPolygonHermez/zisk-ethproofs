@@ -1,15 +1,15 @@
-use std::sync::Arc;
-use std::{fs, path::PathBuf, path::Path};
 use std::io::Write;
+use std::sync::Arc;
+use std::{fs, path::Path, path::PathBuf};
 
 use anyhow::Result;
 use chrono::Utc;
 use env_logger::{Builder, Env};
-use futures_util::{StreamExt, SinkExt};
-use log::{error, info, warn, debug};
+use futures_util::{SinkExt, StreamExt};
+use log::{debug, error, info, warn};
 use tokio::fs::create_dir_all;
-use tokio::time::{self, Duration, Instant};
 use tokio::task;
+use tokio::time::{self, Duration, Instant};
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::Message;
 
@@ -32,7 +32,7 @@ const LOG_FOLDER: &str = "log";
 const DEFAULT_INPUTS_FOLDER: &str = "upload_inputs";
 
 const PING_INTERVAL: Duration = Duration::from_secs(15);
-const IDLE_TIMEOUT: Duration  = Duration::from_secs(30 * 60); // 30 min
+const IDLE_TIMEOUT: Duration = Duration::from_secs(30 * 60); // 30 min
 
 /// Parses a binary WebSocket message into (filename, file_content)
 fn parse_message(data: &[u8]) -> Option<(&str, &[u8])> {

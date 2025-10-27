@@ -43,7 +43,8 @@ pub async fn send_telegram_alert(message: &str, alert_type: AlertType) -> Result
     // Send the message to the Telegram chat
     let url = format!("https://api.telegram.org/bot{}/sendMessage", bot_token);
     let client = Client::new();
-    let res = client.post(&url)
+    let res = client
+        .post(&url)
         .json(&serde_json::json!({
             "chat_id": chat_id,
             "text": full_message

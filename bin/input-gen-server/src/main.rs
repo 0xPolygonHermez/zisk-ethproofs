@@ -1,6 +1,6 @@
 use std::io::Write;
-use std::{fs, path::PathBuf};
 use std::{env, path::Path, time::Instant};
+use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result};
 use clap::Parser;
@@ -26,7 +26,11 @@ pub struct InputGenServerArgs {
 }
 
 /// Generate the rsp input file for the given block number and return the time taken in milliseconds
-pub async fn generate_input_file(guest: GuestProgram, block_number: u64, inputs_folder: String) -> Result<u128> {
+pub async fn generate_input_file(
+    guest: GuestProgram,
+    block_number: u64,
+    inputs_folder: String,
+) -> Result<u128> {
     let start = Instant::now();
 
     // Load RPC URL from environment variable
@@ -43,16 +47,26 @@ pub async fn generate_input_file(guest: GuestProgram, block_number: u64, inputs_
     let result = tokio::task::spawn_blocking(move || {
         let rt = tokio::runtime::Handle::current();
         rt.block_on(async move {
-            let input_builder = input::build_input_generator(guest, &rpc_url, Some(Network::Mainnet));
+            let input_builder =
+                input::build_input_generator(guest, &rpc_url, Some(Network::Mainnet));
             input_builder.generate(block_number).await
         })
-    }).await??;
-    info!("Input generation for block {} took {} ms", block_number, start_input_gen.elapsed().as_millis());
+    })
+    .await??;
+    info!(
+        "Input generation for block {} took {} ms",
+        block_number,
+        start_input_gen.elapsed().as_millis()
+    );
 
     let save_file_start = Instant::now();
     let mut input_file = std::fs::File::create(&input_path)?;
     input_file.write_all(&result.input)?;
-    info!("Saving input file for block {} took {} ms", block_number, save_file_start.elapsed().as_millis());
+    info!(
+        "Saving input file for block {} took {} ms",
+        block_number,
+        save_file_start.elapsed().as_millis()
+    );
 
     let input_file_time = start.elapsed().as_millis();
 
@@ -100,13 +114,17 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
 
         if let Err(e) = async {
             if tx.send(format!("queued {}", block_number)).is_err() {
-                info!("No active receivers, skipping input file generation for block {}", block_number);
+                info!(
+                    "No active receivers, skipping input file generation for block {}",
+                    block_number
+                );
                 return Ok::<(), anyhow::Error>(());
             }
 
             info!("Generating input file for block {}", block_number);
 
-            let input_file_time = generate_input_file(guest.clone(), block_number, inputs_folder.clone()).await?;
+            let input_file_time =
+                generate_input_file(guest.clone(), block_number, inputs_folder.clone()).await?;
 
             total_input_time += input_file_time;
             input_count += 1;
@@ -128,7 +146,9 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
             }
 
             Ok::<(), anyhow::Error>(())
-        }.await {
+        }
+        .await
+        {
             error!("Error processing block {}, error: {:?}", block_number, e);
         }
     }
@@ -188,7 +208,11 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                             break;
                         }
 
-                        info!("Input file sent to client: {}, time: {}ms", file, start_send.elapsed().as_millis());
+                        info!(
+                            "Input file sent to client: {}, time: {}ms",
+                            file,
+                            start_send.elapsed().as_millis()
+                        );
                     }
                     Err(e) => {
                         error!("Error reading input file {}: {}", file, e);

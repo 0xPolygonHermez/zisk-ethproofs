@@ -1,7 +1,9 @@
-use anyhow::{Ok, Result, anyhow};
-use tonic::transport::Channel;
+use anyhow::{anyhow, Ok, Result};
 use log::{debug, info};
-use zisk_distributed_grpc_api::{LaunchProofRequest, zisk_distributed_api_client::ZiskDistributedApiClient};
+use tonic::transport::Channel;
+use zisk_distributed_grpc_api::{
+    zisk_distributed_api_client::ZiskDistributedApiClient, LaunchProofRequest,
+};
 
 use crate::state::AppState;
 
@@ -12,7 +14,11 @@ pub async fn generate_proof(block_number: u64, state: AppState) -> Result<()> {
     if let Some(client) = state.ethproofs_client {
         let start = std::time::Instant::now();
         client.proof_proving(state.ethproofs_cluster_id.unwrap(), block_number).await?;
-        debug!("Report proving state for block number {}, request_time: {} ms", block_number, start.elapsed().as_millis());
+        debug!(
+            "Report proving state for block number {}, request_time: {} ms",
+            block_number,
+            start.elapsed().as_millis()
+        );
     }
 
     // Prepare input file
@@ -34,7 +40,10 @@ pub async fn generate_proof(block_number: u64, state: AppState) -> Result<()> {
     };
 
     // Make the coordinator prove request
-    info!("Sending coordinator request for block {} with {} compute units", block_number, state.compute_capacity);
+    info!(
+        "Sending coordinator request for block {} with {} compute units",
+        block_number, state.compute_capacity
+    );
     let response = client.launch_proof(launch_proof_request).await?;
 
     // Handle response
