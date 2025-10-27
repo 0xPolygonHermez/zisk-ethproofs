@@ -25,10 +25,9 @@ pub async fn generate_proof(block_number: u64, state: AppState) -> Result<String
     let input_file = format!("{}.bin", block_number);
 
     // Connect to the coordinator
-    let coordinator_url = "http://localhost:50051".to_string(); // TODO: Make configurable
-    debug!("Connecting to coordinator on {}", coordinator_url);
+    debug!("Connecting to coordinator on {}", state.coordinator_url);
 
-    let channel = Channel::from_shared(coordinator_url)?.connect().await?;
+    let channel = Channel::from_shared(state.coordinator_url)?.connect().await?;
     let mut client = ZiskDistributedApiClient::new(channel);
 
     // Build request

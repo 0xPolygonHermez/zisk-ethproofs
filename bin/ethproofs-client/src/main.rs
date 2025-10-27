@@ -30,6 +30,7 @@ use crate::state::AppState;
 const OUTPUT_FOLDER: &str = "output";
 const LOG_FOLDER: &str = "log";
 const DEFAULT_INPUTS_FOLDER: &str = "upload_inputs";
+const DEFAULT_COORDINATOR_URL: &str = "http://localhost:50051";
 
 const PING_INTERVAL: Duration = Duration::from_secs(15);
 const IDLE_TIMEOUT: Duration = Duration::from_secs(30 * 60); // 30 min

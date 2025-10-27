@@ -7,11 +7,12 @@ use clap::Parser;
 use dotenv::dotenv;
 use log::warn;
 
-use crate::cliargs::CliArgs;
 use crate::{
     api::EthProofsApi,
+    cliargs::CliArgs,
     db::{self, DbBlockProofs},
     DEFAULT_INPUTS_FOLDER,
+    DEFAULT_COORDINATOR_URL,
 };
 
 #[derive(Clone)]
@@ -22,6 +23,7 @@ pub struct AppState {
     pub current_job_id: Arc<Mutex<String>>,
     pub ethproofs_client: Option<EthProofsApi>,
     pub ethproofs_cluster_id: Option<u32>,
+    pub coordinator_url: String,
     pub inputs_folder: String,
     pub input_gen_server_url: String,
     pub compute_capacity: u32,
@@ -59,6 +61,7 @@ impl AppState {
             (None, None)
         };
 
+        let coordinator_url = env::var("COORDINATOR_URL").unwrap_or(DEFAULT_COORDINATOR_URL.to_string());
         let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
         let input_gen_server_url =
             env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
@@ -101,6 +104,7 @@ impl AppState {
             current_job_id,
             ethproofs_client,
             ethproofs_cluster_id,
+            coordinator_url,
             inputs_folder,
             input_gen_server_url,
             compute_capacity,
