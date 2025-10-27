@@ -48,7 +48,7 @@ async fn webhook_handler(
 
     // Validate that the webhook corresponds to the current proving block
     if proved_block == 0 {
-        warn!("Received webhook for job {}, but no block is currently being proved", payload.job_id);
+        warn!("Received webhook for job {}, but no block is currently being proved. Ignoring...", payload.job_id);
         return (StatusCode::OK, "OK").into_response();
     }
 
@@ -57,8 +57,8 @@ async fn webhook_handler(
         let job_id = state.current_job_id.lock().unwrap_or_else(|e| e.into_inner());
         job_id.clone()
     };
-    if current_job_id.eq(&job_id) {
-        warn!("Received webhook for job {}, but current job is {}", payload.job_id, current_job_id);
+    if current_job_id != job_id {
+        warn!("Received webhook for job {}, but current job is {}. Ignoring...", payload.job_id, current_job_id);
         return (StatusCode::OK, "OK").into_response();
     }
 
