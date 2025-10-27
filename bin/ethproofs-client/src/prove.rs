@@ -7,7 +7,7 @@ use zisk_distributed_grpc_api::{
 
 use crate::state::AppState;
 
-pub async fn generate_proof(block_number: u64, state: AppState) -> Result<()> {
+pub async fn generate_proof(block_number: u64, state: AppState) -> Result<String> {
     info!("🔄 Generating proof for block number {}", block_number);
 
     // Report to EthProofs that we are generating the proof
@@ -50,6 +50,7 @@ pub async fn generate_proof(block_number: u64, state: AppState) -> Result<()> {
     match response.into_inner().result {
         Some(zisk_distributed_grpc_api::launch_proof_response::Result::JobId(job_id)) => {
             info!("Proof generation started for block number {}, job_id: {}", block_number, job_id);
+            Ok(job_id)
         }
         Some(zisk_distributed_grpc_api::launch_proof_response::Result::Error(error)) => {
             return Err(anyhow!("Proof job failed: {} - {}", error.code, error.message));
@@ -58,6 +59,4 @@ pub async fn generate_proof(block_number: u64, state: AppState) -> Result<()> {
             return Err(anyhow!("Received empty response from coordinator"));
         }
     }
-
-    Ok(())
 }

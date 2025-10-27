@@ -36,7 +36,7 @@ pub fn get_proof_b64(proof_data: &[u64]) -> Result<String> {
 
 #[axum::debug_handler]
 async fn webhook_handler(
-    Path(_job_id): Path<String>,
+    Path(job_id): Path<String>,
     State(state): State<AppState>,
     Json(payload): Json<WebhookPayloadDto>,
 ) -> impl IntoResponse {
@@ -45,6 +45,22 @@ async fn webhook_handler(
         let proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
         *proving_block
     };
+
+    // Validate that the webhook corresponds to the current proving block
+    if proved_block == 0 {
+        warn!("Received webhook for job {}, but no block is currently being proved", payload.job_id);
+        return (StatusCode::OK, "OK").into_response();
+    }
+
+    // Check if the job ID matches the current job ID
+    let current_job_id = {
+        let job_id = state.current_job_id.lock().unwrap_or_else(|e| e.into_inner());
+        job_id.clone()
+    };
+    if current_job_id.eq(&job_id) {
+        warn!("Received webhook for job {}, but current job is {}", payload.job_id, current_job_id);
+        return (StatusCode::OK, "OK").into_response();
+    }
 
     // Check if proof generation was successful
     if !payload.success {
@@ -90,20 +106,25 @@ async fn webhook_handler(
             *proving_block = next_block_number;
         }
 
-        if let Err(e) = generate_proof(next_block_number, state.clone()).await {
-            // If generation failed, reset proving_block in atomic scope
-            {
-                let mut proving_block =
-                    state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
-                *proving_block = 0;
-            }
-            error!(
-                "❌  Proof generation failed for next block number {}, error: {}",
-                next_block_number, e
-            );
+        let result = generate_proof(next_block_number, state.clone()).await;
 
-            // Clean up input file if not needed
-            state.delete_input_file(next_block_number);
+        match result {
+            Ok(job_id) => {
+                // Store current job ID
+                let mut current_job_id = state.current_job_id.lock().unwrap_or_else(|e| e.into_inner());
+                *current_job_id = job_id;
+            }
+            Err(e) => {
+                // If generation failed, reset proving_block in atomic scope
+                {
+                    let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+                    *proving_block = 0;
+                }
+                error!("❌  Proof generation failed for next block number {}, error: {}", next_block_number, e);
+
+                // Clean up input file if not needed
+                state.delete_input_file(next_block_number);
+            }
         }
     } else {
         // Reset proving_block

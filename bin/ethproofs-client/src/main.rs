@@ -163,6 +163,11 @@ async fn main() -> Result<()> {
                                     }
                                 };
 
+                                if app_state.skip_proving {
+                                    info!("Skipping proving for block {} as per configuration", block_number);
+                                    app_state.delete_input_file(block_number);
+                                    continue;
+                                }
 
                                 // Check if already proving a block
                                 let proving_block_shared_clone = Arc::clone(&app_state.proving_block);
@@ -175,14 +180,23 @@ async fn main() -> Result<()> {
                                     continue;
                                 }
 
-                                // Generate proof
-                                if let Err(e) = generate_proof(block_number, app_state.clone()).await {
-                                    error!("❌  Proof generation failed for block number {}, error: {}", block_number, e);
-                                    // Clean up input file if not needed
-                                    app_state.delete_input_file(block_number);
-                                    continue;
-                                } else {
-                                    *proving_block = block_number;
+                                // Start proof generation
+                                let result = generate_proof(block_number, app_state.clone()).await;
+
+                                match result {
+                                    Ok(job_id) => {
+                                        *proving_block = block_number;
+                                        // Store current job ID
+                                        let current_job_id_shared_clone = Arc::clone(&app_state.current_job_id);
+                                        let mut current_job_id = current_job_id_shared_clone.lock().unwrap();
+                                        *current_job_id = job_id;
+                                    }
+                                    Err(e) => {
+                                        error!("❌  Proof generation failed for block number {}, error: {}", block_number, e);
+                                        // Clean up input file if not needed
+                                        app_state.delete_input_file(block_number);
+                                        continue;
+                                    }
                                 }
                             } else {
                                 error!("Malformed message received");

@@ -19,11 +19,13 @@ pub struct AppState {
     pub cliargs: CliArgs,
     pub proving_block: Arc<Mutex<u64>>,
     pub next_proving_block: Arc<Mutex<u64>>,
+    pub current_job_id: Arc<Mutex<String>>,
     pub ethproofs_client: Option<EthProofsApi>,
     pub ethproofs_cluster_id: Option<u32>,
     pub inputs_folder: String,
     pub input_gen_server_url: String,
     pub compute_capacity: u32,
+    pub skip_proving: bool,
     pub db_block_proofs: Option<DbBlockProofs>,
 }
 
@@ -62,6 +64,8 @@ impl AppState {
             env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
         let proving_block = Arc::new(Mutex::new(0u64));
         let next_proving_block = Arc::new(Mutex::new(0u64));
+        let current_job_id = Arc::new(Mutex::new(String::new()));
+        let skip_proving = env::var("SKIP_PROVING").unwrap_or("false".to_string()).to_lowercase() == "true";
 
         let compute_capacity = match env::var("COMPUTE_CAPACITY") {
             Ok(capacity_str) => match capacity_str.parse::<u32>() {
@@ -94,11 +98,13 @@ impl AppState {
             cliargs,
             proving_block,
             next_proving_block,
+            current_job_id,
             ethproofs_client,
             ethproofs_cluster_id,
             inputs_folder,
             input_gen_server_url,
             compute_capacity,
+            skip_proving,
             db_block_proofs,
         }
     }
