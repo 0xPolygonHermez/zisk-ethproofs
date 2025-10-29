@@ -175,10 +175,22 @@ async fn main() -> Result<()> {
 
                                     info!("Received queued command for block {}", block_number);
 
-                                    if let Some(client) = &app_state.ethproofs_client {
-                                        if let Err(e) = client.proof_queued(app_state.ethproofs_cluster_id.unwrap(), block_number).await {
-                                            error!("Failed to report queued state to EthProofs for block {}: {}", block_number, e);
-                                        }
+                                    if let Some(client) = app_state.ethproofs_client.clone() {
+                                        tokio::spawn(async move {
+                                            let start = std::time::Instant::now();
+                                            match client.proof_queued(app_state.ethproofs_cluster_id.unwrap(), block_number).await {
+                                                Ok(_) => {
+                                                    info!(
+                                                        "Reported queued state to EthProofs for block {}, request_time: {} ms",
+                                                        block_number,
+                                                        start.elapsed().as_millis()
+                                                    );
+                                                }
+                                                Err(e) => {
+                                                    error!("Failed to report queued state to EthProofs for block {}: {}", block_number, e);
+                                                }
+                                            }
+                                        });
                                     }
                                 }
                                 _ => {
