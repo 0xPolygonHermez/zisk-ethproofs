@@ -13,9 +13,9 @@ pub struct CliArgs {
     #[arg(short = 's', long)]
     pub submit_ethproofs: bool,
 
-    /// Send Telegram alert when block is submitted to EthProofs
+    /// Send Telegram alerts for specified events
     #[arg(short = 'a', long, use_value_delimiter = true, num_args = 1..)]
-    pub telegram: Vec<TelegramEvent>,
+    pub telegram_alert: Vec<TelegramEvent>,
 
     /// Insert block proofs into database
     #[arg(short = 'd', long)]
@@ -40,6 +40,6 @@ pub struct CliArgs {
 
 impl CliArgs {
     pub fn telegram_enabled(&self, event: TelegramEvent) -> bool {
-        self.telegram.iter().any(|e| *e == event)
+        self.telegram_alert.iter().any(|e| *e == event)
     }
 }
