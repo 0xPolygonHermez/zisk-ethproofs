@@ -25,8 +25,10 @@ mod webhook;
 use prove::generate_proof;
 use webhook::start_webhook_server;
 
+use crate::cliargs::TelegramEvent;
 use crate::metrics::{BLOCK_TIMESTAMP_GAUGE, RECEIVED_TIME_GAUGE, prune_gauge_last_n};
 use crate::state::{AppState, LOG_FOLDER, OUTPUT_FOLDER};
+use crate::telegram::{AlertType, send_telegram_alert};
 
 // Constants
 const PING_INTERVAL: Duration = Duration::from_secs(15);
@@ -110,7 +112,7 @@ async fn main() -> Result<()> {
 
         let (mut writer, mut reader) = ws_stream.split();
 
-        // Heartbeat + idle tracking
+        // Heartbeat and idle tracking
         let mut ping_ticker = time::interval(PING_INTERVAL);
         let mut last_activity = Instant::now();
 
@@ -223,6 +225,25 @@ async fn main() -> Result<()> {
                                     let next_proving_block_shared_clone = Arc::clone(&app_state.next_proving_block);
                                     let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
                                     *next_proving_block = block_number;
+
+                                    if block_number - *proving_block >= app_state.cliargs.skipped_threshold as u64 {
+                                        let msg = format!(
+                                            "Skipped {} consecutive blocks. Currently proving block {}, next queued block is {}.",
+                                            block_number - *proving_block,
+                                            *proving_block,
+                                            block_number
+                                        );
+
+                                        warn!("{}", msg);
+
+                                        // Send Telegram alert if enabled
+                                        if app_state.cliargs.telegram_enabled(TelegramEvent::Skipped) {
+                                            if let Err(e) = send_telegram_alert(&msg, AlertType::Warning).await {
+                                                warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                                            }
+                                        }
+                                    }
+
                                     continue;
                                 }
 

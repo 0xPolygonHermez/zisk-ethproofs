@@ -10,6 +10,7 @@ use log::{error, info, warn};
 
 use zisk_distributed_common::WebhookPayloadDto;
 
+use crate::cliargs::TelegramEvent;
 use crate::metrics::{PROVING_CYCLES_GAUGE, PROVING_TIME_GAUGE, SUBMIT_TIME_GAUGE, prune_gauge_last_n};
 use crate::{db::BlockProof, prove::generate_proof};
 use crate::{
@@ -167,7 +168,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
     }
 
     // Send Telegram alert if enabled
-    if state.cliargs.submit_alert {
+    if state.cliargs.telegram_enabled(TelegramEvent::Proved) {
         let msg = format!(
             "Proof generated for block {}, proving_time: {}s, cycles: {}",
             proved_block,
@@ -176,7 +177,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
         );
 
         if let Err(e) = send_telegram_alert(&msg, AlertType::Success).await {
-            warn!("Failed to send Telegram alert: {}", e);
+            warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
         }
     }
 

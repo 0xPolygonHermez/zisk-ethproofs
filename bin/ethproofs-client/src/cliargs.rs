@@ -1,4 +1,10 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
+
+#[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
+pub enum TelegramEvent {
+    Proved,
+    Skipped,
+}
 
 // Command line arguments
 #[derive(Clone, Parser)]
@@ -8,8 +14,8 @@ pub struct CliArgs {
     pub submit_ethproofs: bool,
 
     /// Send Telegram alert when block is submitted to EthProofs
-    #[arg(short = 'a', long)]
-    pub submit_alert: bool,
+    #[arg(short = 'a', long, use_value_delimiter = true, num_args = 1..)]
+    pub telegram: Vec<TelegramEvent>,
 
     /// Insert block proofs into database
     #[arg(short = 'd', long)]
@@ -26,4 +32,14 @@ pub struct CliArgs {
     /// Keep input file
     #[arg(short = 'i', long)]
     pub keep_input: bool,
+
+    /// Backlog alert threshold
+    #[arg(short = 'b', long, default_value_t = 5)]
+    pub skipped_threshold: u32,
+}
+
+impl CliArgs {
+    pub fn telegram_enabled(&self, event: TelegramEvent) -> bool {
+        self.telegram.iter().any(|e| *e == event)
+    }
 }
