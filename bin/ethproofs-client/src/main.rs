@@ -227,10 +227,11 @@ async fn main() -> Result<()> {
                                     let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
                                     *next_proving_block = block_number;
 
+                                    // Check for skipped blocks threshold
                                     if block_number - *proving_block > app_state.cliargs.skipped_threshold as u64 {
                                         let msg = format!(
                                             "Skipped {} consecutive blocks. Currently proving block {}, next queued block is {}.",
-                                            block_number - *proving_block,
+                                            block_number - *proving_block - 1,
                                             *proving_block,
                                             block_number
                                         );
@@ -247,22 +248,22 @@ async fn main() -> Result<()> {
                                         }
 
                                         fired_skipped_alert = true;
+                                    } else {
+                                        // Reset skipped alert flag if within threshold
+                                        if fired_skipped_alert {
+                                            let msg = format!("Resumed proving. Now proving block {}.", proving_block);
+                                            info!("{}", msg);
+
+                                            if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
+                                                if let Err(e) = send_telegram_alert(&msg, AlertType::Info).await {
+                                                    warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                                                }
+                                            }
+                                            fired_skipped_alert = false;
+                                        }
                                     }
 
                                     continue;
-                                }
-
-                                // Reset skipped alert flag if proving resumes
-                                if fired_skipped_alert {
-                                    let msg = format!("Resumed proving. Now proving block {}.", block_number);
-                                    info!("{}", msg);
-
-                                    if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
-                                        if let Err(e) = send_telegram_alert(&msg, AlertType::Info).await {
-                                            warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
-                                        }
-                                    }
-                                    fired_skipped_alert = false;
                                 }
 
                                 // Start proof generation
