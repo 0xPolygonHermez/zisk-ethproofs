@@ -227,7 +227,7 @@ async fn main() -> Result<()> {
                                     let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
                                     *next_proving_block = block_number;
 
-                                    if block_number - *proving_block >= app_state.cliargs.skipped_threshold as u64 {
+                                    if block_number - *proving_block > app_state.cliargs.skipped_threshold as u64 {
                                         let msg = format!(
                                             "Skipped {} consecutive blocks. Currently proving block {}, next queued block is {}.",
                                             block_number - *proving_block,
@@ -243,18 +243,21 @@ async fn main() -> Result<()> {
                                                 if let Err(e) = send_telegram_alert(&msg, AlertType::Warning).await {
                                                     warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
                                                 }
-                                                fired_skipped_alert = true;
                                             }
                                         }
+
+                                        fired_skipped_alert = true;
                                     }
 
                                     continue;
                                 }
 
                                 // Reset skipped alert flag if proving resumes
-                                if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
-                                    if fired_skipped_alert {
-                                        let msg = format!("Resumed proving. Now proving block {}.", block_number);
+                                if fired_skipped_alert {
+                                    let msg = format!("Resumed proving. Now proving block {}.", block_number);
+                                    info!("{}", msg);
+
+                                    if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
                                         if let Err(e) = send_telegram_alert(&msg, AlertType::Info).await {
                                             warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
                                         }
