@@ -7,7 +7,7 @@ pub struct CliArgs {
     #[arg(short = 's', long)]
     pub submit_ethproofs: bool,
 
-    /// Send telegram alert when block is submitted to EthProofs
+    /// Send Telegram alert when block is submitted to EthProofs
     #[arg(short = 'a', long)]
     pub submit_alert: bool,
 
@@ -18,8 +18,8 @@ pub struct CliArgs {
     /// Skip proving step (for testing purposes)
     #[arg(short = 'k', long)]
     pub skip_proving: bool,
-    
-    /// Enable prometheus metrics server
+
+    /// Enable Prometheus metrics server
     #[arg(short = 'm', long)]
     pub enable_metrics: bool,
 
