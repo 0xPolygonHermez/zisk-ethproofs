@@ -3,11 +3,11 @@ use clap::Parser;
 // Command line arguments
 #[derive(Clone, Parser)]
 pub struct CliArgs {
-    /// Enable submit proofs to ethproofs
+    /// Enable submit proofs to EthProofs
     #[arg(short = 's', long)]
     pub submit_ethproofs: bool,
 
-    /// Send telegram alert when block is submitted to ethproofs
+    /// Send telegram alert when block is submitted to EthProofs
     #[arg(short = 'a', long)]
     pub submit_alert: bool,
 

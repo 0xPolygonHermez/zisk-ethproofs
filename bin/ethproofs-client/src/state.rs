@@ -6,6 +6,7 @@ use std::{
 use clap::Parser;
 use dotenv::dotenv;
 use log::warn;
+use tonic::transport::Channel;
 
 use crate::{
     api::EthProofsApi,
@@ -23,7 +24,7 @@ pub struct AppState {
     pub current_job_id: Arc<Mutex<String>>,
     pub ethproofs_client: Option<EthProofsApi>,
     pub ethproofs_cluster_id: Option<u32>,
-    pub coordinator_url: String,
+    pub coordinator_channel: Channel,
     pub inputs_folder: String,
     pub input_gen_server_url: String,
     pub compute_capacity: u32,
@@ -32,7 +33,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new() -> Self {
+    pub async fn new() -> anyhow::Result<Self> {
         // Load environment variables from .env file
         dotenv().ok();
 
@@ -62,6 +63,10 @@ impl AppState {
         };
 
         let coordinator_url = env::var("COORDINATOR_URL").unwrap_or(DEFAULT_COORDINATOR_URL.to_string());
+        let coordinator_channel = Channel::from_shared(coordinator_url.clone())?
+            .connect()
+            .await?;
+
         let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
         let input_gen_server_url =
             env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
@@ -97,20 +102,20 @@ impl AppState {
             None
         };
 
-        Self {
+        Ok(Self {
             cliargs,
             proving_block,
             next_proving_block,
             current_job_id,
             ethproofs_client,
             ethproofs_cluster_id,
-            coordinator_url,
+            coordinator_channel,
             inputs_folder,
             input_gen_server_url,
             compute_capacity,
             skip_proving,
             db_block_proofs,
-        }
+        })
     }
 
     pub fn delete_input_file(&self, block_number: u64) {

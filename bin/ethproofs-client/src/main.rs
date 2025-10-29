@@ -1,3 +1,23 @@
+/// Prune gauge to keep only the last N block labels
+fn prune_gauge_last_n(gauge: &IntGaugeVec, keep_last: usize) {
+    use prometheus::core::Collector;
+    let mut blocks: Vec<u64> = gauge
+        .collect()
+        .iter()
+        .flat_map(|mf| {
+            mf.get_metric().iter().filter_map(|m| {
+                m.get_label().iter().find(|l| l.name() == "block")
+                    .and_then(|l| l.value().parse::<u64>().ok())
+            })
+        })
+        .collect();
+    blocks.sort_unstable();
+    if blocks.len() > keep_last {
+        for old_block in &blocks[..blocks.len() - keep_last] {
+            let _ = gauge.remove_label_values(&[&old_block.to_string()]);
+        }
+    }
+}
 use std::io::Write;
 use std::sync::Arc;
 use std::{fs, path::Path, path::PathBuf};
@@ -7,6 +27,21 @@ use chrono::Utc;
 use env_logger::{Builder, Env};
 use futures_util::{SinkExt, StreamExt};
 use log::{debug, error, info, warn};
+use prometheus::{register_int_gauge_vec, IntGaugeVec};
+use lazy_static::lazy_static;
+// Prometheus metrics for received input file
+lazy_static! {
+    static ref RECEIVED_TIME_GAUGE: IntGaugeVec = register_int_gauge_vec!(
+        "received_input_time_ms",
+        "Time to receive and save input file in milliseconds",
+        &["block"]
+    ).unwrap();
+    static ref BLOCK_TIMESTAMP_GAUGE: IntGaugeVec = register_int_gauge_vec!(
+        "block_timestamp",
+        "Timestamp (seconds) when block was queued",
+        &["block"]
+    ).unwrap();
+}
 use tokio::fs::create_dir_all;
 use tokio::task;
 use tokio::time::{self, Duration, Instant};
@@ -60,7 +95,13 @@ async fn main() -> Result<()> {
         .init();
 
     // Initialize application state
-    let app_state = AppState::new().await;
+    let app_state = match AppState::new().await {
+        Ok(state) => state,
+        Err(e) => {
+            error!("Failed to initialize application state: {}", e);
+            return Err(e);
+        }
+    };
 
     // Ensure input, output, and log directories exist
     create_dir_all(&app_state.inputs_folder).await?;
@@ -126,10 +167,18 @@ async fn main() -> Result<()> {
                                         .parse()
                                         .expect("Failed to parse block number from command queued");
 
+                                    // Set Prometheus block_timestamp in seconds
+                                    let now_secs = chrono::Utc::now().timestamp();
+                                    let block_label = block_number.to_string();
+                                    BLOCK_TIMESTAMP_GAUGE.with_label_values(&[&block_label]).set(now_secs);
+                                    prune_gauge_last_n(&BLOCK_TIMESTAMP_GAUGE, 300);
+
                                     info!("Received queued command for block {}", block_number);
 
                                     if let Some(client) = &app_state.ethproofs_client {
-                                        client.proof_queued(app_state.ethproofs_cluster_id.unwrap(), block_number).await?;
+                                        if let Err(e) = client.proof_queued(app_state.ethproofs_cluster_id.unwrap(), block_number).await {
+                                            error!("Failed to report queued state to EthProofs for block {}: {}", block_number, e);
+                                        }
                                     }
                                 }
                                 _ => {
@@ -144,8 +193,16 @@ async fn main() -> Result<()> {
                             if let Some((filename, content)) = parse_message(&payload) {
                                 // Received input file, save it
                                 let filepath = PathBuf::from(&app_state.inputs_folder).join(filename);
+
+                                let elapsed = queued_start.elapsed().as_millis();
                                 match fs::write(&filepath, content) {
-                                    Ok(_) => info!("Received and saved input file: {}, time: {} ms", filepath.display(), queued_start.elapsed().as_millis()),
+                                    Ok(_) => {
+                                        // Extract block number from filename (strip .bin)
+                                        let block_label = filepath.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "unknown".to_string());
+                                        RECEIVED_TIME_GAUGE.with_label_values(&[&block_label]).set(elapsed as i64);
+                                        prune_gauge_last_n(&RECEIVED_TIME_GAUGE, 300);
+                                        info!("Received and saved input file: {}, time: {} ms", filepath.display(), elapsed)
+                                    },
                                     Err(e) => { error!("Failed to save input file {}, error: {}", filepath.display(), e); continue; }
                                 }
 

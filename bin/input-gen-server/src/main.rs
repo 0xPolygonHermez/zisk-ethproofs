@@ -133,7 +133,7 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
             min_input_time = min_input_time.min(input_file_time);
 
             info!(
-                "Input file generated for block {}, time: {}ms, avg: {}ms, max: {}ms, min: {}ms",
+                "Input file generated for block {}, time: {} ms, avg: {} ms, max: {} ms, min: {} ms",
                 block_number,
                 input_file_time,
                 total_input_time / input_count as u128,
@@ -209,7 +209,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                         }
 
                         info!(
-                            "Input file sent to client: {}, time: {}ms",
+                            "Input file sent to client: {}, time: {} ms",
                             file,
                             start_send.elapsed().as_millis()
                         );

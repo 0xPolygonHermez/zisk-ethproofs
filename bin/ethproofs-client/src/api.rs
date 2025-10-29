@@ -124,7 +124,7 @@ impl EthProofsApi {
             }
 
             debug!(
-                "Ethproofs API request attempt {}/{} failed, retrying in {}ms...",
+                "Ethproofs API request attempt {}/{} failed, retrying in {} ms...",
                 attempt,
                 Self::MAX_RETRIES,
                 Self::RETRY_DELAY_MS
