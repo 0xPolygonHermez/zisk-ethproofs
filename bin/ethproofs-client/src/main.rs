@@ -1,23 +1,3 @@
-/// Prune gauge to keep only the last N block labels
-fn prune_gauge_last_n(gauge: &IntGaugeVec, keep_last: usize) {
-    use prometheus::core::Collector;
-    let mut blocks: Vec<u64> = gauge
-        .collect()
-        .iter()
-        .flat_map(|mf| {
-            mf.get_metric().iter().filter_map(|m| {
-                m.get_label().iter().find(|l| l.name() == "block")
-                    .and_then(|l| l.value().parse::<u64>().ok())
-            })
-        })
-        .collect();
-    blocks.sort_unstable();
-    if blocks.len() > keep_last {
-        for old_block in &blocks[..blocks.len() - keep_last] {
-            let _ = gauge.remove_label_values(&[&old_block.to_string()]);
-        }
-    }
-}
 use std::io::Write;
 use std::sync::Arc;
 use std::{fs, path::Path, path::PathBuf};
@@ -27,21 +7,6 @@ use chrono::Utc;
 use env_logger::{Builder, Env};
 use futures_util::{SinkExt, StreamExt};
 use log::{debug, error, info, warn};
-use prometheus::{register_int_gauge_vec, IntGaugeVec};
-use lazy_static::lazy_static;
-// Prometheus metrics for received input file
-lazy_static! {
-    static ref RECEIVED_TIME_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "received_input_time_ms",
-        "Time to receive and save input file in milliseconds",
-        &["block"]
-    ).unwrap();
-    static ref BLOCK_TIMESTAMP_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "block_timestamp",
-        "Timestamp (seconds) when block was queued",
-        &["block"]
-    ).unwrap();
-}
 use tokio::fs::create_dir_all;
 use tokio::task;
 use tokio::time::{self, Duration, Instant};
@@ -51,6 +16,7 @@ use tokio_tungstenite::tungstenite::Message;
 mod api;
 mod cliargs;
 mod db;
+mod metrics;
 mod prove;
 mod state;
 mod telegram;
@@ -59,14 +25,10 @@ mod webhook;
 use prove::generate_proof;
 use webhook::start_webhook_server;
 
-use crate::state::AppState;
+use crate::metrics::{BLOCK_TIMESTAMP_GAUGE, RECEIVED_TIME_GAUGE, prune_gauge_last_n};
+use crate::state::{AppState, LOG_FOLDER, OUTPUT_FOLDER};
 
 // Constants
-const OUTPUT_FOLDER: &str = "output";
-const LOG_FOLDER: &str = "log";
-const DEFAULT_INPUTS_FOLDER: &str = "upload_inputs";
-const DEFAULT_COORDINATOR_URL: &str = "http://localhost:50051";
-
 const PING_INTERVAL: Duration = Duration::from_secs(15);
 const IDLE_TIMEOUT: Duration = Duration::from_secs(30 * 60); // 30 min
 
@@ -115,6 +77,16 @@ async fn main() -> Result<()> {
             panic!("Webhook server exited with error: {}", e);
         }
     });
+
+    // Launch the metrics server if enabled
+    if app_state.cliargs.enable_metrics {
+        let state_clone = app_state.clone();
+        task::spawn(async move {
+            if let Err(e) = metrics::start_metrics_server(state_clone).await {
+                panic!("Metrics server exited with error: {}", e);
+            }
+        });
+    }
 
     // Loop to connect (re-connect) to the input generator server
     let mut attempt: u32 = 0;
@@ -211,9 +183,13 @@ async fn main() -> Result<()> {
                                     Ok(_) => {
                                         // Extract block number from filename (strip .bin)
                                         let block_label = filepath.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "unknown".to_string());
-                                        RECEIVED_TIME_GAUGE.with_label_values(&[&block_label]).set(elapsed as i64);
-                                        prune_gauge_last_n(&RECEIVED_TIME_GAUGE, 300);
-                                        info!("Received and saved input file: {}, time: {} ms", filepath.display(), elapsed)
+                                        info!("Received and saved input file: {}, time: {} ms", filepath.display(), elapsed);
+
+                                        // Update Prometheus metrics for input file received time if metrics enabled
+                                        if app_state.cliargs.enable_metrics {
+                                            RECEIVED_TIME_GAUGE.with_label_values(&[&block_label]).set(elapsed as i64);
+                                            prune_gauge_last_n(&RECEIVED_TIME_GAUGE, 300);
+                                        }
                                     },
                                     Err(e) => { error!("Failed to save input file {}, error: {}", filepath.display(), e); continue; }
                                 }
@@ -233,7 +209,7 @@ async fn main() -> Result<()> {
                                     }
                                 };
 
-                                if app_state.skip_proving {
+                                if app_state.cliargs.skip_proving {
                                     info!("Skipping proving for block {} as per configuration", block_number);
                                     app_state.delete_input_file(block_number);
                                     continue;

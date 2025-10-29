@@ -12,9 +12,14 @@ use crate::{
     api::EthProofsApi,
     cliargs::CliArgs,
     db::{self, DbBlockProofs},
-    DEFAULT_INPUTS_FOLDER,
-    DEFAULT_COORDINATOR_URL,
 };
+
+pub const OUTPUT_FOLDER: &str = "output";
+pub const LOG_FOLDER: &str = "log";
+pub const DEFAULT_INPUTS_FOLDER: &str = "upload_inputs";
+pub const DEFAULT_COORDINATOR_URL: &str = "http://localhost:50051";
+pub const DEFAULT_WEBHOOK_PORT: u16 = 8051;
+pub const DEFAULT_METRICS_PORT: u16 = 8384;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -25,10 +30,11 @@ pub struct AppState {
     pub ethproofs_client: Option<EthProofsApi>,
     pub ethproofs_cluster_id: Option<u32>,
     pub coordinator_channel: Channel,
+    pub webhook_port: u16,
+    pub metrics_port: u16,
     pub inputs_folder: String,
     pub input_gen_server_url: String,
     pub compute_capacity: u32,
-    pub skip_proving: bool,
     pub db_block_proofs: Option<DbBlockProofs>,
 }
 
@@ -73,7 +79,8 @@ impl AppState {
         let proving_block = Arc::new(Mutex::new(0u64));
         let next_proving_block = Arc::new(Mutex::new(0u64));
         let current_job_id = Arc::new(Mutex::new(String::new()));
-        let skip_proving = env::var("SKIP_PROVING").unwrap_or("false".to_string()).to_lowercase() == "true";
+        let webhook_port = env::var("WEBHOOK_PORT").unwrap_or(DEFAULT_WEBHOOK_PORT.to_string()).parse().unwrap_or(DEFAULT_WEBHOOK_PORT);
+        let metrics_port = env::var("METRICS_PORT").unwrap_or(DEFAULT_METRICS_PORT.to_string()).parse().unwrap_or(DEFAULT_METRICS_PORT);
 
         let compute_capacity = match env::var("COMPUTE_CAPACITY") {
             Ok(capacity_str) => match capacity_str.parse::<u32>() {
@@ -110,10 +117,11 @@ impl AppState {
             ethproofs_client,
             ethproofs_cluster_id,
             coordinator_channel,
+            webhook_port,
+            metrics_port,
             inputs_folder,
             input_gen_server_url,
             compute_capacity,
-            skip_proving,
             db_block_proofs,
         })
     }

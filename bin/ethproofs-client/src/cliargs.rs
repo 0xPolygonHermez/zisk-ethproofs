@@ -15,6 +15,14 @@ pub struct CliArgs {
     #[arg(short = 'd', long)]
     pub insert_db: bool,
 
+    /// Skip proving step (for testing purposes)
+    #[arg(short = 'k', long)]
+    pub skip_proving: bool,
+    
+    /// Enable prometheus metrics server
+    #[arg(short = 'm', long)]
+    pub enable_metrics: bool,
+
     /// Keep input file
     #[arg(short = 'i', long)]
     pub keep_input: bool,
