@@ -14,7 +14,7 @@ pub struct CliArgs {
     pub submit_ethproofs: bool,
 
     /// Send Telegram alerts for specified events
-    #[arg(short = 'a', long, use_value_delimiter = true, num_args = 1..)]
+    #[arg(short = 't', long, use_value_delimiter = true, num_args = 1..)]
     pub telegram_alert: Vec<TelegramEvent>,
 
     /// Insert block proofs into database
