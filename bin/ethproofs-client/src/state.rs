@@ -29,7 +29,7 @@ pub struct AppState {
     pub current_job_id: Arc<Mutex<String>>,
     pub ethproofs_client: Option<EthProofsApi>,
     pub ethproofs_cluster_id: Option<u32>,
-    pub coordinator_channel: Channel,
+    pub coordinator_channel: Option<Channel>,
     pub webhook_port: u16,
     pub metrics_port: u16,
     pub inputs_folder: String,
@@ -69,9 +69,14 @@ impl AppState {
         };
 
         let coordinator_url = env::var("COORDINATOR_URL").unwrap_or(DEFAULT_COORDINATOR_URL.to_string());
-        let coordinator_channel = Channel::from_shared(coordinator_url.clone())?
-            .connect()
-            .await?;
+        let coordinator_channel = if !cliargs.skip_proving {
+            let coordinator_channel = Channel::from_shared(coordinator_url.clone())?
+                .connect()
+                .await?;
+            Some(coordinator_channel)
+        } else {
+            None
+        };
 
         let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
         let input_gen_server_url =

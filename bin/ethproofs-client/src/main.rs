@@ -92,6 +92,7 @@ async fn main() -> Result<()> {
 
     // Loop to connect (re-connect) to the input generator server
     let mut attempt: u32 = 0;
+    let mut fired_skipped_alert = false;
     loop {
         info!("Connecting to input-gen-server at {}", app_state.input_gen_server_url);
 
@@ -238,13 +239,27 @@ async fn main() -> Result<()> {
 
                                         // Send Telegram alert if enabled
                                         if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
-                                            if let Err(e) = send_telegram_alert(&msg, AlertType::Warning).await {
-                                                warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                                            if !fired_skipped_alert {
+                                                if let Err(e) = send_telegram_alert(&msg, AlertType::Warning).await {
+                                                    warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                                                }
+                                                fired_skipped_alert = true;
                                             }
                                         }
                                     }
 
                                     continue;
+                                }
+
+                                // Reset skipped alert flag if proving resumes
+                                if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
+                                    if fired_skipped_alert {
+                                        let msg = format!("Resumed proving. Now proving block {}.", block_number);
+                                        if let Err(e) = send_telegram_alert(&msg, AlertType::Info).await {
+                                            warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                                        }
+                                    }
+                                    fired_skipped_alert = false;
                                 }
 
                                 // Start proof generation

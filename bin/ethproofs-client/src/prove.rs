@@ -31,7 +31,7 @@ pub async fn generate_proof(block_number: u64, state: AppState) -> Result<String
 
     let start = std::time::Instant::now();
 
-    let mut client = ZiskDistributedApiClient::new(state.coordinator_channel.clone());
+    let mut client = ZiskDistributedApiClient::new(state.coordinator_channel.clone().unwrap());
     // Build request
     let launch_proof_request = LaunchProofRequest {
         block_id: block_number.to_string(),
