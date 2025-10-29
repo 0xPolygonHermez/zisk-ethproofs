@@ -237,7 +237,7 @@ async fn main() -> Result<()> {
                                         warn!("{}", msg);
 
                                         // Send Telegram alert if enabled
-                                        if app_state.cliargs.telegram_enabled(TelegramEvent::Skipped) {
+                                        if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
                                             if let Err(e) = send_telegram_alert(&msg, AlertType::Warning).await {
                                                 warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
                                             }

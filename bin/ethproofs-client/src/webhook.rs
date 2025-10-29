@@ -168,7 +168,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
     }
 
     // Send Telegram alert if enabled
-    if state.cliargs.telegram_enabled(TelegramEvent::Proved) {
+    if state.cliargs.telegram_enabled(TelegramEvent::BlockProved) {
         let msg = format!(
             "Proof generated for block {}, proving_time: {}s, cycles: {}",
             proved_block,

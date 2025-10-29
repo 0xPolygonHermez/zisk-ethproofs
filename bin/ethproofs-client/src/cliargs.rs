@@ -2,8 +2,8 @@ use clap::{Parser, ValueEnum};
 
 #[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
 pub enum TelegramEvent {
-    Proved,
-    Skipped,
+    BlockProved,
+    SkippedThreshold,
 }
 
 // Command line arguments
@@ -33,7 +33,7 @@ pub struct CliArgs {
     #[arg(short = 'i', long)]
     pub keep_input: bool,
 
-    /// Backlog alert threshold
+    /// Blocks skipped alert threshold
     #[arg(short = 'b', long, default_value_t = 5)]
     pub skipped_threshold: u32,
 }
