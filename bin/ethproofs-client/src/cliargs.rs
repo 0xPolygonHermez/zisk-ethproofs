@@ -36,6 +36,10 @@ pub struct CliArgs {
     /// Blocks skipped alert threshold
     #[arg(short = 'b', long, default_value_t = 5)]
     pub skipped_threshold: u32,
+
+    /// Panic on skipped blocks exceeding threshold
+    #[arg(short = 'p', long)]
+    pub panic_on_skipped: bool,
 }
 
 impl CliArgs {

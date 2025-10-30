@@ -247,6 +247,12 @@ async fn main() -> Result<()> {
                                             }
                                         }
 
+                                        // Panic if configured to do so
+                                        if app_state.cliargs.panic_on_skipped {
+                                            panic!("Skipped blocks exceeded threshold, panicking as per configuration");
+                                        }
+
+                                        // Set skipped alert flag
                                         fired_skipped_alert = true;
                                     } else {
                                         // Reset skipped alert flag if within threshold
@@ -259,6 +265,7 @@ async fn main() -> Result<()> {
                                                     warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
                                                 }
                                             }
+
                                             fired_skipped_alert = false;
                                         }
                                     }

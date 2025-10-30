@@ -40,10 +40,14 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
     let proving_time_ms: u32 = payload.duration_ms as u32;
     let proving_cycles = payload.executed_steps.unwrap_or(0);
 
-    info!(
-        "✅  Proof generated for block {}, proving_time: {} ms, cycles: {}, job: {}",
-        proved_block, payload.duration_ms, proving_cycles, payload.job_id
-    );
+    // We show now successful log to show it before the log showing proof generation of next block
+    // This way, logs are in order of events
+    if payload.success {
+        info!(
+            "✅  Proof generated for block {}, proving_time: {} ms, cycles: {}, job: {}",
+            proved_block, payload.duration_ms, proving_cycles, payload.job_id
+        );
+    }
 
     // Get next_block_number in atomic scope
     let next_block_number: u64 = {
@@ -91,6 +95,24 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
         let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
         *proving_block = 0;
     }
+
+    // Return if proof generation was not successful logging the error
+    if !payload.success {
+        match payload.error {
+            Some(err) => error!(
+                "❌  Failed proof for block number {}, job: {}, error: {}-{}",
+                proved_block, payload.job_id, err.code, err.message
+            ),
+            None => error!(
+                "❌  Failed proof for block number {}, job: {}",
+                proved_block, payload.job_id
+            ),
+        }
+
+        return;
+    }
+
+    // If proof generation was successful, proceed to process the block proof
 
     // Encode compressed proof to base64
     let proof_base64 = match payload.proof.as_ref() {
@@ -229,21 +251,6 @@ async fn webhook_handler(
     };
     if current_job_id != job_id {
         warn!("Received webhook for job {}, but current job is {}. Ignoring...", payload.job_id, current_job_id);
-        return (StatusCode::OK, "OK").into_response();
-    }
-
-    // Check if proof generation was successful
-    if !payload.success {
-        match payload.error {
-            Some(err) => error!(
-                "❌  Failed proof for block number {}, job: {}, error: {}-{}",
-                proved_block, payload.job_id, err.code, err.message
-            ),
-            None => error!(
-                "❌  Failed proof for block number {}, job: {}",
-                proved_block, payload.job_id
-            ),
-        }
         return (StatusCode::OK, "OK").into_response();
     }
 
