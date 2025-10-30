@@ -4828,8 +4828,8 @@ dependencies = [
 
 [[package]]
 name = "input"
-version = "0.3.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=feature%2Fupdate_rsp#fa6160486b859d7e01eb704868de78bd0f3b98d5"
+version = "0.4.0"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?tag=v0.4.0#12720e34d0fcd5c3f638b90628bd5a2f53fb1b53"
 dependencies = [
  "alloy",
  "alloy-consensus",
@@ -4844,6 +4844,7 @@ dependencies = [
  "dotenv",
  "eyre",
  "k256",
+ "rayon",
  "reth-ethereum-primitives 1.7.0",
  "reth-primitives-traits 1.7.0",
  "rsp-client-executor",
@@ -4854,7 +4855,6 @@ dependencies = [
  "serde_json",
  "serde_with",
  "tokio",
- "tracing-subscriber",
  "url",
 ]
 

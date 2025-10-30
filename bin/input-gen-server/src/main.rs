@@ -48,7 +48,7 @@ pub async fn generate_input_file(
         let rt = tokio::runtime::Handle::current();
         rt.block_on(async move {
             let input_builder =
-                input::build_input_generator(guest, &rpc_url, Some(Network::Mainnet));
+                input::build_input_generator(guest, &rpc_url, Network::Mainnet);
             input_builder.generate(block_number).await
         })
     })
