@@ -222,7 +222,7 @@ async fn main() -> Result<()> {
                                 let proving_block_shared_clone = Arc::clone(&app_state.proving_block);
                                 let mut proving_block = proving_block_shared_clone.lock().unwrap();
                                 if *proving_block != 0 {
-                                    warn!("⚠️  Already proving block, saving next block {}", block_number);
+                                    warn!("⚠️ Already proving block, saving next block {}", block_number);
                                     let next_proving_block_shared_clone = Arc::clone(&app_state.next_proving_block);
                                     let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
                                     *next_proving_block = block_number;
@@ -285,7 +285,7 @@ async fn main() -> Result<()> {
                                         *current_job_id = job_id;
                                     }
                                     Err(e) => {
-                                        error!("❌  Proof generation failed for block number {}, error: {}", block_number, e);
+                                        error!("❌ Proof generation failed for block number {}, error: {}", block_number, e);
                                         // Clean up input file if not needed
                                         app_state.delete_input_file(block_number);
                                         continue;

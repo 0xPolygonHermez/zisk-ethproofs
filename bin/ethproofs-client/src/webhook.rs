@@ -44,7 +44,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
     // This way, logs are in order of events
     if payload.success {
         info!(
-            "✅  Proof generated for block {}, proving_time: {} ms, cycles: {}, job: {}",
+            "✅ Proof generated for block {}, proving_time: {} ms, cycles: {}, job: {}",
             proved_block, payload.duration_ms, proving_cycles, payload.job_id
         );
     }
@@ -84,7 +84,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
                     let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
                     *proving_block = 0;
                 }
-                error!("❌  Proof generation failed for next block number {}, error: {}", next_block_number, e);
+                error!("❌ Proof generation failed for next block number {}, error: {}", next_block_number, e);
 
                 // Clean up input file if not needed
                 state.delete_input_file(next_block_number);
@@ -100,11 +100,11 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
     if !payload.success {
         match payload.error {
             Some(err) => error!(
-                "❌  Failed proof for block number {}, job: {}, error: {}-{}",
+                "❌ Failed proof for block number {}, job: {}, error: {}-{}",
                 proved_block, payload.job_id, err.code, err.message
             ),
             None => error!(
-                "❌  Failed proof for block number {}, job: {}",
+                "❌ Failed proof for block number {}, job: {}",
                 proved_block, payload.job_id
             ),
         }
@@ -119,12 +119,12 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
         Some(proof) => match get_proof_b64(proof) {
             Ok(b64) => b64,
             Err(e) => {
-                error!("❌  Failed to get compressed proof in base64, error: {}", e);
+                error!("❌ Failed to get compressed proof in base64, error: {}", e);
                 return;
             }
         },
         None => {
-            error!("❌  No proof data in payload");
+            error!("❌ No proof data in payload");
             return;
         }
     };
@@ -156,7 +156,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
                 (true, submit_time)
             },
             Err(e) => {
-                error!("❌  Failed to submit proof to EthProofs: {}", e);
+                error!("❌ Failed to submit proof to EthProofs: {}", e);
                 (false, 0f64)
             }
         }
@@ -182,7 +182,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
                     proved_block,
                     start.elapsed().as_millis()
                 ),
-                Err(e) => error!("❌  Failed to insert proof into DB: {}", e),
+                Err(e) => error!("❌ Failed to insert proof into DB: {}", e),
             }
         } else {
             warn!("DB handle not initialized, cannot insert proof for block {}", proved_block);
