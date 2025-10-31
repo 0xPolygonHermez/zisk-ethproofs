@@ -1,5 +1,5 @@
-use anyhow::{anyhow, Ok, Result};
-use log::{debug, info};
+use anyhow::{anyhow, Result};
+use log::{error, info};
 use zisk_distributed_grpc_api::{
     zisk_distributed_api_client::ZiskDistributedApiClient, LaunchProofRequest,
 };
@@ -9,15 +9,23 @@ use crate::state::AppState;
 pub async fn generate_proof(block_number: u64, state: AppState) -> Result<String> {
     info!("🔄 Generating proof for block number {}", block_number);
 
-    // Report to EthProofs that we are generating the proof
+    // Report to EthProofs that we are proving this block
     if let Some(client) = state.ethproofs_client {
-        let start = std::time::Instant::now();
-        client.proof_proving(state.ethproofs_cluster_id.unwrap(), block_number).await?;
-        debug!(
-            "Report proving state for block number {}, request_time: {} ms",
-            block_number,
-            start.elapsed().as_millis()
-        );
+        tokio::spawn(async move {
+            let start = std::time::Instant::now();
+            match client.proof_proving(state.ethproofs_cluster_id.unwrap(), block_number).await {
+                Ok(_) => {
+                    info!(
+                        "Reported proving state to EthProofs for block {}, request_time: {} ms",
+                        block_number,
+                        start.elapsed().as_millis()
+                    );
+                }
+                Err(e) => {
+                    error!("Failed to report proving state to EthProofs for block {}: {}", block_number, e);
+                }
+            }
+        });
     }
 
     // Prepare input file
