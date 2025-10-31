@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use log::{error, info};
+use log::{debug, error, info};
 use zisk_distributed_grpc_api::{
     zisk_distributed_api_client::ZiskDistributedApiClient, LaunchProofRequest,
 };
@@ -8,6 +8,42 @@ use crate::state::AppState;
 
 pub async fn generate_proof(block_number: u64, state: AppState) -> Result<String> {
     info!("🔄 Generating proof for block number {}", block_number);
+
+    // Get input file name
+    let input_file = format!("{}.bin", block_number);
+
+    debug!(
+        "Sending coordinator request for block {} with {} compute units",
+        block_number, state.compute_capacity
+    );
+
+    let start = std::time::Instant::now();
+
+    // Get gRPC client
+    let mut client = ZiskDistributedApiClient::new(state.coordinator_channel.clone().unwrap());
+    // Build request
+    let launch_proof_request = LaunchProofRequest {
+        block_id: block_number.to_string(),
+        compute_capacity: state.compute_capacity,
+        input_path: input_file,
+        simulated_node: None,
+    };
+    // Send the coordinator prove request
+    let response = client.launch_proof(launch_proof_request).await?;
+
+    // Handle coordinator response
+    let job_id = match response.into_inner().result {
+        Some(zisk_distributed_grpc_api::launch_proof_response::Result::JobId(job_id)) => {
+            info!("Proof generation started for block number {}, job_id: {}, request time: {} ms", block_number, job_id, start.elapsed().as_millis());
+            job_id
+        }
+        Some(zisk_distributed_grpc_api::launch_proof_response::Result::Error(error)) => {
+            return Err(anyhow!("Coordinator proof request failed: {} - {}", error.code, error.message));
+        }
+        None => {
+            return Err(anyhow!("Received empty response from coordinator"));
+        }
+    };
 
     // Report to EthProofs that we are proving this block
     if let Some(client) = state.ethproofs_client {
@@ -28,39 +64,6 @@ pub async fn generate_proof(block_number: u64, state: AppState) -> Result<String
         });
     }
 
-    // Prepare input file
-    let input_file = format!("{}.bin", block_number);
+    Ok(job_id)
 
-    // Send request to coordinator to generate the proof
-    info!(
-        "Sending coordinator request for block {} with {} compute units",
-        block_number, state.compute_capacity
-    );
-
-    let start = std::time::Instant::now();
-
-    let mut client = ZiskDistributedApiClient::new(state.coordinator_channel.clone().unwrap());
-    // Build request
-    let launch_proof_request = LaunchProofRequest {
-        block_id: block_number.to_string(),
-        compute_capacity: state.compute_capacity,
-        input_path: input_file,
-        simulated_node: None,
-    };
-    // Send the coordinator prove request
-    let response = client.launch_proof(launch_proof_request).await?;
-
-    // Handle response
-    match response.into_inner().result {
-        Some(zisk_distributed_grpc_api::launch_proof_response::Result::JobId(job_id)) => {
-            info!("Proof generation started for block number {}, job_id: {}, request time: {} ms", block_number, job_id, start.elapsed().as_millis());
-            Ok(job_id)
-        }
-        Some(zisk_distributed_grpc_api::launch_proof_response::Result::Error(error)) => {
-            return Err(anyhow!("Proof job failed: {} - {}", error.code, error.message));
-        }
-        None => {
-            return Err(anyhow!("Received empty response from coordinator"));
-        }
-    }
 }

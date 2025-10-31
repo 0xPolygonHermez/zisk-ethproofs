@@ -6,7 +6,7 @@ use axum::{
     Router,
 };
 use base64::{engine::general_purpose, Engine};
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 
 use zisk_distributed_common::WebhookPayloadDto;
 
@@ -119,12 +119,12 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
         Some(proof) => match get_proof_b64(proof) {
             Ok(b64) => b64,
             Err(e) => {
-                error!("❌ Failed to get compressed proof in base64, error: {}", e);
+                error!("❌ Failed to get compressed proof in base64 for block {}, error: {}", proved_block, e);
                 return;
             }
         },
         None => {
-            error!("❌ No proof data in payload");
+            error!("❌ No proof data in payload fro block {}", proved_block);
             return;
         }
     };
@@ -156,7 +156,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
                 (true, submit_time)
             },
             Err(e) => {
-                error!("❌ Failed to submit proof to EthProofs: {}", e);
+                error!("❌ Failed to submit proof to EthProofs for block {}, error: {}", proved_block, e);
                 (false, 0f64)
             }
         }
@@ -182,7 +182,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
                     proved_block,
                     start.elapsed().as_millis()
                 ),
-                Err(e) => error!("❌ Failed to insert proof into DB: {}", e),
+                Err(e) => error!("❌ Failed to insert proof into DB for block {}: {}", proved_block, e),
             }
         } else {
             warn!("DB handle not initialized, cannot insert proof for block {}", proved_block);
@@ -215,7 +215,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
             SUBMIT_TIME_GAUGE.with_label_values(&[&block_label]).set(submit_time as i64);
             prune_gauge_last_n(&SUBMIT_TIME_GAUGE, 300);
         }
-        info!(
+        debug!(
             "Updated metrics for block {}, update time: {} ms",
             proved_block,
             start.elapsed().as_millis()

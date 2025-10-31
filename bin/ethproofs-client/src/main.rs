@@ -241,13 +241,20 @@ async fn main() -> Result<()> {
                                         // Send Telegram alert if enabled
                                         if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
                                             if !fired_skipped_alert {
-                                                if let Err(e) = send_telegram_alert(&msg, AlertType::Warning).await {
-                                                    warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                                                let handle = tokio::spawn(async move {
+                                                    if let Err(e) = send_telegram_alert(&msg, AlertType::Warning).await {
+                                                        warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                                                    }
+                                                });
+
+                                                // If panic_on_skipped is set, wait for the alert to be sent before panicking
+                                                if app_state.cliargs.panic_on_skipped {
+                                                    handle.await.ok();
                                                 }
                                             }
                                         }
 
-                                        // Panic if configured to do so
+                                        // Panic if configured
                                         if app_state.cliargs.panic_on_skipped {
                                             panic!("Skipped blocks exceeded threshold, panicking as per configuration");
                                         }
@@ -261,9 +268,11 @@ async fn main() -> Result<()> {
                                             info!("{}", msg);
 
                                             if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
-                                                if let Err(e) = send_telegram_alert(&msg, AlertType::Info).await {
-                                                    warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
-                                                }
+                                                tokio::spawn(async move {
+                                                    if let Err(e) = send_telegram_alert(&msg, AlertType::Info).await {
+                                                        warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                                                    }
+                                                });
                                             }
 
                                             fired_skipped_alert = false;
