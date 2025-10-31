@@ -149,7 +149,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
             Ok(_) => {
                 let submit_time = start.elapsed().as_millis() as f64;
                 info!(
-                    "Proof submitted to ethproofs for block {}, submit_time: {} ms",
+                    "Reported proved state to EthProofs for block {}, request_time: {} ms",
                     proved_block,
                     submit_time
                 );
