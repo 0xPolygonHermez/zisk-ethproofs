@@ -330,10 +330,10 @@ async fn main() -> Result<()> {
 
                 // 2) Heartbeat: send ping each PING_INTERVAL
                 _ = ping_ticker.tick() => {
-                    if let Err(e) = writer.send(Message::Ping(Vec::new())).await {
-                        warn!("Failed to send Ping: {e}");
-                        break; // reconnect
-                    }
+                    // if let Err(e) = writer.send(Message::Ping(Vec::new())).await {
+                    //     warn!("Failed to send Ping: {e}");
+                    //     break; // reconnect
+                    // }
                 }
 
                 // 3) Watchdog: if no incoming messages for IDLE_TIMEOUT, reconnect
