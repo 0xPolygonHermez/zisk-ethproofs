@@ -14,7 +14,9 @@ use tokio::{
     sync::broadcast::{self, Receiver, Sender},
     task,
 };
-use tokio_tungstenite::{accept_async, tungstenite::Message};
+use tokio_tungstenite::accept_async_with_config;
+use tokio_tungstenite::tungstenite::protocol::WebSocketConfig;
+use tokio_tungstenite::tungstenite::Message;
 
 const WS_LISTEN_IP: &str = "0.0.0.0";
 const WS_DEFAULT_PORT: &str = "8765";
@@ -166,7 +168,15 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
         }
     }
 
-    let ws_stream = match accept_async(stream).await {
+    // Configure WebSocket connection
+    let ws_cfg = WebSocketConfig {
+        max_frame_size:   Some(32 << 20),   // 32 MiB per frame
+        max_message_size: Some(128 << 20),  // 128 MiB per message
+        max_write_buffer_size: 10 << 20,    // 10 MiB write buffer
+        ..Default::default()
+    };
+
+    let ws_stream = match accept_async_with_config(stream, Some(ws_cfg)).await {
         Ok(ws) => ws,
         Err(e) => {
             error!("WebSocket handshake failed: {}", e);

@@ -4,6 +4,7 @@ use clap::{Parser, ValueEnum};
 pub enum TelegramEvent {
     BlockProved,
     SkippedThreshold,
+    ProofFailed,
 }
 
 // Command line arguments

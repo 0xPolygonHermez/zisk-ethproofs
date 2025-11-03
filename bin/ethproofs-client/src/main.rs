@@ -8,9 +8,10 @@ use env_logger::{Builder, Env};
 use futures_util::{SinkExt, StreamExt};
 use log::{debug, error, info, warn};
 use tokio::fs::create_dir_all;
+use tokio::sync::Mutex;
 use tokio::task;
 use tokio::time::{self, Duration, Instant};
-use tokio_tungstenite::connect_async;
+use tokio_tungstenite::connect_async_with_config;
 use tokio_tungstenite::tungstenite::Message;
 
 mod api;
@@ -23,6 +24,7 @@ mod telegram;
 mod webhook;
 
 use prove::generate_proof;
+use tokio_tungstenite::tungstenite::protocol::WebSocketConfig;
 use webhook::start_webhook_server;
 
 use crate::cliargs::TelegramEvent;
@@ -90,13 +92,21 @@ async fn main() -> Result<()> {
         });
     }
 
+    // Configure WebSocket connection
+    let ws_cfg = WebSocketConfig {
+        max_frame_size:   Some(32 << 20),   // 32 MiB per frame
+        max_message_size: Some(128 << 20),  // 128 MiB per message
+        max_write_buffer_size: 10 << 20,    // 10 MiB write buffer
+        ..Default::default()
+    };
+
     // Loop to connect (re-connect) to the input generator server
     let mut attempt: u32 = 0;
     let mut fired_skipped_alert = false;
     loop {
         info!("Connecting to input-gen-server at {}", app_state.input_gen_server_url);
 
-        let (ws_stream, _) = match connect_async(&app_state.input_gen_server_url).await {
+        let (ws_stream, _) = match connect_async_with_config(&app_state.input_gen_server_url, Some(ws_cfg), false).await {
             Ok(s) => {
                 info!("Connected to input-gen-server");
                 attempt = 0; // reset backoff on successful connection
@@ -111,7 +121,8 @@ async fn main() -> Result<()> {
             }
         };
 
-        let (mut writer, mut reader) = ws_stream.split();
+        let (writer, mut reader) = ws_stream.split();
+        let writer = Arc::new(Mutex::new(writer));
 
         // Heartbeat and idle tracking
         let mut ping_ticker = time::interval(PING_INTERVAL);
@@ -294,7 +305,17 @@ async fn main() -> Result<()> {
                                         *current_job_id = job_id;
                                     }
                                     Err(e) => {
-                                        error!("❌ Proof generation failed for block number {}, error: {}", block_number, e);
+                                        let msg = format!("❌ Proof generation failed for block number {}: {}", block_number, e);
+                                        error!("{}", &msg);
+
+                                        if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
+                                            tokio::spawn(async move {
+                                                if let Err(e) = send_telegram_alert(&msg, AlertType::Info).await {
+                                                        warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                                                }
+                                            });
+                                        }
+
                                         // Clean up input file if not needed
                                         app_state.delete_input_file(block_number);
                                         continue;
@@ -328,12 +349,18 @@ async fn main() -> Result<()> {
                     }
                 }
 
-                // 2) Heartbeat: send ping each PING_INTERVAL
+                // 2) Heartbeat: send ping each PING_INTERVAL in a separate task
                 _ = ping_ticker.tick() => {
-                    // if let Err(e) = writer.send(Message::Ping(Vec::new())).await {
-                    //     warn!("Failed to send Ping: {e}");
-                    //     break; // reconnect
-                    // }
+                    let writer_clone = Arc::clone(&writer);
+                    tokio::spawn(async move {
+                        let mut w = writer_clone.lock().await;
+                        if let Err(e) = w.send(Message::Ping(Vec::new())).await {
+                            warn!("Failed to send Ping: {e}");
+                            true
+                        } else {
+                            false
+                        }
+                    });
                 }
 
                 // 3) Watchdog: if no incoming messages for IDLE_TIMEOUT, reconnect

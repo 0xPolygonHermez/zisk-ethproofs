@@ -84,7 +84,17 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
                     let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
                     *proving_block = 0;
                 }
-                error!("❌ Proof generation failed for next block number {}, error: {}", next_block_number, e);
+
+                let msg = format!("❌ Proof generation failed for next block number {}, error: {}", next_block_number, e);
+                error!("{}", msg);
+
+                if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+                    tokio::spawn(async move {
+                        if let Err(e) = send_telegram_alert(&msg, AlertType::Error).await {
+                            warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                        }
+                    });
+                }
 
                 // Clean up input file if not needed
                 state.delete_input_file(next_block_number);
@@ -98,15 +108,24 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
 
     // Return if proof generation was not successful logging the error
     if !payload.success {
-        match payload.error {
-            Some(err) => error!(
-                "❌ Failed proof for block number {}, job: {}, error: {}-{}",
-                proved_block, payload.job_id, err.code, err.message
-            ),
-            None => error!(
-                "❌ Failed proof for block number {}, job: {}",
-                proved_block, payload.job_id
-            ),
+
+        let (err_code, err_message) = payload
+            .error
+            .map(|err| (err.code, err.message))
+            .unwrap_or_else(|| ("0".to_string(), "Unknown error".to_string()));
+
+        let msg = format!(
+            "❌ Failed proof for block number {}, job: {}, error: {}-{}",
+            proved_block, payload.job_id, err_code, err_message
+        );
+        error!("{}", &msg);
+
+        if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+            tokio::spawn(async move {
+                if let Err(e) = send_telegram_alert(&msg, AlertType::Error).await {
+                    warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                }
+            });
         }
 
         return;
