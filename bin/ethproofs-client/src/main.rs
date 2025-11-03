@@ -64,7 +64,7 @@ async fn main() -> Result<()> {
     let app_state = match AppState::new().await {
         Ok(state) => state,
         Err(e) => {
-            error!("Failed to initialize application state: {}", e);
+            error!("Failed to initialize application state, error: {}", e);
             return Err(e);
         }
     };

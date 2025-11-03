@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use anyhow::Context;
 use clap::Parser;
 use dotenv::dotenv;
 use log::warn;
@@ -70,9 +71,11 @@ impl AppState {
 
         let coordinator_url = env::var("COORDINATOR_URL").unwrap_or(DEFAULT_COORDINATOR_URL.to_string());
         let coordinator_channel = if !cliargs.skip_proving {
-            let coordinator_channel = Channel::from_shared(coordinator_url.clone())?
+            let coordinator_channel = Channel::from_shared(coordinator_url.clone())
+                .context("Failed to create coordinator channel")?
                 .connect()
-                .await?;
+                .await
+                .with_context(|| format!("Failed to connect to coordinator at {}", coordinator_url))?;
             Some(coordinator_channel)
         } else {
             None
