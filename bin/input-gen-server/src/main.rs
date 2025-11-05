@@ -46,10 +46,16 @@ struct BlockMessage {
     mgas: Option<u64>,
 }
 
+// Returns the first 5 lowercase hex characters (without 0x) of the given hash-like value
+fn short_hash (hash: &String) -> String {
+    hash.chars().take(6).collect()
+}
+
 /// Generate the guest input file for the given block number and return the time taken in milliseconds
 pub async fn generate_input_file(
     guest: GuestProgram,
     block_number: u64,
+    hash: String,
     inputs_folder: String,
 ) -> Result<u128> {
     let start = Instant::now();
@@ -61,7 +67,7 @@ pub async fn generate_input_file(
     let input_folder = Path::new(&inputs_folder);
     std::fs::create_dir_all(input_folder)?;
 
-    let input_path = input_folder.join(format!("{}.bin", block_number));
+    let input_path = input_folder.join(format!("{}-{}.bin", block_number, hash));
 
     let start_input_gen = Instant::now();
     // Use spawn_blocking to handle the non-Send future
@@ -167,14 +173,22 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
 
             info!("Generating input file for block {}", block_number);
 
+            let block_hash = if let Some(h) = block.hash {
+                format!("{:x}", h)
+            } else {
+                String::from("nohash")
+            };
+
+            let hash = short_hash(&block_hash);
+
             let input_file_time =
-                generate_input_file(guest.clone(), block_number, inputs_folder.clone()).await?;
+                generate_input_file(guest.clone(), block_number, hash, inputs_folder.clone()).await?;
 
             let input_message = BlockMessage {
                 command: BlockCommand::Input,
                 block_number,
                 timestamp: Some(block.timestamp.as_u64().to_string()),
-                block_hash: block.hash.map(|h| format!("{:#x}", h)),
+                block_hash: Some(block_hash),
                 tx_count: Some(block.transactions.len()),
                 mgas: Some(block.gas_used.as_u64() / 1_000_000),
             };
@@ -260,7 +274,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                     }
                 }
                 BlockCommand::Input => {
-                    let block_hash = msg.block_hash.clone().unwrap_or_default();
+                    let block_hash = short_hash(&msg.block_hash.unwrap());
                     let file = format!("{}-{}.bin", msg.block_number, block_hash);
                     info!("Sending input for block {}, file: {}", msg.block_number,file);
                     let start_send = Instant::now();

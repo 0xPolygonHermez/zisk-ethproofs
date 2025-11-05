@@ -56,6 +56,11 @@ struct BlockMessage {
     mgas: Option<u64>,
 }
 
+// Returns the first 5 lowercase hex characters (without 0x) of the given hash-like value
+fn short_hash (hash: &String) -> String {
+    hash.chars().take(6).collect()
+}
+
 /// Parses a binary WebSocket message into (BlockMessage, file_content)
 fn parse_binary_input(data: &[u8]) -> Option<(BlockMessage, &[u8])> {
     let split_index = data.iter().position(|&b| b == b'\n')?;
@@ -107,7 +112,7 @@ async fn process_input(
     fired_skipped_alert: &mut bool,
 ) {
     let block_number = msg.block_number;
-    let filename = format!("{}.bin", block_number);
+    let filename = format!("{}-{}.bin", block_number, short_hash(&msg.block_hash.clone().unwrap()));
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
 
     let elapsed = queued_start.elapsed().as_millis();
