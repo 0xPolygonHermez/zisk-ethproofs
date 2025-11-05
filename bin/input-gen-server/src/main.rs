@@ -9,6 +9,7 @@ use ethers::providers::{Middleware, Provider, Ws};
 use futures_util::{SinkExt, StreamExt};
 use input::{GuestProgram, Network};
 use log::{error, info, warn};
+use serde::{Deserialize, Serialize};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::broadcast::{self, Receiver, Sender},
@@ -28,7 +29,24 @@ pub struct InputGenServerArgs {
     pub guest: GuestProgram,
 }
 
-/// Generate the rsp input file for the given block number and return the time taken in milliseconds
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum BlockCommand {
+    Queued,
+    Input,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct BlockMessage {
+    command: BlockCommand,
+    block_number: u64,
+    timestamp: Option<String>,
+    block_hash: Option<String>,
+    tx_count: Option<usize>,
+    mgas: Option<u64>,
+}
+
+/// Generate the guest input file for the given block number and return the time taken in milliseconds
 pub async fn generate_input_file(
     guest: GuestProgram,
     block_number: u64,
@@ -91,7 +109,6 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
     let mut input_count: u64 = 0;
 
     loop {
-        let mut block_number: u64 = 0;
         let rpc_provider = Provider::<Ws>::connect(rpc_ws_url.clone())
             .await
             .context("Failed to connect to WS RPC provider")?;
@@ -99,24 +116,48 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
         let mut stream = rpc_provider.subscribe_blocks().await?;
         info!("Listening for new blocks on Ethereum Mainnet...");
 
+        let mut selected_block: Option<ethers::types::Block<ethers::types::TxHash>> = None;
         while let Some(block) = stream.next().await {
             if let Some(number) = block.number {
-                block_number = number.as_u64();
+                let bn = number.as_u64();
+                if bn % block_modulus == 0 {
+                    selected_block = Some(block);
+                    info!("Received block {}, processing...", bn);
+                    break;
+                } else {
+                    info!("Received block {}, skipping...", bn);
+                }
             } else {
                 warn!("Received block without number, skipping...");
-                continue;
-            }
-
-            if block_number % block_modulus == 0 {
-                info!("Received block number {}, processing...", block_number);
-                break;
-            } else {
-                info!("Received block number {}, skipping...", block_number);
             }
         }
 
+        let block = if let Some(block) = selected_block {
+            block
+        } else {
+            warn!("No block selected for processing, skipping...");
+            return Ok(());
+        };
+
+        let block_number = if let Some (bn) =block.number {
+            bn.as_u64()
+        } else {
+            warn!("Selected block has no number, skipping...");
+            return Ok(());
+        };
+
         if let Err(e) = async {
-            if tx.send(format!("queued {}", block_number)).is_err() {
+            // Send queued message as JSON
+            let queued_message = BlockMessage {
+                command: BlockCommand::Queued,
+                block_number,
+                timestamp: None,
+                block_hash: None,
+                tx_count: None,
+                mgas: None,
+            };
+            let queued_message_json = serde_json::to_string(&queued_message).unwrap();
+            if tx.send(queued_message_json).is_err() {
                 info!(
                     "No active receivers, skipping input file generation for block {}",
                     block_number
@@ -128,6 +169,16 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
 
             let input_file_time =
                 generate_input_file(guest.clone(), block_number, inputs_folder.clone()).await?;
+
+            let input_message = BlockMessage {
+                command: BlockCommand::Input,
+                block_number,
+                timestamp: Some(block.timestamp.as_u64().to_string()),
+                block_hash: block.hash.map(|h| format!("{:#x}", h)),
+                tx_count: Some(block.transactions.len()),
+                mgas: Some(block.gas_used.as_u64() / 1_000_000),
+            };
+            let input_message_json = serde_json::to_string(&input_message).unwrap();
 
             total_input_time += input_file_time;
             input_count += 1;
@@ -144,7 +195,7 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
                 min_input_time
             );
 
-            if tx.send(format!("input {}.bin", block_number)).is_err() {
+            if tx.send(input_message_json).is_err() {
                 warn!("No active receivers for broadcast channel");
             }
 
@@ -185,53 +236,62 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
         }
     };
 
-    info!("Client connected");
+    let peer_addr = match ws_stream.get_ref().peer_addr() {
+        Ok(addr) => addr.to_string(),
+        Err(_) => "unknown".to_string(),
+    };
+
+    info!("Client connected {}", peer_addr);
     let (mut ws_sender, _) = ws_stream.split();
 
     while let Ok(command) = rx.recv().await {
-        let args: Vec<&str> = command.split_whitespace().collect();
-
-        match args.as_slice() {
-            ["queued", block_number] => {
-                info!("Sending block {} queued", block_number);
-
-                let payload = format!("queued {}", block_number);
-                if ws_sender.send(Message::Text(payload)).await.is_err() {
-                    error!("Client disconnected");
-                    break;
+        let parsed: serde_json::Result<BlockMessage> = serde_json::from_str(&command);
+        match parsed {
+            Ok(msg) => match msg.command {
+                BlockCommand::Queued => {
+                    info!("Sending block {} queued (binary)", msg.block_number);
+                    let command_bytes = command.as_bytes();
+                    let mut payload = Vec::with_capacity(command_bytes.len() + 1);
+                    payload.extend_from_slice(command_bytes);
+                    payload.push(b'\n'); // no file content for queued
+                    if ws_sender.send(Message::Binary(payload)).await.is_err() {
+                        error!("Client disconnected");
+                        break;
+                    }
                 }
-            }
-            ["input", file] => {
-                info!("Sending input file: {}", file);
-                let start_send = Instant::now();
-
-                let filepath = PathBuf::from(&inputs_folder).join(&file);
-                match fs::read(&filepath) {
-                    Ok(content) => {
-                        let payload = format!("{}\n", file)
-                            .into_bytes()
-                            .into_iter()
-                            .chain(content)
-                            .collect::<Vec<u8>>();
-
-                        if ws_sender.send(Message::Binary(payload)).await.is_err() {
-                            error!("Client disconnected");
-                            break;
+                BlockCommand::Input => {
+                    let block_hash = msg.block_hash.clone().unwrap_or_default();
+                    let file = format!("{}-{}.bin", msg.block_number, block_hash);
+                    info!("Sending input for block {}, file: {}", msg.block_number,file);
+                    let start_send = Instant::now();
+                    let filepath = PathBuf::from(&inputs_folder).join(&file);
+                    match fs::read(&filepath) {
+                        Ok(content) => {
+                            let command_bytes = command.as_bytes();
+                            let mut payload = Vec::with_capacity(command_bytes.len() + 1 + content.len());
+                            payload.extend_from_slice(command_bytes);
+                            payload.push(b'\n');
+                            payload.extend_from_slice(&content);
+                            if ws_sender.send(Message::Binary(payload)).await.is_err() {
+                                error!("Client disconnected");
+                                break;
+                            }
+                            info!(
+                                "Input file sent to client: {}, time: {} ms, txs: {:?}, mgas: {:?}",
+                                file,
+                                start_send.elapsed().as_millis(),
+                                msg.tx_count,
+                                msg.mgas
+                            );
                         }
-
-                        info!(
-                            "Input file sent to client: {}, time: {} ms",
-                            file,
-                            start_send.elapsed().as_millis()
-                        );
-                    }
-                    Err(e) => {
-                        error!("Error reading input file {}: {}", file, e);
+                        Err(e) => {
+                            error!("Error reading input file {}: {}", file, e);
+                        }
                     }
                 }
-            }
-            _ => {
-                error!("Unknown command received: {}", command);
+            },
+            Err(_) => {
+                error!("Invalid JSON command received: {}", command);
                 continue;
             }
         }
@@ -256,7 +316,7 @@ async fn main() {
 
     let args = InputGenServerArgs::parse();
 
-    // Create broadcast channel for sending input file names to clients
+    // Create broadcast channel for sending input file metadata + names
     let (tx, _) = broadcast::channel::<String>(100);
 
     // Launch eth block input file generator

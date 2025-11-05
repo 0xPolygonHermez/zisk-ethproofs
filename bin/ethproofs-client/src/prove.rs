@@ -7,7 +7,7 @@ use zisk_distributed_grpc_api::{
 use crate::state::AppState;
 
 pub async fn generate_proof(block_number: u64, state: AppState) -> Result<String> {
-    info!("🔄 Generating proof for block number {}", block_number);
+    info!("🔄 Generating proof for block {}", block_number);
 
     // Get input file name
     let input_file = format!("{}.bin", block_number);
@@ -34,7 +34,7 @@ pub async fn generate_proof(block_number: u64, state: AppState) -> Result<String
     // Handle coordinator response
     let job_id = match response.into_inner().result {
         Some(zisk_distributed_grpc_api::launch_proof_response::Result::JobId(job_id)) => {
-            info!("Proof generation started for block number {}, job_id: {}, request time: {} ms", block_number, job_id, start.elapsed().as_millis());
+            info!("Proof generation started for block {}, job_id: {}, request time: {} ms", block_number, job_id, start.elapsed().as_millis());
             job_id
         }
         Some(zisk_distributed_grpc_api::launch_proof_response::Result::Error(error)) => {

@@ -85,7 +85,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
                     *proving_block = 0;
                 }
 
-                let msg = format!("❌ Proof generation failed for next block number {}, error: {}", next_block_number, e);
+                let msg = format!("❌ Proof generation failed for next block {}, error: {}", next_block_number, e);
                 error!("{}", msg);
 
                 if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
@@ -115,7 +115,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
             .unwrap_or_else(|| ("0".to_string(), "Unknown error".to_string()));
 
         let msg = format!(
-            "❌ Failed proof for block number {}, job: {}, error: {}-{}",
+            "❌ Failed proof for block {}, job: {}, error: {}-{}",
             proved_block, payload.job_id, err_code, err_message
         );
         error!("{}", &msg);

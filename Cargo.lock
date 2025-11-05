@@ -4872,6 +4872,8 @@ dependencies = [
  "futures-util",
  "input",
  "log",
+ "serde",
+ "serde_json",
  "tokio",
  "tokio-native-tls",
  "tokio-stream",

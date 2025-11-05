@@ -13,6 +13,8 @@ use tokio::task;
 use tokio::time::{self, Duration, Instant};
 use tokio_tungstenite::connect_async_with_config;
 use tokio_tungstenite::tungstenite::Message;
+use serde::{Deserialize, Serialize};
+use serde_json;
 
 mod api;
 mod cliargs;
@@ -36,13 +38,168 @@ use crate::telegram::{AlertType, send_telegram_alert};
 const PING_INTERVAL: Duration = Duration::from_secs(15);
 const IDLE_TIMEOUT: Duration = Duration::from_secs(30 * 60); // 30 min
 
-/// Parses a binary WebSocket message into (filename, file_content)
-fn parse_message(data: &[u8]) -> Option<(&str, &[u8])> {
+// New protocol structures mirroring input-gen-server
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+enum BlockCommand {
+    Queued,
+    Input,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct BlockMessage {
+    command: BlockCommand,
+    block_number: u64,
+    timestamp: Option<String>,
+    block_hash: Option<String>,
+    tx_count: Option<usize>,
+    mgas: Option<u64>,
+}
+
+/// Parses a binary WebSocket message into (BlockMessage, file_content)
+fn parse_binary_input(data: &[u8]) -> Option<(BlockMessage, &[u8])> {
     let split_index = data.iter().position(|&b| b == b'\n')?;
-    let (name, content) = data.split_at(split_index);
-    let content = &content[1..]; // skip newline
-    let name_str = std::str::from_utf8(name).ok()?;
-    Some((name_str, content))
+    let (header_bytes, content_with_newline) = data.split_at(split_index);
+    let content = &content_with_newline[1..]; // skip newline
+    let header_str = std::str::from_utf8(header_bytes).ok()?;
+    let msg: BlockMessage = serde_json::from_str(header_str).ok()?;
+    Some((msg, content))
+}
+
+fn process_queued(block_number: u64, app_state: &AppState, queued_start: &mut std::time::Instant) {
+    *queued_start = std::time::Instant::now();
+
+    // Set Prometheus block_timestamp in seconds
+    if app_state.cliargs.enable_metrics {
+        let now_secs = chrono::Utc::now().timestamp();
+        let block_label = block_number.to_string();
+        BLOCK_TIMESTAMP_GAUGE.with_label_values(&[&block_label]).set(now_secs);
+        prune_gauge_last_n(&BLOCK_TIMESTAMP_GAUGE, 300);
+    }
+
+    info!("Received queued command for block {}", block_number);
+
+    if let Some(client) = app_state.ethproofs_client.clone() {
+        let cluster_id = app_state.ethproofs_cluster_id.unwrap();
+        tokio::spawn(async move {
+            let start = std::time::Instant::now();
+            match client.proof_queued(cluster_id, block_number).await {
+                Ok(_) => {
+                    info!(
+                        "Reported queued state to EthProofs for block {}, request_time: {} ms",
+                        block_number,
+                        start.elapsed().as_millis()
+                    );
+                }
+                Err(e) => {
+                    error!("Failed to report queued state to EthProofs for block {}: {}", block_number, e);
+                }
+            }
+        });
+    }
+}
+
+async fn process_input(
+    msg: &BlockMessage,
+    content: &[u8],
+    app_state: &AppState,
+    queued_start: &std::time::Instant,
+    fired_skipped_alert: &mut bool,
+) {
+    let block_number = msg.block_number;
+    let filename = format!("{}.bin", block_number);
+    let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
+
+    let elapsed = queued_start.elapsed().as_millis();
+    match fs::write(&filepath, content) {
+        Ok(_) => {
+            let block_label = block_number.to_string();
+            if app_state.cliargs.enable_metrics {
+                RECEIVED_TIME_GAUGE.with_label_values(&[&block_label]).set(elapsed as i64);
+                prune_gauge_last_n(&RECEIVED_TIME_GAUGE, 300);
+            }
+        }
+        Err(e) => {
+            error!("Failed to save input for block {}, file: {}, error: {}", block_number, filename, e);
+            return;
+        }
+    }
+
+    info!("Received and saved input for block {}, file: {}, time: {} ms", block_number, filename, elapsed);
+
+    if app_state.cliargs.skip_proving {
+        info!("Skipping proving for block {} as per configuration", block_number);
+        app_state.delete_input_file(block_number);
+        return;
+    }
+
+    // Check if already proving a block
+    let proving_block_shared_clone = Arc::clone(&app_state.proving_block);
+    let mut proving_block = proving_block_shared_clone.lock().unwrap();
+    if *proving_block != 0 {
+        warn!("⚠️ Already proving block, saving next block {}", block_number);
+        let next_proving_block_shared_clone = Arc::clone(&app_state.next_proving_block);
+        let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
+        *next_proving_block = block_number;
+
+        // Check for skipped blocks threshold
+        if block_number - *proving_block > app_state.cliargs.skipped_threshold as u64 {
+            let msg_alert = format!(
+                "Skipped {} consecutive blocks. Currently proving block {}, next queued block is {}.",
+                block_number - *proving_block - 1,
+                *proving_block,
+                block_number
+            );
+            warn!("{}", msg_alert);
+            if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
+                if !*fired_skipped_alert {
+                    let handle = tokio::spawn(async move {
+                        if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Warning).await {
+                            warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
+                        }
+                    });
+                    if app_state.cliargs.panic_on_skipped { handle.await.ok(); }
+                }
+            }
+            if app_state.cliargs.panic_on_skipped { panic!("Skipped blocks exceeded threshold, panicking as per configuration"); }
+            *fired_skipped_alert = true;
+        } else if *fired_skipped_alert {
+            let msg_alert = format!("Resumed proving. Now proving block {}.", proving_block);
+            info!("{}", msg_alert);
+            if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
+                tokio::spawn(async move {
+                    if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
+                        warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
+                    }
+                });
+            }
+            *fired_skipped_alert = false;
+        }
+        return;
+    }
+
+    // Start proof generation
+    let result = generate_proof(block_number, app_state.clone()).await;
+    match result {
+        Ok(job_id) => {
+            *proving_block = block_number;
+            let current_job_id_shared_clone = Arc::clone(&app_state.current_job_id);
+            let mut current_job_id = current_job_id_shared_clone.lock().unwrap();
+            *current_job_id = job_id;
+        }
+        Err(e) => {
+            let msg_alert = format!("❌ Proof generation failed for block {}, error: {}", block_number, e);
+            error!("{}", &msg_alert);
+            if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
+                tokio::spawn(async move {
+                    if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
+                        warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
+                    }
+                });
+            }
+            app_state.delete_input_file(block_number);
+        }
+    }
 }
 
 #[tokio::main]
@@ -136,193 +293,19 @@ async fn main() -> Result<()> {
                 next = reader.next() => {
                     #[allow(unreachable_patterns)]
                     match next {
-                        Some(Ok(Message::Text(command))) => {
-                            last_activity = Instant::now();
-
-                            let args_text = command.split_whitespace().collect::<Vec<&str>>();
-                            if args_text.is_empty() {
-                                error!("Received empty command");
-                                continue;
-                            }
-
-                            match args_text[0] {
-                                "queued" => {
-                                    queued_start = std::time::Instant::now();
-
-                                    let block_number: u64 = args_text[1]
-                                        .parse()
-                                        .expect("Failed to parse block number from command queued");
-
-                                    // Set Prometheus block_timestamp in seconds
-                                    let now_secs = chrono::Utc::now().timestamp();
-                                    let block_label = block_number.to_string();
-                                    BLOCK_TIMESTAMP_GAUGE.with_label_values(&[&block_label]).set(now_secs);
-                                    prune_gauge_last_n(&BLOCK_TIMESTAMP_GAUGE, 300);
-
-                                    info!("Received queued command for block {}", block_number);
-
-                                    if let Some(client) = app_state.ethproofs_client.clone() {
-                                        tokio::spawn(async move {
-                                            let start = std::time::Instant::now();
-                                            match client.proof_queued(app_state.ethproofs_cluster_id.unwrap(), block_number).await {
-                                                Ok(_) => {
-                                                    info!(
-                                                        "Reported queued state to EthProofs for block {}, request_time: {} ms",
-                                                        block_number,
-                                                        start.elapsed().as_millis()
-                                                    );
-                                                }
-                                                Err(e) => {
-                                                    error!("Failed to report queued state to EthProofs for block {}: {}", block_number, e);
-                                                }
-                                            }
-                                        });
-                                    }
-                                }
-                                _ => {
-                                    error!("Unknown command received: {}", command);
-                                }
-                            }
-                        }
-
                         Some(Ok(Message::Binary(payload))) => {
                             last_activity = Instant::now();
-
-                            if let Some((filename, content)) = parse_message(&payload) {
-                                // Received input file, save it
-                                let filepath = PathBuf::from(&app_state.inputs_folder).join(filename);
-
-                                let elapsed = queued_start.elapsed().as_millis();
-                                match fs::write(&filepath, content) {
-                                    Ok(_) => {
-                                        // Extract block number from filename (strip .bin)
-                                        let block_label = filepath.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "unknown".to_string());
-                                        info!("Received and saved input file: {}, time: {} ms", filepath.display(), elapsed);
-
-                                        // Update Prometheus metrics for input file received time if metrics enabled
-                                        if app_state.cliargs.enable_metrics {
-                                            RECEIVED_TIME_GAUGE.with_label_values(&[&block_label]).set(elapsed as i64);
-                                            prune_gauge_last_n(&RECEIVED_TIME_GAUGE, 300);
-                                        }
-                                    },
-                                    Err(e) => { error!("Failed to save input file {}, error: {}", filepath.display(), e); continue; }
-                                }
-
-                                // Get block number from filename
-                                let block_number = match filepath.file_stem() {
-                                    Some(stem) => match stem.to_string_lossy().parse::<u64>() {
-                                        Ok(num) => num,
-                                        Err(_) => {
-                                            error!("Failed to parse block number from input filename {}", filepath.display());
-                                            continue;
-                                        }
+                            if let Some((msg, content)) = parse_binary_input(&payload) {
+                                match msg.command {
+                                    BlockCommand::Queued => {
+                                        process_queued(msg.block_number, &app_state, &mut queued_start);
                                     }
-                                    None => {
-                                        error!("Failed to get block number from filename {}", filepath.display());
-                                        continue;
-                                    }
-                                };
-
-                                if app_state.cliargs.skip_proving {
-                                    info!("Skipping proving for block {} as per configuration", block_number);
-                                    app_state.delete_input_file(block_number);
-                                    continue;
-                                }
-
-                                // Check if already proving a block
-                                let proving_block_shared_clone = Arc::clone(&app_state.proving_block);
-                                let mut proving_block = proving_block_shared_clone.lock().unwrap();
-                                if *proving_block != 0 {
-                                    warn!("⚠️ Already proving block, saving next block {}", block_number);
-                                    let next_proving_block_shared_clone = Arc::clone(&app_state.next_proving_block);
-                                    let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
-                                    *next_proving_block = block_number;
-
-                                    // Check for skipped blocks threshold
-                                    if block_number - *proving_block > app_state.cliargs.skipped_threshold as u64 {
-                                        let msg = format!(
-                                            "Skipped {} consecutive blocks. Currently proving block {}, next queued block is {}.",
-                                            block_number - *proving_block - 1,
-                                            *proving_block,
-                                            block_number
-                                        );
-
-                                        warn!("{}", msg);
-
-                                        // Send Telegram alert if enabled
-                                        if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
-                                            if !fired_skipped_alert {
-                                                let handle = tokio::spawn(async move {
-                                                    if let Err(e) = send_telegram_alert(&msg, AlertType::Warning).await {
-                                                        warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
-                                                    }
-                                                });
-
-                                                // If panic_on_skipped is set, wait for the alert to be sent before panicking
-                                                if app_state.cliargs.panic_on_skipped {
-                                                    handle.await.ok();
-                                                }
-                                            }
-                                        }
-
-                                        // Panic if configured
-                                        if app_state.cliargs.panic_on_skipped {
-                                            panic!("Skipped blocks exceeded threshold, panicking as per configuration");
-                                        }
-
-                                        // Set skipped alert flag
-                                        fired_skipped_alert = true;
-                                    } else {
-                                        // Reset skipped alert flag if within threshold
-                                        if fired_skipped_alert {
-                                            let msg = format!("Resumed proving. Now proving block {}.", proving_block);
-                                            info!("{}", msg);
-
-                                            if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
-                                                tokio::spawn(async move {
-                                                    if let Err(e) = send_telegram_alert(&msg, AlertType::Info).await {
-                                                        warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
-                                                    }
-                                                });
-                                            }
-
-                                            fired_skipped_alert = false;
-                                        }
-                                    }
-
-                                    continue;
-                                }
-
-                                // Start proof generation
-                                let result = generate_proof(block_number, app_state.clone()).await;
-
-                                match result {
-                                    Ok(job_id) => {
-                                        *proving_block = block_number;
-                                        // Store current job ID
-                                        let current_job_id_shared_clone = Arc::clone(&app_state.current_job_id);
-                                        let mut current_job_id = current_job_id_shared_clone.lock().unwrap();
-                                        *current_job_id = job_id;
-                                    }
-                                    Err(e) => {
-                                        let msg = format!("❌ Proof generation failed for block number {}: {}", block_number, e);
-                                        error!("{}", &msg);
-
-                                        if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
-                                            tokio::spawn(async move {
-                                                if let Err(e) = send_telegram_alert(&msg, AlertType::Info).await {
-                                                        warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
-                                                }
-                                            });
-                                        }
-
-                                        // Clean up input file if not needed
-                                        app_state.delete_input_file(block_number);
-                                        continue;
+                                    BlockCommand::Input => {
+                                        process_input(&msg, content, &app_state, &queued_start, &mut fired_skipped_alert).await;
                                     }
                                 }
                             } else {
-                                error!("Malformed message received");
+                                error!("Malformed binary message received (cannot parse header JSON)");
                             }
                         }
 
