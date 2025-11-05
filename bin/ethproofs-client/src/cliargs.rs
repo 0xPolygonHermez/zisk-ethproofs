@@ -10,7 +10,7 @@ pub enum TelegramEvent {
 // Command line arguments
 #[derive(Clone, Parser)]
 pub struct CliArgs {
-    /// Enable submit proofs to EthProofs
+    /// Enable proof submission to Ethproofs
     #[arg(short = 's', long)]
     pub submit_ethproofs: bool,
 
@@ -18,11 +18,11 @@ pub struct CliArgs {
     #[arg(short = 't', long, use_value_delimiter = true, num_args = 1..)]
     pub telegram_alert: Vec<TelegramEvent>,
 
-    /// Insert block proofs into database
+    /// Insert block proof data into the database
     #[arg(short = 'd', long)]
     pub insert_db: bool,
 
-    /// Skip proving step (for testing purposes)
+    /// Skip the proving step (useful for testing)
     #[arg(short = 'k', long)]
     pub skip_proving: bool,
 
@@ -30,15 +30,15 @@ pub struct CliArgs {
     #[arg(short = 'm', long)]
     pub enable_metrics: bool,
 
-    /// Keep input file
+    /// Keep the input file after processing
     #[arg(short = 'i', long)]
     pub keep_input: bool,
 
-    /// Blocks skipped alert threshold
+    /// Number of skipped blocks before triggering an alert
     #[arg(short = 'b', long, default_value_t = 5)]
     pub skipped_threshold: u32,
 
-    /// Panic on skipped blocks exceeding threshold
+    /// Panic when skipped blocks exceed the threshold
     #[arg(short = 'p', long)]
     pub panic_on_skipped: bool,
 }

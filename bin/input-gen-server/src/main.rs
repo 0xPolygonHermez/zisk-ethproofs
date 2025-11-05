@@ -23,7 +23,8 @@ const WS_DEFAULT_PORT: &str = "8765";
 
 #[derive(Debug, Clone, Parser)]
 pub struct InputGenServerArgs {
-    #[clap(long, short)]
+    /// Guest program for which to generate inputs
+    #[clap(long, short, value_enum, default_value_t = GuestProgram::Rsp)]
     pub guest: GuestProgram,
 }
 
