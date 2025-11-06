@@ -252,7 +252,7 @@ async fn main() -> Result<()> {
     let ws_cfg = WebSocketConfig {
         max_frame_size:   Some(32 << 20),   // 32 MiB per frame
         max_message_size: Some(128 << 20),  // 128 MiB per message
-        max_write_buffer_size: 10 << 20,    // 10 MiB write buffer
+        max_write_buffer_size: 32 << 20,    // 32 MiB write buffer
         ..Default::default()
     };
 

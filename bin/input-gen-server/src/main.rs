@@ -5,7 +5,6 @@ use std::{fs, path::PathBuf};
 use anyhow::{Context, Result};
 use clap::Parser;
 use dotenv::dotenv;
-use ethers::core::k256::elliptic_curve::rand_core::block;
 use ethers::providers::{Middleware, Provider, Ws};
 use futures_util::{SinkExt, StreamExt};
 use input::{GuestProgram, Network};
@@ -210,7 +209,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
     let ws_cfg = WebSocketConfig {
         max_frame_size:   Some(32 << 20),   // 32 MiB per frame
         max_message_size: Some(128 << 20),  // 128 MiB per message
-        max_write_buffer_size: 10 << 20,    // 10 MiB write buffer
+        max_write_buffer_size: 32 << 20,    // 32 MiB write buffer
         ..Default::default()
     };
 
