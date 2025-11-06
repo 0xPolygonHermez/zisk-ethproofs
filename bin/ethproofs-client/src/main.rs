@@ -30,7 +30,7 @@ use tokio_tungstenite::tungstenite::protocol::WebSocketConfig;
 use webhook::start_webhook_server;
 
 use crate::cliargs::TelegramEvent;
-use crate::metrics::{BLOCK_TIMESTAMP_GAUGE, RECEIVED_TIME_GAUGE, prune_gauge_last_n};
+use crate::metrics::{BLOCK_TIMESTAMP_GAUGE, RECEIVED_TIME_GAUGE, TIME_TO_INPUT_GAUGE, prune_gauge_last_n};
 use crate::state::{AppState, LOG_FOLDER, OUTPUT_FOLDER};
 use ethproofs_protocol::{BlockCommand, BlockInfo, BlockMessage};
 use crate::telegram::{AlertType, send_telegram_alert};
@@ -115,6 +115,13 @@ async fn process_input(
         Ok(now) => now.as_millis() as u128 - block_timestamp_ms,
         Err(_) => 0,
     };
+
+    if app_state.cliargs.enable_metrics {
+        let block_label = block_number.to_string();
+        TIME_TO_INPUT_GAUGE.with_label_values(&[&block_label]).set(time_to_input as i64);
+        prune_gauge_last_n(&TIME_TO_INPUT_GAUGE, 300);
+    }
+
 
     info!("Received and saved input for block {}, file: {}, time: {} ms, time-to-input: {} ms", block_number, filename, elapsed, time_to_input);
 

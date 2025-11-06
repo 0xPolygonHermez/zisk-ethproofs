@@ -28,7 +28,12 @@ lazy_static! {
     ).unwrap();
     pub static ref RECEIVED_TIME_GAUGE: IntGaugeVec = register_int_gauge_vec!(
         "received_input_time_ms",
-        "Time to receive and save input file in milliseconds",
+        "Time (milliseconds) to receive and save input file",
+        &["block"]
+    ).unwrap();
+    pub static ref TIME_TO_INPUT_GAUGE: IntGaugeVec = register_int_gauge_vec!(
+        "time_to_input_ms",
+        "Time (milliseconds) elapsed from block timestamp to time where input was received and saved",
         &["block"]
     ).unwrap();
     pub static ref BLOCK_TIMESTAMP_GAUGE: IntGaugeVec = register_int_gauge_vec!(
