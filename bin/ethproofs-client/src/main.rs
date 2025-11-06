@@ -1,5 +1,6 @@
 use std::io::Write;
 use std::sync::Arc;
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fs, path::Path, path::PathBuf};
 
 use anyhow::Result;
@@ -92,8 +93,10 @@ async fn process_input(
     let block_number = block_info.block_number;
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
 
+    let result = fs::write(&filepath, content);
     let elapsed = queued_start.elapsed().as_millis();
-    match fs::write(&filepath, content) {
+
+    match result {
         Ok(_) => {
             let block_label = block_number.to_string();
             if app_state.cliargs.enable_metrics {
@@ -107,7 +110,13 @@ async fn process_input(
         }
     }
 
-    info!("Received and saved input for block {}, file: {}, time: {} ms", block_number, filename, elapsed);
+    let block_timestamp_ms = block_info.timestamp.as_u64() as u128 * 1000;
+    let time_to_input = match SystemTime::now().duration_since(UNIX_EPOCH) {
+        Ok(now) => now.as_millis() as u128 - block_timestamp_ms,
+        Err(_) => 0,
+    };
+
+    info!("Received and saved input for block {}, file: {}, time: {} ms, time-to-input: {} ms", block_number, filename, elapsed, time_to_input);
 
     if app_state.cliargs.skip_proving {
         info!("Skipping proving for block {} as per configuration", block_number);

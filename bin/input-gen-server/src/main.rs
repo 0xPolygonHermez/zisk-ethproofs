@@ -159,7 +159,7 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
 
             let input_message = BlockMessage::new_input(
                 block_number,
-                block.timestamp.as_u64().to_string(),
+                block.timestamp,
                 block_hash,
                 block.transactions.len(),
                 block.gas_used.as_u64() / 1_000_000,

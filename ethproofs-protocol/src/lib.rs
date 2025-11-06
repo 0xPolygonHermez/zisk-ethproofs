@@ -1,3 +1,4 @@
+use ethers::types::U256;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -10,7 +11,7 @@ pub enum BlockCommand {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BlockInfo {
     pub block_number: u64,
-    pub timestamp: String,
+    pub timestamp: U256,
     pub block_hash: String,
     pub tx_count: usize,
     pub mgas: u64,
@@ -29,9 +30,9 @@ pub struct BlockMessage {
 
 impl BlockMessage {
     pub fn new_queued(block_number: u64) -> Self {
-        Self { command: BlockCommand::Queued, info: BlockInfo { block_number, timestamp: String::new(), block_hash: String::new(), tx_count: 0, mgas: 0 } }
+        Self { command: BlockCommand::Queued, info: BlockInfo { block_number, timestamp: U256::zero(), block_hash: String::new(), tx_count: 0, mgas: 0 } }
     }
-    pub fn new_input(block_number: u64, timestamp: String, block_hash: String, tx_count: usize, mgas: u64) -> Self {
+    pub fn new_input(block_number: u64, timestamp: U256, block_hash: String, tx_count: usize, mgas: u64) -> Self {
         Self { command: BlockCommand::Input, info: BlockInfo { block_number, timestamp, block_hash, tx_count, mgas } }
     }
 }
