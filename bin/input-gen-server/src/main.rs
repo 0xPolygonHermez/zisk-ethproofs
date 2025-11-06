@@ -9,7 +9,7 @@ use ethers::providers::{Middleware, Provider, Ws};
 use futures_util::{SinkExt, StreamExt};
 use input::{GuestProgram, Network};
 use log::{error, info, warn};
-use ethproofs_protocol::{BlockCommand, BlockInfo, BlockMessage, short_hash};
+use ethproofs_protocol::{BlockCommand, BlockInfo, BlockMessage};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::broadcast::{self, Receiver, Sender},
