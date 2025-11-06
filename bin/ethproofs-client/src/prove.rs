@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use ethers::core::k256::elliptic_curve::rand_core::block;
 use log::{debug, error, info};
 use zisk_distributed_grpc_api::{
     zisk_distributed_api_client::ZiskDistributedApiClient, LaunchProofRequest,
@@ -13,7 +14,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     info!("🔄 Generating proof for block {}", block_number);
 
     // Get input file name
-    let input_file = format!("{}.bin", block_number);
+    let input_file = block_info.filename();
 
     debug!(
         "Sending coordinator request for block {} with {} compute units",
