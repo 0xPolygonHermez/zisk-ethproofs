@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Result};
-use ethers::core::k256::elliptic_curve::rand_core::block;
 use log::{debug, error, info};
 use zisk_distributed_grpc_api::{
     zisk_distributed_api_client::ZiskDistributedApiClient, LaunchProofRequest,
