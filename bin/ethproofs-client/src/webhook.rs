@@ -91,8 +91,8 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
 
                 let next_block_number = next_block.block_number;
 
-                let msg = format!("❌ Proof generation failed for next block {}, error: {}", next_block_number, e);
-                error!("{}", msg);
+                let msg = format!("Proof generation failed for next block {}, error: {}", next_block_number, e);
+                error!("❌ {}", msg);
 
                 if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
                     tokio::spawn(async move {
@@ -121,10 +121,10 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
             .unwrap_or_else(|| ("0".to_string(), "Unknown error".to_string()));
 
         let msg = format!(
-            "❌ Failed proof for block {}, job: {}, error: {}-{}",
+            "Failed proof for block {}, job: {}, error: {}-{}",
             proved_block_number, payload.job_id, err_code, err_message
         );
-        error!("{}", &msg);
+        error!("❌ {}", &msg);
 
         if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
             tokio::spawn(async move {

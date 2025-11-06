@@ -187,8 +187,8 @@ async fn process_input(
             *current_job_id = job_id;
         }
         Err(e) => {
-            let msg_alert = format!("❌ Proof generation failed for block {}, error: {}", block_number, e);
-            error!("{}", &msg_alert);
+            let msg_alert = format!("Proof generation failed for block {}, error: {}", block_number, e);
+            error!("❌ {}", &msg_alert);
             if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
                 tokio::spawn(async move {
                     if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
