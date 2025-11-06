@@ -240,9 +240,12 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                     let mut payload = Vec::with_capacity(command_bytes.len() + 1);
                     payload.extend_from_slice(command_bytes);
                     payload.push(b'\n'); // no file content for queued
-                    if ws_sender.send(Message::Binary(payload)).await.is_err() {
-                        error!("Client disconnected");
-                        break;
+                    match ws_sender.send(Message::Binary(payload)).await {
+                        Ok(_) => {}
+                        Err(e) => {
+                            error!("Client disconnected, error: {}", e);
+                            break;
+                        }
                     }
                 }
                 BlockCommand::Input => {
