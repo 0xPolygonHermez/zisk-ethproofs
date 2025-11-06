@@ -12,6 +12,7 @@ use zisk_distributed_common::WebhookPayloadDto;
 
 use crate::cliargs::TelegramEvent;
 use crate::metrics::{PROVING_CYCLES_GAUGE, PROVING_TIME_GAUGE, SUBMIT_TIME_GAUGE, prune_gauge_last_n};
+use ethproofs_protocol::BlockInfo;
 use crate::{db::BlockProof, prove::generate_proof};
 use crate::{
     state::AppState,
@@ -35,42 +36,45 @@ pub fn get_proof_b64(proof_data: &[u64]) -> Result<String> {
     Ok(general_purpose::STANDARD.encode(&compressed))
 }
 
-async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: AppState) {
+async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDto, state: AppState) {
     // Extract proving time and cycles
     let proving_time_ms: u32 = payload.duration_ms as u32;
     let proving_cycles = payload.executed_steps.unwrap_or(0);
+    let proved_block_number = proved_block_info.block_number;
 
     // We show now successful log to show it before the log showing proof generation of next block
     // This way, logs are in order of events
     if payload.success {
         info!(
             "✅ Proof generated for block {}, proving_time: {} ms, cycles: {}, job: {}",
-            proved_block, payload.duration_ms, proving_cycles, payload.job_id
+            proved_block_number, payload.duration_ms, proving_cycles, payload.job_id
         );
     }
 
     // Get next_block_number in atomic scope
-    let next_block_number: u64 = {
+    let next_block = {
         let mut next_proving_block =
             state.next_proving_block.lock().unwrap_or_else(|e| e.into_inner());
-        if *next_proving_block != 0 {
-            let next = *next_proving_block;
-            *next_proving_block = 0;
-            next
+
+        if next_proving_block.is_some() {
+            let next = next_proving_block.clone().unwrap();
+            *next_proving_block = None;
+            Some(next)
         } else {
-            0
+            None
         }
     };
 
     // Check and start proof generation for next block if set
-    if next_block_number != 0 {
+    if next_block.is_some() {
         // Set proving_block to next_block_number in atomic scope
         {
             let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
-            *proving_block = next_block_number;
+            *proving_block = next_block.clone();
         }
 
-        let result = generate_proof(next_block_number, state.clone()).await;
+        let next_block = next_block.unwrap();
+        let result = generate_proof(next_block.clone(), state.clone()).await;
 
         match result {
             Ok(job_id) => {
@@ -82,8 +86,10 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
                 // If generation failed, reset proving_block in atomic scope
                 {
                     let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
-                    *proving_block = 0;
+                    *proving_block = None;
                 }
+
+                let next_block_number = next_block.block_number;
 
                 let msg = format!("❌ Proof generation failed for next block {}, error: {}", next_block_number, e);
                 error!("{}", msg);
@@ -97,13 +103,13 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
                 }
 
                 // Clean up input file if not needed
-                state.delete_input_file(next_block_number);
+                state.delete_input_file(&next_block.filename());
             }
         }
     } else {
         // Reset proving_block
         let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
-        *proving_block = 0;
+        *proving_block = None;
     }
 
     // Return if proof generation was not successful logging the error
@@ -116,7 +122,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
 
         let msg = format!(
             "❌ Failed proof for block {}, job: {}, error: {}-{}",
-            proved_block, payload.job_id, err_code, err_message
+            proved_block_number, payload.job_id, err_code, err_message
         );
         error!("{}", &msg);
 
@@ -138,12 +144,12 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
         Some(proof) => match get_proof_b64(proof) {
             Ok(b64) => b64,
             Err(e) => {
-                error!("❌ Failed to get compressed proof in base64 for block {}, error: {}", proved_block, e);
+                error!("❌ Failed to get compressed proof in base64 for block {}, error: {}", proved_block_number, e);
                 return;
             }
         },
         None => {
-            error!("❌ No proof data in payload fro block {}", proved_block);
+            error!("❌ No proof data in payload fro block {}", proved_block_number);
             return;
         }
     };
@@ -157,7 +163,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
         match client
             .proof_proved(
                 cluster_id,
-                proved_block,
+                proved_block_number,
                 proving_time_ms as u128,
                 proving_cycles,
                 &proof_base64,
@@ -169,13 +175,13 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
                 let submit_time = start.elapsed().as_millis() as f64;
                 info!(
                     "Reported proved state to EthProofs for block {}, request_time: {} ms",
-                    proved_block,
+                    proved_block_number,
                     submit_time
                 );
                 (true, submit_time)
             },
             Err(e) => {
-                error!("❌ Failed to submit proof to EthProofs for block {}, error: {}", proved_block, e);
+                error!("❌ Failed to submit proof to EthProofs for block {}, error: {}", proved_block_number, e);
                 (false, 0f64)
             }
         }
@@ -188,7 +194,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
         if let Some(db) = &state.db_block_proofs {
             let start = std::time::Instant::now();
             let block_proof = BlockProof {
-                block_number: proved_block,
+                block_number: proved_block_number,
                 zisk_version: "0.12.0".to_string(),
                 hardware: "128 vCPU, 512GB RAM, 1 RTX4090 GPU".to_string(),
                 proving_time: proving_time_ms as u32,
@@ -198,13 +204,13 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
             match db.enqueue(block_proof).await {
                 Ok(_) => info!(
                     "Proof inserted into DB for block {}, insert_time: {} ms",
-                    proved_block,
+                    proved_block_number,
                     start.elapsed().as_millis()
                 ),
-                Err(e) => error!("❌ Failed to insert proof into DB for block {}: {}", proved_block, e),
+                Err(e) => error!("❌ Failed to insert proof into DB for block {}: {}", proved_block_number, e),
             }
         } else {
-            warn!("DB handle not initialized, cannot insert proof for block {}", proved_block);
+            warn!("DB handle not initialized, cannot insert proof for block {}", proved_block_number);
         }
     }
 
@@ -212,7 +218,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
     if state.cliargs.telegram_enabled(TelegramEvent::BlockProved) {
         let msg = format!(
             "Proof generated for block {}, proving_time: {}s, cycles: {}",
-            proved_block,
+            proved_block_number,
             proving_time_ms / 1000,
             proving_cycles,
         );
@@ -225,7 +231,7 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
     // Update Prometheus metrics for proof generation if metrics enabled
     if state.cliargs.enable_metrics {
         let start = std::time::Instant::now();
-        let block_label = proved_block.to_string();
+        let block_label = proved_block_number.to_string();
         PROVING_TIME_GAUGE.with_label_values(&[&block_label]).set(proving_time_ms as i64);
         PROVING_CYCLES_GAUGE.with_label_values(&[&block_label]).set(proving_cycles as i64);
         prune_gauge_last_n(&PROVING_TIME_GAUGE, 300);
@@ -236,13 +242,13 @@ async fn process_webhook(proved_block: u64, payload: WebhookPayloadDto, state: A
         }
         debug!(
             "Updated metrics for block {}, update time: {} ms",
-            proved_block,
+            proved_block_number,
             start.elapsed().as_millis()
         );
     }
 
     // Delete input file if not needed
-    state.delete_input_file(proved_block);
+    state.delete_input_file(&proved_block_info.filename());
 }
 
 #[axum::debug_handler]
@@ -252,13 +258,13 @@ async fn webhook_handler(
     Json(payload): Json<WebhookPayloadDto>,
 ) -> impl IntoResponse {
     // Read and capture the current proving block in atomic scope
-    let proved_block: u64 = {
+    let proved_block = {
         let proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
-        *proving_block
+        proving_block.clone()
     };
 
     // Validate that the webhook corresponds to the current proving block
-    if proved_block == 0 {
+    if proved_block.is_none() {
         warn!("Received webhook for job {}, but no block is currently being proved. Ignoring...", payload.job_id);
         return (StatusCode::OK, "OK").into_response();
     }
@@ -274,7 +280,7 @@ async fn webhook_handler(
     }
 
     tokio::spawn(async move {
-        process_webhook(proved_block, payload, state.clone()).await;
+        process_webhook(proved_block.unwrap(), payload, state.clone()).await;
     });
 
     (StatusCode::OK, "OK").into_response()

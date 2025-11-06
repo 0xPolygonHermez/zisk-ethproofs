@@ -7,6 +7,8 @@ use anyhow::Context;
 use clap::Parser;
 use dotenv::dotenv;
 use log::warn;
+// serde derive imports no longer needed after moving protocol types
+use ethproofs_protocol::BlockInfo;
 use tonic::transport::Channel;
 
 use crate::{
@@ -22,11 +24,13 @@ pub const DEFAULT_COORDINATOR_URL: &str = "http://localhost:50051";
 pub const DEFAULT_WEBHOOK_PORT: u16 = 8051;
 pub const DEFAULT_METRICS_PORT: u16 = 8384;
 
+// Protocol types now imported from ethproofs-protocol crate
+
 #[derive(Clone)]
 pub struct AppState {
     pub cliargs: CliArgs,
-    pub proving_block: Arc<Mutex<u64>>,
-    pub next_proving_block: Arc<Mutex<u64>>,
+    pub proving_block: Arc<Mutex<Option<BlockInfo>>>,
+    pub next_proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub current_job_id: Arc<Mutex<String>>,
     pub ethproofs_client: Option<EthProofsApi>,
     pub ethproofs_cluster_id: Option<u32>,
@@ -84,8 +88,8 @@ impl AppState {
         let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
         let input_gen_server_url =
             env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
-        let proving_block = Arc::new(Mutex::new(0u64));
-        let next_proving_block = Arc::new(Mutex::new(0u64));
+        let proving_block = Arc::new(Mutex::new(None));
+        let next_proving_block = Arc::new(Mutex::new(None));
         let current_job_id = Arc::new(Mutex::new(String::new()));
         let webhook_port = env::var("WEBHOOK_PORT").unwrap_or(DEFAULT_WEBHOOK_PORT.to_string()).parse().unwrap_or(DEFAULT_WEBHOOK_PORT);
         let metrics_port = env::var("METRICS_PORT").unwrap_or(DEFAULT_METRICS_PORT.to_string()).parse().unwrap_or(DEFAULT_METRICS_PORT);
@@ -134,9 +138,9 @@ impl AppState {
         })
     }
 
-    pub fn delete_input_file(&self, block_number: u64) {
+    pub fn delete_input_file(&self, filename: &String) {
         if !self.cliargs.keep_input {
-            let input_file_path = format!("{}/{}.bin", &self.inputs_folder, block_number);
+            let input_file_path = format!("{}/{}", &self.inputs_folder, filename);
             if let Err(e) = std::fs::remove_file(&input_file_path) {
                 warn!("Failed to remove input file {}, error: {}", input_file_path, e);
             }

@@ -9,7 +9,7 @@ use ethers::providers::{Middleware, Provider, Ws};
 use futures_util::{SinkExt, StreamExt};
 use input::{GuestProgram, Network};
 use log::{error, info, warn};
-use serde::{Deserialize, Serialize};
+use ethproofs_protocol::{BlockCommand, BlockMessage, short_hash};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::broadcast::{self, Receiver, Sender},
@@ -29,27 +29,7 @@ pub struct InputGenServerArgs {
     pub guest: GuestProgram,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum BlockCommand {
-    Queued,
-    Input,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct BlockMessage {
-    command: BlockCommand,
-    block_number: u64,
-    timestamp: Option<String>,
-    block_hash: Option<String>,
-    tx_count: Option<usize>,
-    mgas: Option<u64>,
-}
-
-// Returns the first 5 lowercase hex characters (without 0x) of the given hash-like value
-fn short_hash (hash: &String) -> String {
-    hash.chars().take(6).collect()
-}
+// BlockCommand, BlockMessage and short_hash now provided by ethproofs-protocol crate
 
 /// Generate the guest input file for the given block number and return the time taken in milliseconds
 pub async fn generate_input_file(
@@ -154,14 +134,7 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
 
         if let Err(e) = async {
             // Send queued message as JSON
-            let queued_message = BlockMessage {
-                command: BlockCommand::Queued,
-                block_number,
-                timestamp: None,
-                block_hash: None,
-                tx_count: None,
-                mgas: None,
-            };
+            let queued_message = BlockMessage::new_queued(block_number);
             let queued_message_json = serde_json::to_string(&queued_message).unwrap();
             if tx.send(queued_message_json).is_err() {
                 info!(
@@ -184,14 +157,13 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
             let input_file_time =
                 generate_input_file(guest.clone(), block_number, hash, inputs_folder.clone()).await?;
 
-            let input_message = BlockMessage {
-                command: BlockCommand::Input,
+            let input_message = BlockMessage::new_input(
                 block_number,
-                timestamp: Some(block.timestamp.as_u64().to_string()),
-                block_hash: Some(block_hash),
-                tx_count: Some(block.transactions.len()),
-                mgas: Some(block.gas_used.as_u64() / 1_000_000),
-            };
+                block.timestamp.as_u64().to_string(),
+                block_hash,
+                block.transactions.len(),
+                block.gas_used.as_u64() / 1_000_000,
+            );
             let input_message_json = serde_json::to_string(&input_message).unwrap();
 
             total_input_time += input_file_time;
@@ -263,7 +235,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
         match parsed {
             Ok(msg) => match msg.command {
                 BlockCommand::Queued => {
-                    info!("Sending block {} queued (binary)", msg.block_number);
+                    info!("Sending block {} queued", msg.info.block_number);
                     let command_bytes = command.as_bytes();
                     let mut payload = Vec::with_capacity(command_bytes.len() + 1);
                     payload.extend_from_slice(command_bytes);
@@ -274,9 +246,9 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                     }
                 }
                 BlockCommand::Input => {
-                    let block_hash = short_hash(&msg.block_hash.unwrap());
-                    let file = format!("{}-{}.bin", msg.block_number, block_hash);
-                    info!("Sending input for block {}, file: {}", msg.block_number,file);
+                    let block_hash = msg.info.short_hash();
+                    let file = format!("{}-{}.bin", msg.info.block_number, block_hash);
+                    info!("Sending input for block {}, file: {}", msg.info.block_number,file);
                     let start_send = Instant::now();
                     let filepath = PathBuf::from(&inputs_folder).join(&file);
                     match fs::read(&filepath) {
@@ -294,8 +266,8 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                                 "Input file sent to client: {}, time: {} ms, txs: {:?}, mgas: {:?}",
                                 file,
                                 start_send.elapsed().as_millis(),
-                                msg.tx_count,
-                                msg.mgas
+                                msg.info.tx_count,
+                                msg.info.mgas
                             );
                         }
                         Err(e) => {

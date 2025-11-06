@@ -5,8 +5,11 @@ use zisk_distributed_grpc_api::{
 };
 
 use crate::state::AppState;
+use ethproofs_protocol::BlockInfo;
 
-pub async fn generate_proof(block_number: u64, state: AppState) -> Result<String> {
+pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<String> {
+    let block_number = block_info.block_number;
+
     info!("🔄 Generating proof for block {}", block_number);
 
     // Get input file name

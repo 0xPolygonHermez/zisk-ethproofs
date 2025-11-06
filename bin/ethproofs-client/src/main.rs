@@ -13,7 +13,6 @@ use tokio::task;
 use tokio::time::{self, Duration, Instant};
 use tokio_tungstenite::connect_async_with_config;
 use tokio_tungstenite::tungstenite::Message;
-use serde::{Deserialize, Serialize};
 use serde_json;
 
 mod api;
@@ -32,34 +31,12 @@ use webhook::start_webhook_server;
 use crate::cliargs::TelegramEvent;
 use crate::metrics::{BLOCK_TIMESTAMP_GAUGE, RECEIVED_TIME_GAUGE, prune_gauge_last_n};
 use crate::state::{AppState, LOG_FOLDER, OUTPUT_FOLDER};
+use ethproofs_protocol::{BlockCommand, BlockInfo, BlockMessage};
 use crate::telegram::{AlertType, send_telegram_alert};
 
 // Constants
 const PING_INTERVAL: Duration = Duration::from_secs(15);
 const IDLE_TIMEOUT: Duration = Duration::from_secs(30 * 60); // 30 min
-
-// New protocol structures mirroring input-gen-server
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase")]
-enum BlockCommand {
-    Queued,
-    Input,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-struct BlockMessage {
-    command: BlockCommand,
-    block_number: u64,
-    timestamp: Option<String>,
-    block_hash: Option<String>,
-    tx_count: Option<usize>,
-    mgas: Option<u64>,
-}
-
-// Returns the first 5 lowercase hex characters (without 0x) of the given hash-like value
-fn short_hash (hash: &String) -> String {
-    hash.chars().take(6).collect()
-}
 
 /// Parses a binary WebSocket message into (BlockMessage, file_content)
 fn parse_binary_input(data: &[u8]) -> Option<(BlockMessage, &[u8])> {
@@ -105,14 +82,14 @@ fn process_queued(block_number: u64, app_state: &AppState, queued_start: &mut st
 }
 
 async fn process_input(
-    msg: &BlockMessage,
+    block_info: BlockInfo,
     content: &[u8],
     app_state: &AppState,
     queued_start: &std::time::Instant,
     fired_skipped_alert: &mut bool,
 ) {
-    let block_number = msg.block_number;
-    let filename = format!("{}-{}.bin", block_number, short_hash(&msg.block_hash.clone().unwrap()));
+    let filename = block_info.filename();
+    let block_number = block_info.block_number;
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
 
     let elapsed = queued_start.elapsed().as_millis();
@@ -134,25 +111,26 @@ async fn process_input(
 
     if app_state.cliargs.skip_proving {
         info!("Skipping proving for block {} as per configuration", block_number);
-        app_state.delete_input_file(block_number);
+        app_state.delete_input_file(&filename);
         return;
     }
 
     // Check if already proving a block
     let proving_block_shared_clone = Arc::clone(&app_state.proving_block);
     let mut proving_block = proving_block_shared_clone.lock().unwrap();
-    if *proving_block != 0 {
+    if proving_block.is_some() {
         warn!("⚠️ Already proving block, saving next block {}", block_number);
         let next_proving_block_shared_clone = Arc::clone(&app_state.next_proving_block);
         let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
-        *next_proving_block = block_number;
+        *next_proving_block = Some(block_info);
 
+        let proving_block_number = proving_block.clone().unwrap().clone().block_number;
         // Check for skipped blocks threshold
-        if block_number - *proving_block > app_state.cliargs.skipped_threshold as u64 {
+        if block_number - proving_block_number > app_state.cliargs.skipped_threshold as u64 {
             let msg_alert = format!(
                 "Skipped {} consecutive blocks. Currently proving block {}, next queued block is {}.",
-                block_number - *proving_block - 1,
-                *proving_block,
+                block_number - proving_block_number - 1,
+                proving_block_number,
                 block_number
             );
             warn!("{}", msg_alert);
@@ -169,7 +147,7 @@ async fn process_input(
             if app_state.cliargs.panic_on_skipped { panic!("Skipped blocks exceeded threshold, panicking as per configuration"); }
             *fired_skipped_alert = true;
         } else if *fired_skipped_alert {
-            let msg_alert = format!("Resumed proving. Now proving block {}.", proving_block);
+            let msg_alert = format!("Resumed proving. Now proving block {}.", proving_block_number);
             info!("{}", msg_alert);
             if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
                 tokio::spawn(async move {
@@ -184,10 +162,10 @@ async fn process_input(
     }
 
     // Start proof generation
-    let result = generate_proof(block_number, app_state.clone()).await;
+    let result = generate_proof(block_info.clone(), app_state.clone()).await;
     match result {
         Ok(job_id) => {
-            *proving_block = block_number;
+            *proving_block = Some(block_info.clone());
             let current_job_id_shared_clone = Arc::clone(&app_state.current_job_id);
             let mut current_job_id = current_job_id_shared_clone.lock().unwrap();
             *current_job_id = job_id;
@@ -202,7 +180,7 @@ async fn process_input(
                     }
                 });
             }
-            app_state.delete_input_file(block_number);
+            app_state.delete_input_file(&filename);
         }
     }
 }
@@ -300,13 +278,13 @@ async fn main() -> Result<()> {
                     match next {
                         Some(Ok(Message::Binary(payload))) => {
                             last_activity = Instant::now();
-                            if let Some((msg, content)) = parse_binary_input(&payload) {
-                                match msg.command {
+                            if let Some((block_msg, content)) = parse_binary_input(&payload) {
+                                match block_msg.command {
                                     BlockCommand::Queued => {
-                                        process_queued(msg.block_number, &app_state, &mut queued_start);
+                                        process_queued(block_msg.info.block_number, &app_state, &mut queued_start);
                                     }
                                     BlockCommand::Input => {
-                                        process_input(&msg, content, &app_state, &queued_start, &mut fired_skipped_alert).await;
+                                        process_input(block_msg.info, content, &app_state, &queued_start, &mut fired_skipped_alert).await;
                                     }
                                 }
                             } else {

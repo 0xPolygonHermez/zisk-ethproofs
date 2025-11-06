@@ -3681,6 +3681,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "ethers",
+ "ethproofs-protocol",
  "flate2",
  "futures-util",
  "influxdb",
@@ -3701,6 +3702,14 @@ dependencies = [
  "zisk-distributed-common",
  "zisk-distributed-grpc-api",
  "zstd 0.13.3",
+]
+
+[[package]]
+name = "ethproofs-protocol"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -4869,6 +4878,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "ethers",
+ "ethproofs-protocol",
  "futures-util",
  "input",
  "log",

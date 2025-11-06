@@ -38,3 +38,5 @@ zstd = "0.13.3"
 zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.13.0" }
 zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.13.0" }
 zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.13.0" }
+
+ethproofs-protocol = { path = "../../ethproofs-protocol" }
