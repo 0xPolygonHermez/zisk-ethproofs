@@ -19,7 +19,7 @@ pub struct BlockInfo {
 
 impl BlockInfo {
     pub fn short_hash(&self) -> String { short_hash(&self.block_hash) }
-    pub fn filename(&self) -> String { format!("{}-{}.bin", self.block_number, self.short_hash()) }
+    pub fn filename(&self) -> String { format!("{}_{}.bin", self.block_number, self.short_hash()) }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
