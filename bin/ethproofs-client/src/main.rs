@@ -75,7 +75,7 @@ fn process_queued(block_number: u64, app_state: &AppState, queued_start: &mut st
                     );
                 }
                 Err(e) => {
-                    error!("Failed to report queued state to EthProofs for block {}: {}", block_number, e);
+                    error!("Failed to report queued state to EthProofs for block {}, error: {}", block_number, e);
                 }
             }
         });
@@ -234,7 +234,7 @@ async fn main() -> Result<()> {
     let state_clone = app_state.clone();
     task::spawn(async move {
         if let Err(e) = start_webhook_server(state_clone).await {
-            panic!("Webhook server exited with error: {}", e);
+            panic!("Webhook server exited, error: {}", e);
         }
     });
 
@@ -243,7 +243,7 @@ async fn main() -> Result<()> {
         let state_clone = app_state.clone();
         task::spawn(async move {
             if let Err(e) = metrics::start_metrics_server(state_clone).await {
-                panic!("Metrics server exited with error: {}", e);
+                panic!("Metrics server exited, error: {}", e);
             }
         });
     }
@@ -337,7 +337,7 @@ async fn main() -> Result<()> {
                     tokio::spawn(async move {
                         let mut w = writer_clone.lock().await;
                         if let Err(e) = w.send(Message::Ping(Vec::new())).await {
-                            warn!("Failed to send Ping: {e}");
+                            warn!("Failed to send Ping, error: {}", e);
                             true
                         } else {
                             false

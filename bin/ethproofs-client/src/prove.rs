@@ -61,7 +61,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     );
                 }
                 Err(e) => {
-                    error!("Failed to report proving state to EthProofs for block {}: {}", block_number, e);
+                    error!("Failed to report proving state to EthProofs for block {}, error: {}", block_number, e);
                 }
             }
         });

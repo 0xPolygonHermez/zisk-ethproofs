@@ -91,7 +91,7 @@ async fn db_block_proofs_worker(
                     Some(block_proof) => {
                         debug!("Inserting DB block proof, block_number: {}", block_proof.block_number);
                         if let Err(e) = insert_with_retries(&pool, insert_sql, &block_proof, cfg.max_retries, cfg.base_backoff).await {
-                            error!("Failed to insert DB block proof, error: {}, block_number: {}", e, block_proof.block_number);
+                            error!("Failed to insert DB proof for block, error: {}, block_number: {}", block_proof.block_number, e);
                         }
                     }
                     None => {

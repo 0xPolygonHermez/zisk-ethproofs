@@ -207,7 +207,7 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
                     proved_block_number,
                     start.elapsed().as_millis()
                 ),
-                Err(e) => error!("❌ Failed to insert proof into DB for block {}: {}", proved_block_number, e),
+                Err(e) => error!("❌ Failed to insert proof into DB for block {}, error: {}", proved_block_number, e),
             }
         } else {
             warn!("DB handle not initialized, cannot insert proof for block {}", proved_block_number);

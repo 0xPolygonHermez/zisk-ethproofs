@@ -200,7 +200,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
     match stream.set_nodelay(true) {
         Ok(_) => (),
         Err(e) => {
-            error!("Failed to set TCP_NODELAY: {}", e);
+            error!("Failed to set TCP_NODELAY, error: {}", e);
             return;
         }
     }
@@ -216,7 +216,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
     let ws_stream = match accept_async_with_config(stream, Some(ws_cfg)).await {
         Ok(ws) => ws,
         Err(e) => {
-            error!("WebSocket handshake failed: {}", e);
+            error!("WebSocket handshake failed, error: {}", e);
             return;
         }
     };
@@ -275,7 +275,7 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                             );
                         }
                         Err(e) => {
-                            error!("Error reading input file {}: {}", file, e);
+                            error!("Error reading input file {}, error: {}", file, e);
                         }
                     }
                 }
