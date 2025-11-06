@@ -5,11 +5,12 @@ use std::{fs, path::PathBuf};
 use anyhow::{Context, Result};
 use clap::Parser;
 use dotenv::dotenv;
+use ethers::core::k256::elliptic_curve::rand_core::block;
 use ethers::providers::{Middleware, Provider, Ws};
 use futures_util::{SinkExt, StreamExt};
 use input::{GuestProgram, Network};
 use log::{error, info, warn};
-use ethproofs_protocol::{BlockCommand, BlockMessage, short_hash};
+use ethproofs_protocol::{BlockCommand, BlockInfo, BlockMessage, short_hash};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::broadcast::{self, Receiver, Sender},
@@ -34,11 +35,11 @@ pub struct InputGenServerArgs {
 /// Generate the guest input file for the given block number and return the time taken in milliseconds
 pub async fn generate_input_file(
     guest: GuestProgram,
-    block_number: u64,
-    hash: String,
+    block_info: BlockInfo,
     inputs_folder: String,
 ) -> Result<u128> {
     let start = Instant::now();
+    let block_number = block_info.block_number;
 
     // Load RPC URL from environment variable
     let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
@@ -47,7 +48,7 @@ pub async fn generate_input_file(
     let input_folder = Path::new(&inputs_folder);
     std::fs::create_dir_all(input_folder)?;
 
-    let input_path = input_folder.join(format!("{}-{}.bin", block_number, hash));
+    let input_path = input_folder.join(block_info.filename());
 
     let start_input_gen = Instant::now();
     // Use spawn_blocking to handle the non-Send future
@@ -152,11 +153,6 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
                 String::from("nohash")
             };
 
-            let hash = short_hash(&block_hash);
-
-            let input_file_time =
-                generate_input_file(guest.clone(), block_number, hash, inputs_folder.clone()).await?;
-
             let input_message = BlockMessage::new_input(
                 block_number,
                 block.timestamp,
@@ -164,6 +160,10 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
                 block.transactions.len(),
                 block.gas_used.as_u64() / 1_000_000,
             );
+
+            let input_file_time =
+                generate_input_file(guest.clone(), input_message.clone().info, inputs_folder.clone()).await?;
+
             let input_message_json = serde_json::to_string(&input_message).unwrap();
 
             total_input_time += input_file_time;
@@ -233,13 +233,13 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
     while let Ok(command) = rx.recv().await {
         let parsed: serde_json::Result<BlockMessage> = serde_json::from_str(&command);
         match parsed {
-            Ok(msg) => match msg.command {
+            Ok(block_message) => match block_message.command {
                 BlockCommand::Queued => {
-                    info!("Sending block {} queued", msg.info.block_number);
+                    info!("Sending block {} queued", block_message.info.block_number);
                     let command_bytes = command.as_bytes();
                     let mut payload = Vec::with_capacity(command_bytes.len() + 1);
                     payload.extend_from_slice(command_bytes);
-                    payload.push(b'\n'); // no file content for queued
+                    payload.push(b'\n');
                     match ws_sender.send(Message::Binary(payload)).await {
                         Ok(_) => {}
                         Err(e) => {
@@ -249,9 +249,8 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                     }
                 }
                 BlockCommand::Input => {
-                    let block_hash = msg.info.short_hash();
-                    let file = format!("{}-{}.bin", msg.info.block_number, block_hash);
-                    info!("Sending input for block {}, file: {}", msg.info.block_number,file);
+                    let file = block_message.info.filename();
+                    info!("Sending input for block {}, file: {}", block_message.info.block_number,file);
                     let start_send = Instant::now();
                     let filepath = PathBuf::from(&inputs_folder).join(&file);
                     match fs::read(&filepath) {
@@ -261,16 +260,19 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                             payload.extend_from_slice(command_bytes);
                             payload.push(b'\n');
                             payload.extend_from_slice(&content);
-                            if ws_sender.send(Message::Binary(payload)).await.is_err() {
-                                error!("Client disconnected");
-                                break;
+                            match ws_sender.send(Message::Binary(payload)).await {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    error!("Client disconnected, error: {}", e);
+                                    break;
+                                }
                             }
                             info!(
                                 "Input file sent to client: {}, time: {} ms, txs: {:?}, mgas: {:?}",
                                 file,
                                 start_send.elapsed().as_millis(),
-                                msg.info.tx_count,
-                                msg.info.mgas
+                                block_message.info.tx_count,
+                                block_message.info.mgas
                             );
                         }
                         Err(e) => {
