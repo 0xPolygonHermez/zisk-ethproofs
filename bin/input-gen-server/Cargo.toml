@@ -23,6 +23,6 @@ tokio-native-tls = "0.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-ethproofs-protocol = { path = "../../ethproofs-protocol" }
+ethproofs-common = { path = "../../ethproofs-common" }
 
 input.workspace = true

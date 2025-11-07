@@ -12,7 +12,7 @@ use zisk_distributed_common::WebhookPayloadDto;
 
 use crate::cliargs::TelegramEvent;
 use crate::metrics::{PROVING_CYCLES_GAUGE, PROVING_TIME_GAUGE, SUBMIT_TIME_GAUGE, prune_gauge_last_n};
-use ethproofs_protocol::BlockInfo;
+use ethproofs_common::protocol::BlockInfo;
 use crate::{db::BlockProof, prove::generate_proof};
 use crate::{
     state::AppState,

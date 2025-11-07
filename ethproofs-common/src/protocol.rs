@@ -3,10 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum BlockCommand {
-    Queued,
-    Input,
-}
+pub enum BlockCommand { Queued, Input }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BlockInfo {
@@ -23,10 +20,7 @@ impl BlockInfo {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct BlockMessage {
-    pub command: BlockCommand,
-    pub info: BlockInfo,
-}
+pub struct BlockMessage { pub command: BlockCommand, pub info: BlockInfo }
 
 impl BlockMessage {
     pub fn new_queued(block_number: u64) -> Self {

@@ -32,7 +32,7 @@ use webhook::start_webhook_server;
 use crate::cliargs::TelegramEvent;
 use crate::metrics::{BLOCK_TIMESTAMP_GAUGE, RECEIVED_TIME_GAUGE, TIME_TO_INPUT_GAUGE, prune_gauge_last_n};
 use crate::state::{AppState, LOG_FOLDER, OUTPUT_FOLDER};
-use ethproofs_protocol::{BlockCommand, BlockInfo, BlockMessage};
+use ethproofs_common::protocol::{BlockCommand, BlockInfo, BlockMessage};
 use crate::telegram::{AlertType, send_telegram_alert};
 
 // Constants

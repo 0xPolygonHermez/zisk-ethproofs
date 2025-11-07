@@ -1,5 +1,5 @@
 [workspace]
-members = ["bin/ethproofs-client", "bin/input-gen-server", "ethproofs-protocol"]
+members = ["bin/ethproofs-client", "bin/input-gen-server", "ethproofs-common"]
 exclude = []
 resolver = "2"
 

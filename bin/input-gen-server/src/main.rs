@@ -1,5 +1,5 @@
-use std::io::Write;
-use std::{env, path::Path, time::Instant};
+use std::time::Instant;
+use std::{env};
 use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result};
@@ -7,9 +7,10 @@ use clap::Parser;
 use dotenv::dotenv;
 use ethers::providers::{Middleware, Provider, Ws};
 use futures_util::{SinkExt, StreamExt};
-use input::{GuestProgram, Network};
+use input::{GuestProgram};
 use log::{error, info, warn};
-use ethproofs_protocol::{BlockCommand, BlockInfo, BlockMessage};
+use ethproofs_common::protocol::{BlockCommand, BlockMessage};
+use ethproofs_common::inputgen::generate_input_file;
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::broadcast::{self, Receiver, Sender},
@@ -27,57 +28,6 @@ pub struct InputGenServerArgs {
     /// Guest program for which to generate inputs
     #[clap(long, short, value_enum, default_value_t = GuestProgram::Rsp)]
     pub guest: GuestProgram,
-}
-
-// BlockCommand, BlockMessage and short_hash now provided by ethproofs-protocol crate
-
-/// Generate the guest input file for the given block number and return the time taken in milliseconds
-pub async fn generate_input_file(
-    guest: GuestProgram,
-    block_info: BlockInfo,
-    inputs_folder: String,
-) -> Result<u128> {
-    let start = Instant::now();
-    let block_number = block_info.block_number;
-
-    // Load RPC URL from environment variable
-    let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
-
-    // Create the inputs folder if it doesn't exist
-    let input_folder = Path::new(&inputs_folder);
-    std::fs::create_dir_all(input_folder)?;
-
-    let input_path = input_folder.join(block_info.filename());
-
-    let start_input_gen = Instant::now();
-    // Use spawn_blocking to handle the non-Send future
-    let result = tokio::task::spawn_blocking(move || {
-        let rt = tokio::runtime::Handle::current();
-        rt.block_on(async move {
-            let input_builder =
-                input::build_input_generator(guest, &rpc_url, Network::Mainnet);
-            input_builder.generate(block_number).await
-        })
-    })
-    .await??;
-    info!(
-        "Input generation for block {} took {} ms",
-        block_number,
-        start_input_gen.elapsed().as_millis()
-    );
-
-    let save_file_start = Instant::now();
-    let mut input_file = std::fs::File::create(&input_path)?;
-    input_file.write_all(&result.input)?;
-    info!(
-        "Saving input file for block {} took {} ms",
-        block_number,
-        save_file_start.elapsed().as_millis()
-    );
-
-    let input_file_time = start.elapsed().as_millis();
-
-    Ok(input_file_time)
 }
 
 /// Listens for new blocks on the Ethereum network and generates input files for them

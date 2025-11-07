@@ -8,7 +8,7 @@ use clap::Parser;
 use dotenv::dotenv;
 use log::warn;
 // serde derive imports no longer needed after moving protocol types
-use ethproofs_protocol::BlockInfo;
+use ethproofs_common::protocol::BlockInfo;
 use tonic::transport::Channel;
 
 use crate::{

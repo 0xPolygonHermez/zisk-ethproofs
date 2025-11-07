@@ -5,7 +5,7 @@ use zisk_distributed_grpc_api::{
 };
 
 use crate::state::AppState;
-use ethproofs_protocol::BlockInfo;
+use ethproofs_common::protocol::BlockInfo;
 
 pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<String> {
     let block_number = block_info.block_number;

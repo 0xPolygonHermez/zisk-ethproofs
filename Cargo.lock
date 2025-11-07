@@ -3681,7 +3681,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "ethers",
- "ethproofs-protocol",
+ "ethproofs-common",
  "flate2",
  "futures-util",
  "influxdb",
@@ -3705,12 +3705,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "ethproofs-protocol"
+name = "ethproofs-common"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "ethers",
+ "input",
+ "log",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -4879,7 +4883,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "ethers",
- "ethproofs-protocol",
+ "ethproofs-common",
  "futures-util",
  "input",
  "log",
