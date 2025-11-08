@@ -23,11 +23,11 @@ tar.workspace = true
 tokio.workspace = true
 tokio-tungstenite.workspace = true
 url.workspace = true
+input.workspace = true
 
 lazy_static = "1.4"
 axum = { version = "0.7", features = ["macros", "json"] }
 bytemuck = "1.24.0"
-influxdb = { version = "0.7", features = ["derive", "reqwest-client"] }
 prometheus = "0.14"
 serde = "1.0.219"
 serde_json = "1.0.143"

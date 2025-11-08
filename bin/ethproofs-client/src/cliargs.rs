@@ -1,4 +1,5 @@
 use clap::{Parser, ValueEnum};
+use input::GuestProgram;
 
 #[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
 pub enum TelegramEvent {
@@ -7,9 +8,23 @@ pub enum TelegramEvent {
     ProofFailed,
 }
 
+#[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
+pub enum InputGen {
+    Server,
+    Local,
+}
+
 // Command line arguments
 #[derive(Clone, Parser)]
 pub struct CliArgs {
+    /// Input generation method: 'server' or 'local'
+    #[arg(short = 'n', long, value_enum, default_value_t = InputGen::Server)]
+    pub input_gen: InputGen,
+
+    /// Guest program for which to generate inputs
+    #[clap(short = 'g', long, value_enum, default_value_t = GuestProgram::Rsp)]
+    pub guest: GuestProgram,
+
     /// Enable proof submission to Ethproofs
     #[arg(short = 's', long)]
     pub submit_ethproofs: bool,

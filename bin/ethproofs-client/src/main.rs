@@ -33,6 +33,7 @@ use crate::cliargs::TelegramEvent;
 use crate::metrics::{BLOCK_TIMESTAMP_GAUGE, RECEIVED_TIME_GAUGE, TIME_TO_INPUT_GAUGE, prune_gauge_last_n};
 use crate::state::{AppState, LOG_FOLDER, OUTPUT_FOLDER};
 use ethproofs_common::protocol::{BlockCommand, BlockInfo, BlockMessage};
+use ethproofs_common::inputgen::generate_input_file;
 use crate::telegram::{AlertType, send_telegram_alert};
 
 // Constants
@@ -201,6 +202,186 @@ async fn process_input(
     }
 }
 
+/// Connect (and reconnect) loop to the input generation server, handling queued/input messages.
+async fn connect_to_input_gen_server(app_state: AppState) {
+    let ws_cfg = WebSocketConfig {
+        max_frame_size:   Some(32 << 20),   // 32 MiB per frame
+        max_message_size: Some(128 << 20),  // 128 MiB per message
+        max_write_buffer_size: 32 << 20,    // 32 MiB write buffer
+        ..Default::default()
+    };
+
+    let mut attempt: u32 = 0;
+    let mut fired_skipped_alert = false;
+    loop {
+        info!("Connecting to input-gen-server at {}", app_state.input_gen_server_url);
+        let (ws_stream, _) = match connect_async_with_config(&app_state.input_gen_server_url, Some(ws_cfg), false).await {
+            Ok(s) => {
+                info!("Connected to input-gen-server");
+                attempt = 0; // reset backoff
+                s
+            }
+            Err(e) => {
+                let backoff_ms = 1_000u64.saturating_mul(2u64.saturating_pow(attempt.min(6)));
+                warn!("Connect failed: {e}. Retrying in {} ms", backoff_ms);
+                time::sleep(Duration::from_millis(backoff_ms)).await;
+                attempt = attempt.saturating_add(1);
+                continue;
+            }
+        };
+
+        let (writer, mut reader) = ws_stream.split();
+        let writer = Arc::new(Mutex::new(writer));
+        let mut ping_ticker = time::interval(PING_INTERVAL);
+        let mut last_activity = Instant::now();
+        let mut queued_start = std::time::Instant::now();
+
+        loop {
+            tokio::select! {
+                next = reader.next() => {
+                    match next {
+                        Some(Ok(Message::Binary(payload))) => {
+                            last_activity = Instant::now();
+                            if let Some((block_msg, content)) = parse_binary_input(&payload) {
+                                match block_msg.command {
+                                    BlockCommand::Queued => process_queued(block_msg.info.block_number, &app_state, &mut queued_start),
+                                    BlockCommand::Input => process_input(block_msg.info, content, &app_state, &queued_start, &mut fired_skipped_alert).await,
+                                }
+                            } else {
+                                error!("Malformed binary message received (cannot parse header JSON)");
+                            }
+                        }
+                        Some(Ok(Message::Close(frame))) => { warn!("Server closed connection: {:?}", frame); break; }
+                        Some(Ok(other)) => { last_activity = Instant::now(); debug!("Ignoring unhandled WS message: {:?}", other); }
+                        Some(Err(e)) => { warn!("WebSocket error: {e}"); break; }
+                        None => { warn!("WebSocket stream ended"); break; }
+                    }
+                }
+                _ = ping_ticker.tick() => {
+                    let writer_clone = Arc::clone(&writer);
+                    tokio::spawn(async move {
+                        let mut w = writer_clone.lock().await;
+                        if let Err(e) = w.send(Message::Ping(Vec::new())).await { warn!("Failed to send Ping, error: {}", e); }
+                    });
+                }
+                _ = time::sleep_until(last_activity + IDLE_TIMEOUT) => { warn!("Idle timeout: no input file received in {:?}", IDLE_TIMEOUT); break; }
+            }
+        }
+
+        let backoff_ms = 1_000u64.saturating_mul(2u64.saturating_pow(attempt.min(6)));
+        warn!("Reconnecting in {} ms...", backoff_ms);
+        time::sleep(Duration::from_millis(backoff_ms)).await;
+        attempt = attempt.saturating_add(1);
+    }
+}
+
+/// Local block listener: subscribes directly to Ethereum WS provider and generates inputs locally
+async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
+    use ethers::providers::{Provider, Ws, Middleware};
+
+    let rpc_ws_url = std::env::var("RPC_WS_URL").expect("RPC_WS_URL must be set");
+    let block_modulus: u64 = std::env::var("BLOCK_MODULUS")
+        .unwrap_or("100".to_string())
+        .parse()
+        .expect("BLOCK_MODULUS must be a valid integer");
+
+    let inputs_folder = app_state.inputs_folder.clone();
+
+    let mut max_input_time: u128 = 0;
+    let mut min_input_time: u128 = u128::MAX;
+    let mut total_input_time: u128 = 0;
+    let mut input_count: u64 = 0;
+
+    let mut fired_skipped_alert = false;
+    let mut queued_start = std::time::Instant::now();
+
+    loop {
+        let provider = match Provider::<Ws>::connect(rpc_ws_url.clone()).await {
+            Ok(p) => {
+                p
+            }
+            Err(e) => {
+                warn!("Failed to connect to WS RPC provider, error: {}", e);
+                info!("Retrying in 1 seconds...");
+                time::sleep(Duration::from_secs(1)).await;
+                continue;
+            }
+        };
+        let mut stream = match provider.subscribe_blocks().await {
+            Ok(s) => s,
+            Err(e) => {
+                warn!("Subscription failed, error: {}", e);
+                info!("Retrying in 1 seconds...");
+                time::sleep(Duration::from_secs(1)).await;
+                continue;
+            }
+        };
+
+        info!("Listening for new blocks on Ethereum Mainnet...");
+
+        // Read blocks until stream ends or error triggers reconnect
+        while let Some(block) = stream.next().await {
+            let block_number = match block.number {
+                Some(n) => n.as_u64(),
+                None => {
+                    warn!("Block without number, skipping...");
+                    continue;
+                }
+            };
+
+            if block_number % block_modulus != 0 {
+                info!("Received block {}, skipping...", block_number);
+                continue;
+            }
+
+            info!("Received block {}, processing...", block_number);
+
+            process_queued(block_number, &app_state, &mut queued_start);
+
+            let block_info = BlockInfo {
+                block_number,
+                timestamp: block.timestamp,
+                block_hash: block.hash.map(|h| format!("{:x}", h)).unwrap_or_else(|| "nohash".into()),
+                tx_count: block.transactions.len(),
+                mgas: block.gas_used.as_u64() / 1_000_000,
+            };
+
+            info!("Generating input file for block {}", block_number);
+            match generate_input_file(app_state.cliargs.guest.clone(), block_info.clone(), inputs_folder.clone()).await {
+                Ok(input_file_time) => {
+                    total_input_time += input_file_time;
+                    input_count += 1;
+                    max_input_time = max_input_time.max(input_file_time);
+                    min_input_time = min_input_time.min(input_file_time);
+
+                    info!(
+                        "Input file generated for block {}, time: {} ms, avg: {} ms, max: {} ms, min: {} ms",
+                        block_number,
+                        input_file_time,
+                        total_input_time / input_count as u128,
+                        max_input_time,
+                        min_input_time
+                    );
+
+                    let path = PathBuf::from(&inputs_folder).join(block_info.filename());
+                    match fs::read(&path) {
+                        Ok(content) => {
+                            process_input(block_info, &content, &app_state, &queued_start, &mut fired_skipped_alert).await;
+                        }
+                        Err(e) => {
+                            error!("Error reading input file {}: {}", path.display(), e);
+                        }
+                    }
+                }
+                Err(e) => error!("Input file generation failed for block  {}, error: {}", block_number, e),
+            }
+        }
+
+        // Stream ended, reconnect (next loop iteration will handle reconnect)
+        warn!("Block subscription ended, reconnecting...");
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // Check if LOG_RUST is set; if not, set it to "info"
@@ -248,115 +429,10 @@ async fn main() -> Result<()> {
         });
     }
 
-    // Configure WebSocket connection
-    let ws_cfg = WebSocketConfig {
-        max_frame_size:   Some(32 << 20),   // 32 MiB per frame
-        max_message_size: Some(128 << 20),  // 128 MiB per message
-        max_write_buffer_size: 32 << 20,    // 32 MiB write buffer
-        ..Default::default()
-    };
-
-    // Loop to connect (re-connect) to the input generator server
-    let mut attempt: u32 = 0;
-    let mut fired_skipped_alert = false;
-    loop {
-        info!("Connecting to input-gen-server at {}", app_state.input_gen_server_url);
-
-        let (ws_stream, _) = match connect_async_with_config(&app_state.input_gen_server_url, Some(ws_cfg), false).await {
-            Ok(s) => {
-                info!("Connected to input-gen-server");
-                attempt = 0; // reset backoff on successful connection
-                s
-            }
-            Err(e) => {
-                let backoff_ms = 1_000u64.saturating_mul(2u64.saturating_pow(attempt.min(6))); // 1s,2s,4s,...,64s
-                warn!("Connect failed: {e}. Retrying in {} ms", backoff_ms);
-                time::sleep(Duration::from_millis(backoff_ms)).await;
-                attempt = attempt.saturating_add(1);
-                continue;
-            }
-        };
-
-        let (writer, mut reader) = ws_stream.split();
-        let writer = Arc::new(Mutex::new(writer));
-
-        // Heartbeat and idle tracking
-        let mut ping_ticker = time::interval(PING_INTERVAL);
-        let mut last_activity = Instant::now();
-
-        let mut queued_start = std::time::Instant::now();
-
-        loop {
-            tokio::select! {
-                // 1) Reading messages from server
-                next = reader.next() => {
-                    #[allow(unreachable_patterns)]
-                    match next {
-                        Some(Ok(Message::Binary(payload))) => {
-                            last_activity = Instant::now();
-                            if let Some((block_msg, content)) = parse_binary_input(&payload) {
-                                match block_msg.command {
-                                    BlockCommand::Queued => {
-                                        process_queued(block_msg.info.block_number, &app_state, &mut queued_start);
-                                    }
-                                    BlockCommand::Input => {
-                                        process_input(block_msg.info, content, &app_state, &queued_start, &mut fired_skipped_alert).await;
-                                    }
-                                }
-                            } else {
-                                error!("Malformed binary message received (cannot parse header JSON)");
-                            }
-                        }
-
-                        Some(Ok(Message::Close(frame))) => {
-                            warn!("Server closed connection: {:?}", frame);
-                            break;
-                        }
-
-                        // Ignore other message types
-                        Some(Ok(other)) => {
-                            last_activity = Instant::now();
-                            debug!("Ignoring unhandled WS message: {:?}", other);
-                        }
-
-                        Some(Err(e)) => {
-                            warn!("WebSocket error: {e}");
-                            break;
-                        }
-
-                        None => {
-                            warn!("WebSocket stream ended");
-                            break;
-                        }
-                    }
-                }
-
-                // 2) Heartbeat: send ping each PING_INTERVAL in a separate task
-                _ = ping_ticker.tick() => {
-                    let writer_clone = Arc::clone(&writer);
-                    tokio::spawn(async move {
-                        let mut w = writer_clone.lock().await;
-                        if let Err(e) = w.send(Message::Ping(Vec::new())).await {
-                            warn!("Failed to send Ping, error: {}", e);
-                            true
-                        } else {
-                            false
-                        }
-                    });
-                }
-
-                // 3) Watchdog: if no incoming messages for IDLE_TIMEOUT, reconnect
-                _ = time::sleep_until(last_activity + IDLE_TIMEOUT) => {
-                    warn!("Idle timeout: no input file received in {:?}", IDLE_TIMEOUT);
-                    break; // reconnect
-                }
-            }
-        }
-
-        // Backoff before reconnecting
-        let backoff_ms = 1_000u64.saturating_mul(2u64.saturating_pow(attempt.min(6))); // 1s,2s,4s,...,64s
-        warn!("Reconnecting in {} ms...", backoff_ms);
-        time::sleep(Duration::from_millis(backoff_ms)).await;
-        attempt = attempt.saturating_add(1);
+    if app_state.cliargs.input_gen == cliargs::InputGen::Server {
+        connect_to_input_gen_server(app_state).await;
+    } else {
+        run_local_block_listener(app_state.clone()).await?;
     }
+    Ok(())
 }
