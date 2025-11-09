@@ -279,12 +279,6 @@ async fn connect_to_input_gen_server(app_state: AppState) {
 async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
     use ethers::providers::{Provider, Ws, Middleware};
 
-    let rpc_ws_url = std::env::var("RPC_WS_URL").expect("RPC_WS_URL must be set");
-    let block_modulus: u64 = std::env::var("BLOCK_MODULUS")
-        .unwrap_or("100".to_string())
-        .parse()
-        .expect("BLOCK_MODULUS must be a valid integer");
-
     let inputs_folder = app_state.inputs_folder.clone();
 
     let mut max_input_time: u128 = 0;
@@ -296,7 +290,7 @@ async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
     let mut queued_start = std::time::Instant::now();
 
     loop {
-        let provider = match Provider::<Ws>::connect(rpc_ws_url.clone()).await {
+        let provider = match Provider::<Ws>::connect(&app_state.rpc_ws_url).await {
             Ok(p) => {
                 p
             }
@@ -329,7 +323,7 @@ async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
                 }
             };
 
-            if block_number % block_modulus != 0 {
+            if block_number % app_state.block_modulus != 0 {
                 info!("Received block {}, skipping...", block_number);
                 continue;
             }

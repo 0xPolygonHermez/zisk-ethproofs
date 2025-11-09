@@ -56,6 +56,10 @@ pub struct CliArgs {
     /// Panic when skipped blocks exceed the threshold
     #[arg(short = 'p', long)]
     pub panic_on_skipped: bool,
+
+    /// Environment config file
+    #[arg(short = 'e', long, default_value = ".env")]
+    pub env_file: String,
 }
 
 impl CliArgs {

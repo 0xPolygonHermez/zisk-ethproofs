@@ -5,7 +5,6 @@ use std::{
 
 use anyhow::Context;
 use clap::Parser;
-use dotenv::dotenv;
 use log::warn;
 // serde derive imports no longer needed after moving protocol types
 use ethproofs_common::protocol::BlockInfo;
@@ -35,6 +34,8 @@ pub struct AppState {
     pub ethproofs_client: Option<EthProofsApi>,
     pub ethproofs_cluster_id: Option<u32>,
     pub coordinator_channel: Option<Channel>,
+    pub block_modulus: u64,
+    pub rpc_ws_url: String,
     pub webhook_port: u16,
     pub metrics_port: u16,
     pub inputs_folder: String,
@@ -45,11 +46,11 @@ pub struct AppState {
 
 impl AppState {
     pub async fn new() -> anyhow::Result<Self> {
-        // Load environment variables from .env file
-        dotenv().ok();
-
         // Parse the command line arguments
         let cliargs = CliArgs::parse();
+
+        // Load environment variables from env file
+        dotenv::from_filename(&cliargs.env_file).ok();
 
         let (ethproofs_client, ethproofs_cluster_id) = if cliargs.submit_ethproofs {
             let ethproofs_url = match env::var("ETHPROOFS_API_URL") {
@@ -86,13 +87,36 @@ impl AppState {
         };
 
         let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
-        let input_gen_server_url =
-            env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set");
+
+        let input_gen_server_url = if cliargs.input_gen == crate::cliargs::InputGen::Server {
+            env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set")
+        } else {
+            "".to_string()
+        };
+
         let proving_block = Arc::new(Mutex::new(None));
         let next_proving_block = Arc::new(Mutex::new(None));
         let current_job_id = Arc::new(Mutex::new(String::new()));
         let webhook_port = env::var("WEBHOOK_PORT").unwrap_or(DEFAULT_WEBHOOK_PORT.to_string()).parse().unwrap_or(DEFAULT_WEBHOOK_PORT);
         let metrics_port = env::var("METRICS_PORT").unwrap_or(DEFAULT_METRICS_PORT.to_string()).parse().unwrap_or(DEFAULT_METRICS_PORT);
+
+        let block_modulus = match env::var("BLOCK_MODULUS") {
+            Ok(modulus_str) => match modulus_str.parse::<u64>() {
+                Ok(modulus) => modulus,
+                Err(_) => panic!("BLOCK_MODULUS is not a valid u64"),
+            },
+            Err(_) => 1, // Default to 1 if not set
+        };
+
+        let rpc_ws_url = if cliargs.input_gen == crate::cliargs::InputGen::Local
+        {
+            match env::var("RPC_WS_URL") {
+                Ok(url) => url,
+                Err(_) => panic!("RPC_WS_URL must be set for local input generation"),
+            }
+        } else {
+            "".to_string()
+        };
 
         let compute_capacity = match env::var("COMPUTE_CAPACITY") {
             Ok(capacity_str) => match capacity_str.parse::<u32>() {
@@ -129,6 +153,8 @@ impl AppState {
             ethproofs_client,
             ethproofs_cluster_id,
             coordinator_channel,
+            block_modulus,
+            rpc_ws_url,
             webhook_port,
             metrics_port,
             inputs_folder,
