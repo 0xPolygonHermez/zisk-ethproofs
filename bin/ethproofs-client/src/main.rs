@@ -1,7 +1,7 @@
 use std::io::Write;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{fs, path::Path, path::PathBuf};
+use std::{fs, path::PathBuf};
 
 use anyhow::Result;
 use chrono::Utc;
@@ -31,7 +31,7 @@ use webhook::start_webhook_server;
 
 use crate::cliargs::TelegramEvent;
 use crate::metrics::{BLOCK_TIMESTAMP_GAUGE, RECEIVED_TIME_GAUGE, TIME_TO_INPUT_GAUGE, prune_gauge_last_n};
-use crate::state::{AppState, LOG_FOLDER, OUTPUT_FOLDER};
+use crate::state::AppState;
 use ethproofs_common::protocol::{BlockCommand, BlockInfo, BlockMessage};
 use ethproofs_common::inputgen::generate_input_file;
 use crate::telegram::{AlertType, send_telegram_alert};
@@ -402,8 +402,6 @@ async fn main() -> Result<()> {
 
     // Ensure input, output, and log directories exist
     create_dir_all(&app_state.inputs_folder).await?;
-    create_dir_all(Path::new(OUTPUT_FOLDER)).await?;
-    create_dir_all(Path::new(LOG_FOLDER)).await?;
 
     // Launch the webhook server
     let state_clone = app_state.clone();

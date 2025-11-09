@@ -26,9 +26,10 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     let mut client = ZiskDistributedApiClient::new(state.coordinator_channel.clone().unwrap());
     // Build request
     let launch_proof_request = LaunchProofRequest {
-        block_id: block_number.to_string(),
+        data_id: block_number.to_string(),
         compute_capacity: state.compute_capacity,
-        input_path: input_file,
+        input_path: Some(input_file),
+        input_mode: 1,
         simulated_node: None,
     };
     // Send the coordinator prove request

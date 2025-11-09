@@ -16,9 +16,7 @@ use crate::{
     db::{self, DbBlockProofs},
 };
 
-pub const OUTPUT_FOLDER: &str = "output";
-pub const LOG_FOLDER: &str = "log";
-pub const DEFAULT_INPUTS_FOLDER: &str = "upload_inputs";
+pub const DEFAULT_INPUTS_FOLDER: &str = "inputs";
 pub const DEFAULT_COORDINATOR_URL: &str = "http://localhost:50051";
 pub const DEFAULT_WEBHOOK_PORT: u16 = 8051;
 pub const DEFAULT_METRICS_PORT: u16 = 8384;
