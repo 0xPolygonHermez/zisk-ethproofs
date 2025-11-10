@@ -295,7 +295,7 @@ async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
                 p
             }
             Err(e) => {
-                warn!("Failed to connect to WS RPC provider, error: {}", e);
+                warn!("Failed to connect to WS RPC provider at {}, error: {}", app_state.rpc_ws_url, e);
                 info!("Retrying in 1 seconds...");
                 time::sleep(Duration::from_secs(1)).await;
                 continue;
