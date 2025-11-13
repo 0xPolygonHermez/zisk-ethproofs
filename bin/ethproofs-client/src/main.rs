@@ -1,3 +1,6 @@
+use crate::metrics::BlockMetrics;
+use std::collections::HashMap;
+type SharedMetrics = Arc<Mutex<HashMap<u64, BlockMetrics>>>;
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
@@ -32,7 +35,7 @@ use tokio_tungstenite::tungstenite::protocol::WebSocketConfig;
 use webhook::start_webhook_server;
 
 use crate::cliargs::TelegramEvent;
-use crate::metrics::{LATEST_BLOCK_TIMESTAMP, LATEST_RECEIVED_TIME_MS, LATEST_TIME_TO_INPUT_MS};
+use crate::metrics::LATEST_BLOCK_TIMESTAMP;
 use crate::state::AppState;
 use crate::telegram::{send_telegram_alert, AlertType};
 use ethproofs_common::inputgen::generate_input;
@@ -115,11 +118,6 @@ async fn process_input(
 
     let elapsed = queued_start.elapsed().as_millis();
 
-    if app_state.cliargs.enable_metrics {
-        LATEST_RECEIVED_TIME_MS.set(elapsed as i64);
-        crate::metrics::LATEST_BLOCK_NUMBER.set(block_number as i64);
-    }
-
     let block_timestamp_ms = block_info.timestamp.as_u64() as u128 * 1000;
     let time_to_input = match SystemTime::now().duration_since(UNIX_EPOCH) {
         Ok(now) => now.as_millis() as u128 - block_timestamp_ms,
@@ -127,7 +125,23 @@ async fn process_input(
     };
 
     if app_state.cliargs.enable_metrics {
-        LATEST_TIME_TO_INPUT_MS.set(time_to_input as i64);
+        let mut metrics_map = app_state.shared_metrics.lock().await;
+        metrics_map.insert(
+            block_number,
+            BlockMetrics {
+                block_number,
+                received_time_ms: elapsed as i64,
+                time_to_input_ms: time_to_input as i64,
+                mgas: block_info.mgas,
+                tx_count: block_info.tx_count as u64,
+                timestamp: block_info.timestamp.as_u64() as i64,
+                proving_time_ms: None,
+                proving_cycles: None,
+                submit_time_ms: None,
+                success: false,
+            },
+        );
+    // Only store the data in the vector; metrics are updated in webhook.rs
     }
 
     info!(
@@ -381,13 +395,6 @@ async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
                         max_input_time,
                         min_input_time
                     );
-                    if app_state.cliargs.enable_metrics {
-                        crate::metrics::INPUT_TIME_MAX_MS.set(max_input_time as i64);
-                        crate::metrics::INPUT_TIME_MIN_MS.set(min_input_time as i64);
-                        crate::metrics::INPUT_TIME_AVG_MS
-                            .set((total_input_time / input_count as u128) as i64);
-                    }
-
                     process_input(
                         block_info,
                         &input_result.input,
@@ -483,7 +490,6 @@ async fn run_local_folder(app_state: AppState) -> anyhow::Result<()> {
             mgas: 0,
         };
         current_timestamp += app_state.cliargs.interval_secs;
-
         total_input_time += app_state.cliargs.simulated_processed_time as u128;
         input_count += 1;
         max_input_time = max_input_time.max(app_state.cliargs.simulated_processed_time as u128);
@@ -497,11 +503,6 @@ async fn run_local_folder(app_state: AppState) -> anyhow::Result<()> {
             max_input_time,
             min_input_time
         );
-        if app_state.cliargs.enable_metrics {
-            crate::metrics::INPUT_TIME_MAX_MS.set(max_input_time as i64);
-            crate::metrics::INPUT_TIME_MIN_MS.set(min_input_time as i64);
-            crate::metrics::INPUT_TIME_AVG_MS.set((total_input_time / input_count as u128) as i64);
-        }
 
         let path = PathBuf::from(&app_state.inputs_folder).join(block_info.filename());
         match fs::read(&path) {

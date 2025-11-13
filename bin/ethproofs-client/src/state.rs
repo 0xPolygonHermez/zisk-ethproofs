@@ -25,6 +25,7 @@ pub const DEFAULT_METRICS_PORT: u16 = 8384;
 
 #[derive(Clone)]
 pub struct AppState {
+    pub shared_metrics: crate::SharedMetrics,
     pub cliargs: CliArgs,
     pub proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub next_proving_block: Arc<Mutex<Option<BlockInfo>>>,
@@ -72,13 +73,16 @@ impl AppState {
             (None, None)
         };
 
-        let coordinator_url = env::var("COORDINATOR_URL").unwrap_or(DEFAULT_COORDINATOR_URL.to_string());
+        let coordinator_url =
+            env::var("COORDINATOR_URL").unwrap_or(DEFAULT_COORDINATOR_URL.to_string());
         let coordinator_channel = if !cliargs.skip_proving {
             let coordinator_channel = Channel::from_shared(coordinator_url.clone())
                 .context("Failed to create coordinator channel")?
                 .connect()
                 .await
-                .with_context(|| format!("Failed to connect to coordinator at {}", coordinator_url))?;
+                .with_context(|| {
+                    format!("Failed to connect to coordinator at {}", coordinator_url)
+                })?;
             Some(coordinator_channel)
         } else {
             None
@@ -95,8 +99,14 @@ impl AppState {
         let proving_block = Arc::new(Mutex::new(None));
         let next_proving_block = Arc::new(Mutex::new(None));
         let current_job_id = Arc::new(Mutex::new(String::new()));
-        let webhook_port = env::var("WEBHOOK_PORT").unwrap_or(DEFAULT_WEBHOOK_PORT.to_string()).parse().unwrap_or(DEFAULT_WEBHOOK_PORT);
-        let metrics_port = env::var("METRICS_PORT").unwrap_or(DEFAULT_METRICS_PORT.to_string()).parse().unwrap_or(DEFAULT_METRICS_PORT);
+        let webhook_port = env::var("WEBHOOK_PORT")
+            .unwrap_or(DEFAULT_WEBHOOK_PORT.to_string())
+            .parse()
+            .unwrap_or(DEFAULT_WEBHOOK_PORT);
+        let metrics_port = env::var("METRICS_PORT")
+            .unwrap_or(DEFAULT_METRICS_PORT.to_string())
+            .parse()
+            .unwrap_or(DEFAULT_METRICS_PORT);
 
         let block_modulus = match env::var("BLOCK_MODULUS") {
             Ok(modulus_str) => match modulus_str.parse::<u64>() {
@@ -106,8 +116,7 @@ impl AppState {
             Err(_) => 1, // Default to 1 if not set
         };
 
-        let rpc_ws_url = if cliargs.input_gen == crate::cliargs::InputGen::Local
-        {
+        let rpc_ws_url = if cliargs.input_gen == crate::cliargs::InputGen::Local {
             match env::var("RPC_WS_URL") {
                 Ok(url) => url,
                 Err(_) => panic!("RPC_WS_URL must be set for local input generation"),
@@ -159,6 +168,7 @@ impl AppState {
             input_gen_server_url,
             compute_capacity,
             db_block_proofs,
+            shared_metrics: crate::SharedMetrics::default(),
         })
     }
 

@@ -9,8 +9,30 @@ use axum::{routing::get};
 
 use crate::{state::AppState};
 
+#[derive(Clone, Debug)]
+pub struct BlockMetrics {
+    pub block_number: u64,
+    pub received_time_ms: i64,
+    pub time_to_input_ms: i64,
+    pub mgas: u64,
+    pub tx_count: u64,
+    pub timestamp: i64, // Unix timestamp (seconds)
+    pub proving_time_ms: Option<i64>,
+    pub proving_cycles: Option<i64>,
+    pub submit_time_ms: Option<i64>,
+    pub success: bool,
+}
+
 // Prometheus metrics
 lazy_static! {
+    pub static ref LATEST_MGAS: prometheus::IntGauge = prometheus::register_int_gauge!(
+        "latest_mgas",
+        "Latest mgas value for processed block"
+    ).unwrap();
+    pub static ref LATEST_TX_COUNT: prometheus::IntGauge = prometheus::register_int_gauge!(
+        "latest_tx_count",
+        "Latest tx_count value for processed block"
+    ).unwrap();
     pub static ref LATEST_PROVING_TIME_MS: prometheus::IntGauge = prometheus::register_int_gauge!(
         "latest_proving_time_ms",
         "Latest proof generation time in milliseconds"

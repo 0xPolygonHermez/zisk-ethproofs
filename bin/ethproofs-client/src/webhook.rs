@@ -11,17 +11,16 @@ use log::{debug, error, info, warn};
 use zisk_distributed_common::WebhookPayloadDto;
 
 use crate::cliargs::TelegramEvent;
-use ethproofs_common::protocol::BlockInfo;
 use crate::{db::BlockProof, prove::generate_proof};
 use crate::{
     state::AppState,
     telegram::{send_telegram_alert, AlertType},
 };
+use ethproofs_common::protocol::BlockInfo;
 
 pub fn get_proof_b64(proof_data: &[u64]) -> Result<String> {
     // Convert &[u64] to &[u8] without copying
     let proof_bytes = bytemuck::cast_slice::<u64, u8>(proof_data);
-
 
     let mut compressed = Vec::new();
     {
@@ -35,7 +34,11 @@ pub fn get_proof_b64(proof_data: &[u64]) -> Result<String> {
     Ok(general_purpose::STANDARD.encode(&compressed))
 }
 
-async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDto, state: AppState) {
+async fn process_webhook(
+    proved_block_info: BlockInfo,
+    payload: WebhookPayloadDto,
+    state: AppState,
+) {
     // Extract proving time and cycles
     let proving_time_ms: u32 = payload.duration_ms as u32;
     let proving_cycles = payload.executed_steps.unwrap_or(0);
@@ -78,19 +81,24 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
         match result {
             Ok(job_id) => {
                 // Store current job ID
-                let mut current_job_id = state.current_job_id.lock().unwrap_or_else(|e| e.into_inner());
+                let mut current_job_id =
+                    state.current_job_id.lock().unwrap_or_else(|e| e.into_inner());
                 *current_job_id = job_id;
             }
             Err(e) => {
                 // If generation failed, reset proving_block in atomic scope
                 {
-                    let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+                    let mut proving_block =
+                        state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
                     *proving_block = None;
                 }
 
                 let next_block_number = next_block.block_number;
 
-                let msg = format!("Proof generation failed for next block {}, error: {}", next_block_number, e);
+                let msg = format!(
+                    "Proof generation failed for next block {}, error: {}",
+                    next_block_number, e
+                );
                 error!("❌ {}", msg);
 
                 if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
@@ -125,6 +133,31 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
         error!("❌ {}", &msg);
         if state.cliargs.enable_metrics {
             crate::metrics::PROOF_FAILURE_TOTAL.inc();
+            // Publish all available metrics for this block
+            let mut shared_metrics = state.shared_metrics.lock().await;
+            let entry = shared_metrics.get(&proved_block_number);
+            if let Some(metrics) = entry {
+                crate::metrics::LATEST_BLOCK_NUMBER.set(metrics.block_number as i64);
+                crate::metrics::LATEST_RECEIVED_TIME_MS.set(metrics.received_time_ms);
+                crate::metrics::LATEST_TIME_TO_INPUT_MS.set(metrics.time_to_input_ms);
+                crate::metrics::LATEST_MGAS.set(metrics.mgas as i64);
+                crate::metrics::LATEST_TX_COUNT.set(metrics.tx_count as i64);
+                crate::metrics::LATEST_PROVING_TIME_MS.set(metrics.proving_time_ms.unwrap_or(0));
+                crate::metrics::LATEST_PROVING_CYCLES.set(metrics.proving_cycles.unwrap_or(0));
+                crate::metrics::LATEST_BLOCK_TIMESTAMP.set(metrics.timestamp);
+                if let Some(submit_time) = metrics.submit_time_ms {
+                    crate::metrics::LATEST_SUBMIT_TIME_MS.set(submit_time);
+                }
+                debug!("Published failure metrics for block {}", metrics.block_number);
+                // Remove the entry for the processed block
+                shared_metrics.remove(&proved_block_number);
+            } else {
+                crate::metrics::LATEST_BLOCK_NUMBER.set(proved_block_number as i64);
+                warn!(
+                    "No metrics entry found for block {} when trying to publish failure metrics",
+                    proved_block_number
+                );
+            }
         }
         if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
             tokio::spawn(async move {
@@ -143,7 +176,10 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
         Some(proof) => match get_proof_b64(proof) {
             Ok(b64) => b64,
             Err(e) => {
-                error!("❌ Failed to get compressed proof in base64 for block {}, error: {}", proved_block_number, e);
+                error!(
+                    "❌ Failed to get compressed proof in base64 for block {}, error: {}",
+                    proved_block_number, e
+                );
                 return;
             }
         },
@@ -174,13 +210,15 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
                 let submit_time = start.elapsed().as_millis() as f64;
                 info!(
                     "Reported proved state to EthProofs for block {}, request_time: {} ms",
-                    proved_block_number,
-                    submit_time
+                    proved_block_number, submit_time
                 );
                 (true, submit_time)
-            },
+            }
             Err(e) => {
-                error!("❌ Failed to submit proof to EthProofs for block {}, error: {}", proved_block_number, e);
+                error!(
+                    "❌ Failed to submit proof to EthProofs for block {}, error: {}",
+                    proved_block_number, e
+                );
                 (false, 0f64)
             }
         }
@@ -206,10 +244,16 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
                     proved_block_number,
                     start.elapsed().as_millis()
                 ),
-                Err(e) => error!("❌ Failed to insert proof into DB for block {}, error: {}", proved_block_number, e),
+                Err(e) => error!(
+                    "❌ Failed to insert proof into DB for block {}, error: {}",
+                    proved_block_number, e
+                ),
             }
         } else {
-            warn!("DB handle not initialized, cannot insert proof for block {}", proved_block_number);
+            warn!(
+                "DB handle not initialized, cannot insert proof for block {}",
+                proved_block_number
+            );
         }
     }
 
@@ -233,17 +277,38 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
     // Update Prometheus metrics for proof generation if metrics enabled
     if state.cliargs.enable_metrics {
         let start = std::time::Instant::now();
-        crate::metrics::LATEST_PROVING_TIME_MS.set(proving_time_ms as i64);
-        crate::metrics::LATEST_PROVING_CYCLES.set(proving_cycles as i64);
-        crate::metrics::LATEST_BLOCK_NUMBER.set(proved_block_number as i64);
-        if submitted {
-            crate::metrics::LATEST_SUBMIT_TIME_MS.set(submit_time as i64);
+        // Update the shared HashMap and publish/remove metrics only when the block is complete
+        let mut shared_metrics = state.shared_metrics.lock().await;
+        let entry = shared_metrics.get_mut(&proved_block_number);
+        if let Some(metrics) = entry {
+            metrics.proving_time_ms = Some(proving_time_ms as i64);
+            metrics.proving_cycles = Some(proving_cycles as i64);
+            metrics.submit_time_ms = if submitted { Some(submit_time as i64) } else { None };
+            metrics.success = payload.success;
+            // Publish all metrics for the current block
+            crate::metrics::LATEST_BLOCK_NUMBER.set(metrics.block_number as i64);
+            crate::metrics::LATEST_RECEIVED_TIME_MS.set(metrics.received_time_ms);
+            crate::metrics::LATEST_TIME_TO_INPUT_MS.set(metrics.time_to_input_ms);
+            crate::metrics::LATEST_MGAS.set(metrics.mgas as i64);
+            crate::metrics::LATEST_TX_COUNT.set(metrics.tx_count as i64);
+            crate::metrics::LATEST_PROVING_TIME_MS.set(metrics.proving_time_ms.unwrap_or(0));
+            crate::metrics::LATEST_PROVING_CYCLES.set(metrics.proving_cycles.unwrap_or(0));
+            if let Some(submit_time) = metrics.submit_time_ms {
+                crate::metrics::LATEST_SUBMIT_TIME_MS.set(submit_time);
+            }
+            debug!(
+                "Published metrics for block {}, update time: {} ms",
+                metrics.block_number,
+                start.elapsed().as_millis()
+            );
+            // Remove the entry for the processed block
+            shared_metrics.remove(&proved_block_number);
+        } else {
+            warn!(
+                "No metrics entry found for block {} when trying to publish metrics",
+                proved_block_number
+            );
         }
-        debug!(
-            "Updated latest metrics for block {}, update time: {} ms",
-            proved_block_number,
-            start.elapsed().as_millis()
-        );
     }
 
     // Delete input file if not needed
@@ -264,7 +329,10 @@ async fn webhook_handler(
 
     // Validate that the webhook corresponds to the current proving block
     if proved_block.is_none() {
-        warn!("Received webhook for job {}, but no block is currently being proved. Ignoring...", payload.job_id);
+        warn!(
+            "Received webhook for job {}, but no block is currently being proved. Ignoring...",
+            payload.job_id
+        );
         return (StatusCode::OK, "OK").into_response();
     }
 
@@ -274,7 +342,10 @@ async fn webhook_handler(
         job_id.clone()
     };
     if current_job_id != job_id {
-        warn!("Received webhook for job {}, but current job is {}. Ignoring...", payload.job_id, current_job_id);
+        warn!(
+            "Received webhook for job {}, but current job is {}. Ignoring...",
+            payload.job_id, current_job_id
+        );
         return (StatusCode::OK, "OK").into_response();
     }
 
@@ -290,9 +361,8 @@ pub async fn start_webhook_server(state: AppState) -> Result<()> {
         .parse()
         .map_err(|e| anyhow!("Invalid webhook bind address, error: {e}"))?;
 
-    let webhook_app = Router::new()
-        .route("/:job_id", post(webhook_handler))
-        .with_state(state.clone());
+    let webhook_app =
+        Router::new().route("/:job_id", post(webhook_handler)).with_state(state.clone());
 
     let webhook_server = async move {
         axum::serve(tokio::net::TcpListener::bind(webhook_addr).await?, webhook_app)
