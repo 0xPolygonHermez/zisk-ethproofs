@@ -40,3 +40,4 @@ zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "p
 zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
 
 ethproofs-common = { path = "../../ethproofs-common" }
+regex = "1.12.2"

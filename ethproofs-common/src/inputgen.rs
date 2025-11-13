@@ -1,8 +1,8 @@
-use std::{env, io::Write, path::Path, time::Instant};
-use anyhow::Result;
-use input::{GuestProgram, Network};
 use crate::protocol::BlockInfo;
+use anyhow::Result;
+use input::{GuestProgram, InputGeneratorResult, Network};
 use log::info;
+use std::{env, io::Write, path::Path, time::Instant};
 
 /// Generate the guest input file for the given block and return the time taken in milliseconds.
 /// Reads RPC_URL from environment, spawns a blocking task to run the non-Send generation future,
@@ -28,12 +28,43 @@ pub async fn generate_input_file(
         })
     })
     .await??;
-    info!("Input generation for block {} took {} ms", block_number, start_input_gen.elapsed().as_millis());
+    info!(
+        "Input generation for block {} took {} ms",
+        block_number,
+        start_input_gen.elapsed().as_millis()
+    );
 
     let save_file_start = Instant::now();
     let mut input_file = std::fs::File::create(&input_path)?;
     input_file.write_all(&result.input)?;
-    info!("Saving input file for block {} took {} ms", block_number, save_file_start.elapsed().as_millis());
+    input_file.flush()?;
+    info!(
+        "Saving input file for block {} took {} ms",
+        block_number,
+        save_file_start.elapsed().as_millis()
+    );
 
     Ok(start.elapsed().as_millis())
+}
+
+pub async fn generate_input(
+    guest: GuestProgram,
+    block_info: BlockInfo,
+) -> Result<(u128, InputGeneratorResult)> {
+    let start = Instant::now();
+    let block_number = block_info.block_number;
+    let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
+
+    let start_input_gen = Instant::now();
+
+    let input_builder = input::build_input_generator(guest, &rpc_url, Network::Mainnet);
+    let result = input_builder.generate(block_number).await?;
+
+    info!(
+        "Input generation for block {} took {} ms",
+        block_number,
+        start_input_gen.elapsed().as_millis()
+    );
+
+    Ok((start.elapsed().as_millis(), result))
 }

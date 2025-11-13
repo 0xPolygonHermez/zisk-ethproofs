@@ -6,6 +6,7 @@ use zisk_distributed_grpc_api::{
 
 use crate::state::AppState;
 use ethproofs_common::protocol::BlockInfo;
+use std::path::PathBuf;
 
 pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<String> {
     let block_number = block_info.block_number;
@@ -14,6 +15,9 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
     // Get input file name
     let input_file = block_info.filename();
+
+    let filepath =
+        PathBuf::from(&state.inputs_folder).join(&input_file).to_string_lossy().to_string();
 
     debug!(
         "Sending coordinator request for block {} with {} compute units",
@@ -28,8 +32,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     let launch_proof_request = LaunchProofRequest {
         data_id: block_number.to_string(),
         compute_capacity: state.compute_capacity,
-        input_path: Some(input_file),
-        input_mode: 1,
+        input_path: Some(filepath),
+        input_mode: 2,
         simulated_node: None,
     };
     // Send the coordinator prove request
@@ -38,11 +42,20 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     // Handle coordinator response
     let job_id = match response.into_inner().result {
         Some(zisk_distributed_grpc_api::launch_proof_response::Result::JobId(job_id)) => {
-            info!("Proof generation started for block {}, job_id: {}, request time: {} ms", block_number, job_id, start.elapsed().as_millis());
+            info!(
+                "Proof generation started for block {}, job_id: {}, request time: {} ms",
+                block_number,
+                job_id,
+                start.elapsed().as_millis()
+            );
             job_id
         }
         Some(zisk_distributed_grpc_api::launch_proof_response::Result::Error(error)) => {
-            return Err(anyhow!("Coordinator proof request failed: {} - {}", error.code, error.message));
+            return Err(anyhow!(
+                "Coordinator proof request failed: {} - {}",
+                error.code,
+                error.message
+            ));
         }
         None => {
             return Err(anyhow!("Received empty response from coordinator"));
@@ -62,12 +75,14 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     );
                 }
                 Err(e) => {
-                    error!("Failed to report proving state to EthProofs for block {}, error: {}", block_number, e);
+                    error!(
+                        "Failed to report proving state to EthProofs for block {}, error: {}",
+                        block_number, e
+                    );
                 }
             }
         });
     }
 
     Ok(job_id)
-
 }

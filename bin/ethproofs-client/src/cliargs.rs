@@ -12,12 +12,13 @@ pub enum TelegramEvent {
 pub enum InputGen {
     Server,
     Local,
+    Folder,
 }
 
 // Command line arguments
 #[derive(Clone, Parser)]
 pub struct CliArgs {
-    /// Input generation method: 'server' or 'local'
+    /// Input generation method: 'server', 'local' or 'folder'
     #[arg(short = 'n', long, value_enum, default_value_t = InputGen::Server)]
     pub input_gen: InputGen,
 
@@ -60,6 +61,23 @@ pub struct CliArgs {
     /// Environment config file
     #[arg(short = 'e', long, default_value = ".env")]
     pub env_file: String,
+
+    /// Directory to read input files from in local mode (only affects 'folder' mode)
+    #[clap(long, default_value = "inputs_queue")]
+    pub inputs_queue: String,
+
+    /// Interval in seconds between sending files in local mode (only affects 'folder' mode)
+    #[clap(long, default_value = "12")]
+    pub interval_secs: u64,
+
+    /// Initial timestamp to use for the first file in local mode (only affects 'folder' mode)
+    #[clap(long, default_value = "0")]
+    pub initial_timestamp: u64,
+
+    /// Simulated processed time in milliseconds (only affects 'folder' mode)
+    #[clap(long, default_value = "0")]
+    pub simulated_processed_time: u64,
+
 }
 
 impl CliArgs {

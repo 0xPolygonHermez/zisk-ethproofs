@@ -11,7 +11,6 @@ use log::{debug, error, info, warn};
 use zisk_distributed_common::WebhookPayloadDto;
 
 use crate::cliargs::TelegramEvent;
-use crate::metrics::{PROVING_CYCLES_GAUGE, PROVING_TIME_GAUGE, SUBMIT_TIME_GAUGE, prune_gauge_last_n};
 use ethproofs_common::protocol::BlockInfo;
 use crate::{db::BlockProof, prove::generate_proof};
 use crate::{
@@ -114,7 +113,6 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
 
     // Return if proof generation was not successful logging the error
     if !payload.success {
-
         let (err_code, err_message) = payload
             .error
             .map(|err| (err.code, err.message))
@@ -125,7 +123,9 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
             proved_block_number, payload.job_id, err_code, err_message
         );
         error!("❌ {}", &msg);
-
+        if state.cliargs.enable_metrics {
+            crate::metrics::PROOF_FAILURE_TOTAL.inc();
+        }
         if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
             tokio::spawn(async move {
                 if let Err(e) = send_telegram_alert(&msg, AlertType::Error).await {
@@ -133,7 +133,6 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
                 }
             });
         }
-
         return;
     }
 
@@ -215,6 +214,9 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
     }
 
     // Send Telegram alert if enabled
+    if state.cliargs.enable_metrics {
+        crate::metrics::PROOF_SUCCESS_TOTAL.inc();
+    }
     if state.cliargs.telegram_enabled(TelegramEvent::BlockProved) {
         let msg = format!(
             "Proof generated for block {}, proving_time: {}s, cycles: {}",
@@ -231,17 +233,14 @@ async fn process_webhook(proved_block_info: BlockInfo, payload: WebhookPayloadDt
     // Update Prometheus metrics for proof generation if metrics enabled
     if state.cliargs.enable_metrics {
         let start = std::time::Instant::now();
-        let block_label = proved_block_number.to_string();
-        PROVING_TIME_GAUGE.with_label_values(&[&block_label]).set(proving_time_ms as i64);
-        PROVING_CYCLES_GAUGE.with_label_values(&[&block_label]).set(proving_cycles as i64);
-        prune_gauge_last_n(&PROVING_TIME_GAUGE, 300);
-        prune_gauge_last_n(&PROVING_CYCLES_GAUGE, 300);
+        crate::metrics::LATEST_PROVING_TIME_MS.set(proving_time_ms as i64);
+        crate::metrics::LATEST_PROVING_CYCLES.set(proving_cycles as i64);
+        crate::metrics::LATEST_BLOCK_NUMBER.set(proved_block_number as i64);
         if submitted {
-            SUBMIT_TIME_GAUGE.with_label_values(&[&block_label]).set(submit_time as i64);
-            prune_gauge_last_n(&SUBMIT_TIME_GAUGE, 300);
+            crate::metrics::LATEST_SUBMIT_TIME_MS.set(submit_time as i64);
         }
         debug!(
-            "Updated metrics for block {}, update time: {} ms",
+            "Updated latest metrics for block {}, update time: {} ms",
             proved_block_number,
             start.elapsed().as_millis()
         );

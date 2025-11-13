@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use anyhow::{anyhow, Result};
 use axum::{http::StatusCode, response::IntoResponse, Router};
 use log::{info};
-use prometheus::{Encoder, TextEncoder, register_int_gauge_vec, IntGaugeVec};
+use prometheus::{Encoder, TextEncoder, register_int_gauge};
 use lazy_static::lazy_static;
 use axum::{routing::get};
 
@@ -11,58 +11,62 @@ use crate::{state::AppState};
 
 // Prometheus metrics
 lazy_static! {
-    pub static ref PROVING_TIME_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "proving_time_ms",
-        "Proof generation time in milliseconds",
-        &["block"]
+    pub static ref LATEST_PROVING_TIME_MS: prometheus::IntGauge = prometheus::register_int_gauge!(
+        "latest_proving_time_ms",
+        "Latest proof generation time in milliseconds"
     ).unwrap();
-    pub static ref SUBMIT_TIME_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "submit_time_ms",
-        "Proof submit time in milliseconds",
-        &["block"]
+    pub static ref LATEST_SUBMIT_TIME_MS: prometheus::IntGauge = prometheus::register_int_gauge!(
+        "latest_submit_time_ms",
+        "Latest proof submit time in milliseconds"
     ).unwrap();
-    pub static ref PROVING_CYCLES_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "proving_cycles",
-        "Proof generation cycles",
-        &["block"]
+    pub static ref LATEST_PROVING_CYCLES: prometheus::IntGauge = prometheus::register_int_gauge!(
+        "latest_proving_cycles",
+        "Latest proof generation cycles"
     ).unwrap();
-    pub static ref RECEIVED_TIME_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "received_input_time_ms",
-        "Time (milliseconds) to receive and save input file",
-        &["block"]
+    pub static ref LATEST_RECEIVED_TIME_MS: prometheus::IntGauge = register_int_gauge!(
+        "latest_received_input_time_ms",
+        "Latest time (milliseconds) to receive and save input file"
     ).unwrap();
-    pub static ref TIME_TO_INPUT_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "time_to_input_ms",
-        "Time (milliseconds) elapsed from block timestamp to time where input was received and saved",
-        &["block"]
+    pub static ref LATEST_TIME_TO_INPUT_MS: prometheus::IntGauge = register_int_gauge!(
+        "latest_time_to_input_ms",
+        "Latest time (milliseconds) elapsed from block timestamp to time where input was received and saved"
     ).unwrap();
-    pub static ref BLOCK_TIMESTAMP_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "block_timestamp",
-        "Timestamp (seconds) when block was queued",
-        &["block"]
+    pub static ref LATEST_BLOCK_TIMESTAMP: prometheus::IntGauge = register_int_gauge!(
+        "latest_block_timestamp",
+        "Latest timestamp (seconds) when block was queued"
+    ).unwrap();
+    pub static ref LATEST_BLOCK_NUMBER: prometheus::IntGauge = register_int_gauge!(
+        "latest_block_number",
+        "Latest block number processed"
+    ).unwrap();
+    pub static ref PROOF_SUCCESS_TOTAL: prometheus::IntCounter = prometheus::register_int_counter!(
+        "proof_success_total",
+        "Total number of successful proofs"
+    ).unwrap();
+    pub static ref PROOF_FAILURE_TOTAL: prometheus::IntCounter = prometheus::register_int_counter!(
+        "proof_failure_total",
+        "Total number of failed proofs"
+    ).unwrap();
+    pub static ref INPUT_FILE_ERROR_TOTAL: prometheus::IntCounter = prometheus::register_int_counter!(
+        "input_file_error_total",
+        "Total number of input file errors"
+    ).unwrap();
+    pub static ref INPUT_TIME_MAX_MS: prometheus::IntGauge = prometheus::register_int_gauge!(
+        "input_time_max_ms",
+        "Maximum input file generation time in ms"
+    ).unwrap();
+    pub static ref INPUT_TIME_MIN_MS: prometheus::IntGauge = prometheus::register_int_gauge!(
+        "input_time_min_ms",
+        "Minimum input file generation time in ms"
+    ).unwrap();
+    pub static ref INPUT_TIME_AVG_MS: prometheus::IntGauge = prometheus::register_int_gauge!(
+        "input_time_avg_ms",
+        "Average input file generation time in ms"
     ).unwrap();
 }
 
 /// Prune gauge to keep only the last N block labels
-pub fn prune_gauge_last_n(gauge: &IntGaugeVec, keep_last: usize) {
-    use prometheus::core::Collector;
-    let mut blocks: Vec<u64> = gauge
-        .collect()
-        .iter()
-        .flat_map(|mf| {
-            mf.get_metric().iter().filter_map(|m| {
-                m.get_label().iter().find(|l| l.name() == "block")
-                    .and_then(|l| l.value().parse::<u64>().ok())
-            })
-        })
-        .collect();
-    blocks.sort_unstable();
-    if blocks.len() > keep_last {
-        for old_block in &blocks[..blocks.len() - keep_last] {
-            let _ = gauge.remove_label_values(&[&old_block.to_string()]);
-        }
-    }
-}
+// Removed prune_gauge_last_n and all label logic
 
 async fn metrics_handler() -> impl IntoResponse {
     let encoder = TextEncoder::new();

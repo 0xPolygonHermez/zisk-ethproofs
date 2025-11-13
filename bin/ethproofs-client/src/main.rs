@@ -1,3 +1,4 @@
+use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -8,13 +9,14 @@ use chrono::Utc;
 use env_logger::{Builder, Env};
 use futures_util::{SinkExt, StreamExt};
 use log::{debug, error, info, warn};
+use regex::Regex;
+use serde_json;
 use tokio::fs::create_dir_all;
 use tokio::sync::Mutex;
 use tokio::task;
-use tokio::time::{self, Duration, Instant};
+use tokio::time::{self, sleep, Duration, Instant};
 use tokio_tungstenite::connect_async_with_config;
 use tokio_tungstenite::tungstenite::Message;
-use serde_json;
 
 mod api;
 mod cliargs;
@@ -30,11 +32,11 @@ use tokio_tungstenite::tungstenite::protocol::WebSocketConfig;
 use webhook::start_webhook_server;
 
 use crate::cliargs::TelegramEvent;
-use crate::metrics::{BLOCK_TIMESTAMP_GAUGE, RECEIVED_TIME_GAUGE, TIME_TO_INPUT_GAUGE, prune_gauge_last_n};
+use crate::metrics::{LATEST_BLOCK_TIMESTAMP, LATEST_RECEIVED_TIME_MS, LATEST_TIME_TO_INPUT_MS};
 use crate::state::AppState;
+use crate::telegram::{send_telegram_alert, AlertType};
+use ethproofs_common::inputgen::generate_input;
 use ethproofs_common::protocol::{BlockCommand, BlockInfo, BlockMessage};
-use ethproofs_common::inputgen::generate_input_file;
-use crate::telegram::{AlertType, send_telegram_alert};
 
 // Constants
 const PING_INTERVAL: Duration = Duration::from_secs(15);
@@ -56,9 +58,8 @@ fn process_queued(block_number: u64, app_state: &AppState, queued_start: &mut st
     // Set Prometheus block_timestamp in seconds
     if app_state.cliargs.enable_metrics {
         let now_secs = chrono::Utc::now().timestamp();
-        let block_label = block_number.to_string();
-        BLOCK_TIMESTAMP_GAUGE.with_label_values(&[&block_label]).set(now_secs);
-        prune_gauge_last_n(&BLOCK_TIMESTAMP_GAUGE, 300);
+        LATEST_BLOCK_TIMESTAMP.set(now_secs);
+        crate::metrics::LATEST_BLOCK_NUMBER.set(block_number as i64);
     }
 
     info!("Received queued command for block {}", block_number);
@@ -76,7 +77,10 @@ fn process_queued(block_number: u64, app_state: &AppState, queued_start: &mut st
                     );
                 }
                 Err(e) => {
-                    error!("Failed to report queued state to EthProofs for block {}, error: {}", block_number, e);
+                    error!(
+                        "Failed to report queued state to EthProofs for block {}, error: {}",
+                        block_number, e
+                    );
                 }
             }
         });
@@ -94,21 +98,26 @@ async fn process_input(
     let block_number = block_info.block_number;
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
 
-    let result = fs::write(&filepath, content);
+    let mut file = File::create(filepath)
+        .expect(&format!("Cannot create the file: {} for block {}", &filename, &block_number));
+
+    // Write the content of the file
+    file.write_all(content)
+        .expect(&format!("Failed to write to file: {} for block {}", &filename, &block_number));
+    // Flush internal buffer to OS
+    file.flush().expect(&format!(
+        "Failed to flush file buffer to OS for file: {} for block {}",
+        &filename, &block_number
+    ));
+    // Optional: ensure everything is really on disk
+    file.sync_all()
+        .expect(&format!("Failed to sync file {} to disk for block {}", &filename, &block_number));
+
     let elapsed = queued_start.elapsed().as_millis();
 
-    match result {
-        Ok(_) => {
-            let block_label = block_number.to_string();
-            if app_state.cliargs.enable_metrics {
-                RECEIVED_TIME_GAUGE.with_label_values(&[&block_label]).set(elapsed as i64);
-                prune_gauge_last_n(&RECEIVED_TIME_GAUGE, 300);
-            }
-        }
-        Err(e) => {
-            error!("Failed to save input for block {}, file: {}, error: {}", block_number, filename, e);
-            return;
-        }
+    if app_state.cliargs.enable_metrics {
+        LATEST_RECEIVED_TIME_MS.set(elapsed as i64);
+        crate::metrics::LATEST_BLOCK_NUMBER.set(block_number as i64);
     }
 
     let block_timestamp_ms = block_info.timestamp.as_u64() as u128 * 1000;
@@ -118,13 +127,13 @@ async fn process_input(
     };
 
     if app_state.cliargs.enable_metrics {
-        let block_label = block_number.to_string();
-        TIME_TO_INPUT_GAUGE.with_label_values(&[&block_label]).set(time_to_input as i64);
-        prune_gauge_last_n(&TIME_TO_INPUT_GAUGE, 300);
+        LATEST_TIME_TO_INPUT_MS.set(time_to_input as i64);
     }
 
-
-    info!("Received and saved input for block {}, file: {}, time: {} ms, time-to-input: {} ms", block_number, filename, elapsed, time_to_input);
+    info!(
+        "Received and saved input for block {}, file: {}, time: {} ms, time-to-input: {} ms",
+        block_number, filename, elapsed, time_to_input
+    );
 
     if app_state.cliargs.skip_proving {
         info!("Skipping proving for block {} as per configuration", block_number);
@@ -158,10 +167,14 @@ async fn process_input(
                             warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
                         }
                     });
-                    if app_state.cliargs.panic_on_skipped { handle.await.ok(); }
+                    if app_state.cliargs.panic_on_skipped {
+                        handle.await.ok();
+                    }
                 }
             }
-            if app_state.cliargs.panic_on_skipped { panic!("Skipped blocks exceeded threshold, panicking as per configuration"); }
+            if app_state.cliargs.panic_on_skipped {
+                panic!("Skipped blocks exceeded threshold, panicking as per configuration");
+            }
             *fired_skipped_alert = true;
         } else if *fired_skipped_alert {
             let msg_alert = format!("Resumed proving. Now proving block {}.", proving_block_number);
@@ -188,7 +201,8 @@ async fn process_input(
             *current_job_id = job_id;
         }
         Err(e) => {
-            let msg_alert = format!("Proof generation failed for block {}, error: {}", block_number, e);
+            let msg_alert =
+                format!("Proof generation failed for block {}, error: {}", block_number, e);
             error!("❌ {}", &msg_alert);
             if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
                 tokio::spawn(async move {
@@ -205,9 +219,9 @@ async fn process_input(
 /// Connect (and reconnect) loop to the input generation server, handling queued/input messages.
 async fn connect_to_input_gen_server(app_state: AppState) {
     let ws_cfg = WebSocketConfig {
-        max_frame_size:   Some(32 << 20),   // 32 MiB per frame
-        max_message_size: Some(128 << 20),  // 128 MiB per message
-        max_write_buffer_size: 32 << 20,    // 32 MiB write buffer
+        max_frame_size: Some(32 << 20),    // 32 MiB per frame
+        max_message_size: Some(128 << 20), // 128 MiB per message
+        max_write_buffer_size: 32 << 20,   // 32 MiB write buffer
         ..Default::default()
     };
 
@@ -215,20 +229,23 @@ async fn connect_to_input_gen_server(app_state: AppState) {
     let mut fired_skipped_alert = false;
     loop {
         info!("Connecting to input-gen-server at {}", app_state.input_gen_server_url);
-        let (ws_stream, _) = match connect_async_with_config(&app_state.input_gen_server_url, Some(ws_cfg), false).await {
-            Ok(s) => {
-                info!("Connected to input-gen-server");
-                attempt = 0; // reset backoff
-                s
-            }
-            Err(e) => {
-                let backoff_ms = 1_000u64.saturating_mul(2u64.saturating_pow(attempt.min(6)));
-                warn!("Connect failed: {e}. Retrying in {} ms", backoff_ms);
-                time::sleep(Duration::from_millis(backoff_ms)).await;
-                attempt = attempt.saturating_add(1);
-                continue;
-            }
-        };
+        let (ws_stream, _) =
+            match connect_async_with_config(&app_state.input_gen_server_url, Some(ws_cfg), false)
+                .await
+            {
+                Ok(s) => {
+                    info!("Connected to input-gen-server");
+                    attempt = 0; // reset backoff
+                    s
+                }
+                Err(e) => {
+                    let backoff_ms = 1_000u64.saturating_mul(2u64.saturating_pow(attempt.min(6)));
+                    warn!("Connect failed: {e}. Retrying in {} ms", backoff_ms);
+                    time::sleep(Duration::from_millis(backoff_ms)).await;
+                    attempt = attempt.saturating_add(1);
+                    continue;
+                }
+            };
 
         let (writer, mut reader) = ws_stream.split();
         let writer = Arc::new(Mutex::new(writer));
@@ -277,9 +294,7 @@ async fn connect_to_input_gen_server(app_state: AppState) {
 
 /// Local block listener: subscribes directly to Ethereum WS provider and generates inputs locally
 async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
-    use ethers::providers::{Provider, Ws, Middleware};
-
-    let inputs_folder = app_state.inputs_folder.clone();
+    use ethers::providers::{Middleware, Provider, Ws};
 
     let mut max_input_time: u128 = 0;
     let mut min_input_time: u128 = u128::MAX;
@@ -291,11 +306,12 @@ async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
 
     loop {
         let provider = match Provider::<Ws>::connect(&app_state.rpc_ws_url).await {
-            Ok(p) => {
-                p
-            }
+            Ok(p) => p,
             Err(e) => {
-                warn!("Failed to connect to WS RPC provider at {}, error: {}", app_state.rpc_ws_url, e);
+                warn!(
+                    "Failed to connect to WS RPC provider at {}, error: {}",
+                    app_state.rpc_ws_url, e
+                );
                 info!("Retrying in 1 seconds...");
                 time::sleep(Duration::from_secs(1)).await;
                 continue;
@@ -331,18 +347,27 @@ async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
             info!("Received block {}, processing...", block_number);
 
             process_queued(block_number, &app_state, &mut queued_start);
+            if app_state.cliargs.enable_metrics {
+                crate::metrics::LATEST_BLOCK_NUMBER.set(block_number as i64);
+            }
 
             let block_info = BlockInfo {
                 block_number,
                 timestamp: block.timestamp,
-                block_hash: block.hash.map(|h| format!("{:x}", h)).unwrap_or_else(|| "nohash".into()),
+                block_hash: block
+                    .hash
+                    .map(|h| format!("{:x}", h))
+                    .unwrap_or_else(|| "nohash".into()),
                 tx_count: block.transactions.len(),
                 mgas: block.gas_used.as_u64() / 1_000_000,
             };
 
             info!("Generating input file for block {}", block_number);
-            match generate_input_file(app_state.cliargs.guest.clone(), block_info.clone(), inputs_folder.clone()).await {
-                Ok(input_file_time) => {
+            let input_file_result =
+                generate_input(app_state.cliargs.guest.clone(), block_info.clone()).await;
+
+            match input_file_result {
+                Ok((input_file_time, input_result)) => {
                     total_input_time += input_file_time;
                     input_count += 1;
                     max_input_time = max_input_time.max(input_file_time);
@@ -356,24 +381,151 @@ async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
                         max_input_time,
                         min_input_time
                     );
-
-                    let path = PathBuf::from(&inputs_folder).join(block_info.filename());
-                    match fs::read(&path) {
-                        Ok(content) => {
-                            process_input(block_info, &content, &app_state, &queued_start, &mut fired_skipped_alert).await;
-                        }
-                        Err(e) => {
-                            error!("Error reading input file {}: {}", path.display(), e);
-                        }
+                    if app_state.cliargs.enable_metrics {
+                        crate::metrics::INPUT_TIME_MAX_MS.set(max_input_time as i64);
+                        crate::metrics::INPUT_TIME_MIN_MS.set(min_input_time as i64);
+                        crate::metrics::INPUT_TIME_AVG_MS
+                            .set((total_input_time / input_count as u128) as i64);
                     }
+
+                    process_input(
+                        block_info,
+                        &input_result.input,
+                        &app_state,
+                        &queued_start,
+                        &mut fired_skipped_alert,
+                    )
+                    .await;
                 }
-                Err(e) => error!("Input file generation failed for block  {}, error: {}", block_number, e),
+                Err(e) => {
+                    error!("Input file generation failed for block  {}, error: {}", block_number, e)
+                }
             }
         }
 
         // Stream ended, reconnect (next loop iteration will handle reconnect)
         warn!("Block subscription ended, reconnecting...");
     }
+}
+
+/// Local folder: reads input files from a local folder at intervals
+async fn run_local_folder(app_state: AppState) -> anyhow::Result<()> {
+    let mut current_timestamp = if app_state.cliargs.initial_timestamp == 0 {
+        chrono::Utc::now().timestamp() as u64
+    } else {
+        app_state.cliargs.initial_timestamp
+    };
+    let inputs_queue = app_state.cliargs.inputs_queue.clone();
+    let mut queued_start = std::time::Instant::now();
+    let mut max_input_time: u128 = 0;
+    let mut min_input_time: u128 = u128::MAX;
+    let mut total_input_time: u128 = 0;
+    let mut input_count: u64 = 0;
+    let mut fired_skipped_alert = false;
+
+    // Read all files in the input directory
+    let entries = match fs::read_dir(&inputs_queue) {
+        Ok(e) => e,
+        Err(e) => {
+            error!("Failed to read input directory {}: {}", inputs_queue, e);
+            return Err(e.into());
+        }
+    };
+
+    // Collect all files matching the pattern and their block numbers
+    let hash_re = Regex::new(r"^(\d+)_([a-fA-F0-9]+)\.bin$").unwrap();
+    let mut files: Vec<(u64, String, PathBuf)> = vec![];
+    for entry in entries {
+        if let Ok(entry) = entry {
+            let fname = entry.file_name();
+            let fname_str = fname.to_string_lossy();
+            if let Some(caps) = hash_re.captures(&fname_str) {
+                if let (Some(block_str), Some(hash_str)) = (caps.get(1), caps.get(2)) {
+                    if let Ok(block_number) = block_str.as_str().parse::<u64>() {
+                        let hash = hash_str.as_str().to_string();
+                        files.push((block_number, hash, entry.path()));
+                    }
+                }
+            }
+        }
+    }
+
+    // Sort files by block number (ascending)
+    files.sort_by_key(|(block_number, _, _)| *block_number);
+
+    info!("Found {} input files to send", files.len());
+
+    // Send each file
+    for (block_number, hash, file_path) in &files {
+        info!("Reading block {}, processing...", block_number);
+
+        info!("Generating input file for block {}", block_number);
+        sleep(Duration::from_millis(app_state.cliargs.simulated_processed_time)).await;
+
+        // Copy file to inputs folder
+        let dest_path =
+            PathBuf::from(&app_state.inputs_folder).join(file_path.file_name().unwrap());
+        match fs::copy(file_path, &dest_path) {
+            Ok(_) => {
+                info!("Copied file {:?} to {:?}", file_path, dest_path);
+            }
+            Err(e) => {
+                error!("Failed to copy file {:?} to {:?}: {}", file_path, dest_path, e);
+            }
+        }
+
+        process_queued(*block_number, &app_state, &mut queued_start);
+        let block_info = BlockInfo {
+            block_number: *block_number,
+            timestamp: current_timestamp.into(),
+            block_hash: hash.clone(),
+            tx_count: 0,
+            mgas: 0,
+        };
+        current_timestamp += app_state.cliargs.interval_secs;
+
+        total_input_time += app_state.cliargs.simulated_processed_time as u128;
+        input_count += 1;
+        max_input_time = max_input_time.max(app_state.cliargs.simulated_processed_time as u128);
+        min_input_time = min_input_time.min(app_state.cliargs.simulated_processed_time as u128);
+
+        info!(
+            "Input file generated for block {}, time: {} ms, avg: {} ms, max: {} ms, min: {} ms",
+            block_number,
+            app_state.cliargs.simulated_processed_time,
+            total_input_time / input_count as u128,
+            max_input_time,
+            min_input_time
+        );
+        if app_state.cliargs.enable_metrics {
+            crate::metrics::INPUT_TIME_MAX_MS.set(max_input_time as i64);
+            crate::metrics::INPUT_TIME_MIN_MS.set(min_input_time as i64);
+            crate::metrics::INPUT_TIME_AVG_MS.set((total_input_time / input_count as u128) as i64);
+        }
+
+        let path = PathBuf::from(&app_state.inputs_folder).join(block_info.filename());
+        match fs::read(&path) {
+            Ok(content) => {
+                process_input(
+                    block_info,
+                    &content,
+                    &app_state,
+                    &queued_start,
+                    &mut fired_skipped_alert,
+                )
+                .await;
+            }
+            Err(e) => {
+                error!("Error reading input file {}: {}", path.display(), e);
+                if app_state.cliargs.enable_metrics {
+                    crate::metrics::INPUT_FILE_ERROR_TOTAL.inc();
+                }
+            }
+        }
+        sleep(Duration::from_secs(app_state.cliargs.interval_secs)).await;
+    }
+
+    Ok(())
 }
 
 #[tokio::main]
@@ -421,10 +573,17 @@ async fn main() -> Result<()> {
         });
     }
 
-    if app_state.cliargs.input_gen == cliargs::InputGen::Server {
-        connect_to_input_gen_server(app_state).await;
-    } else {
-        run_local_block_listener(app_state.clone()).await?;
+    // Select input generation method
+    match app_state.cliargs.input_gen {
+        cliargs::InputGen::Server => {
+            connect_to_input_gen_server(app_state).await;
+        }
+        cliargs::InputGen::Local => {
+            run_local_block_listener(app_state.clone()).await?;
+        }
+        cliargs::InputGen::Folder => {
+            run_local_folder(app_state.clone()).await?;
+        }
     }
     Ok(())
 }
