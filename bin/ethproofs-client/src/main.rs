@@ -1,3 +1,4 @@
+use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -94,21 +95,27 @@ async fn process_input(
     let block_number = block_info.block_number;
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
 
-    let result = fs::write(&filepath, content);
+    let mut file = File::create(filepath)
+        .expect(&format!("Cannot create the file: {} for block {}", &filename, &block_number));
+
+    // Write the content of the file
+    file.write_all(content)
+        .expect(&format!("Failed to write to file: {} for block {}", &filename, &block_number));
+    // Flush internal buffer to OS
+    file.flush().expect(&format!(
+        "Failed to flush file buffer to OS for file: {} for block {}",
+        &filename, &block_number
+    ));
+    // Optional: ensure everything is really on disk
+    file.sync_all()
+        .expect(&format!("Failed to sync file {} to disk for block {}", &filename, &block_number));
+
     let elapsed = queued_start.elapsed().as_millis();
 
-    match result {
-        Ok(_) => {
-            let block_label = block_number.to_string();
-            if app_state.cliargs.enable_metrics {
-                RECEIVED_TIME_GAUGE.with_label_values(&[&block_label]).set(elapsed as i64);
-                prune_gauge_last_n(&RECEIVED_TIME_GAUGE, 300);
-            }
-        }
-        Err(e) => {
-            error!("Failed to save input for block {}, file: {}, error: {}", block_number, filename, e);
-            return;
-        }
+    let block_label = block_number.to_string();
+    if app_state.cliargs.enable_metrics {
+        RECEIVED_TIME_GAUGE.with_label_values(&[&block_label]).set(elapsed as i64);
+        prune_gauge_last_n(&RECEIVED_TIME_GAUGE, 300);
     }
 
     let block_timestamp_ms = block_info.timestamp.as_u64() as u128 * 1000;

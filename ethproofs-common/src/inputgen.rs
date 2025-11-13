@@ -33,6 +33,7 @@ pub async fn generate_input_file(
     let save_file_start = Instant::now();
     let mut input_file = std::fs::File::create(&input_path)?;
     input_file.write_all(&result.input)?;
+    input_file.flush()?;
     info!("Saving input file for block {} took {} ms", block_number, save_file_start.elapsed().as_millis());
 
     Ok(start.elapsed().as_millis())
