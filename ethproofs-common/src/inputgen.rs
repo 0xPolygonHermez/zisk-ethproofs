@@ -1,6 +1,6 @@
 use std::{env, io::Write, path::Path, time::Instant};
 use anyhow::Result;
-use input::{GuestProgram, Network};
+use input::{GuestProgram, Network, InputGeneratorResult};
 use crate::protocol::BlockInfo;
 use log::info;
 
@@ -37,4 +37,22 @@ pub async fn generate_input_file(
     info!("Saving input file for block {} took {} ms", block_number, save_file_start.elapsed().as_millis());
 
     Ok(start.elapsed().as_millis())
+}
+
+pub async fn generate_input(
+    guest: GuestProgram,
+    block_info: BlockInfo
+) -> Result<(u128, InputGeneratorResult)> {
+    let start = Instant::now();
+    let block_number = block_info.block_number;
+    let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
+
+    let start_input_gen = Instant::now();
+    
+    let input_builder = input::build_input_generator(guest, &rpc_url, Network::Mainnet);
+    let result = input_builder.generate(block_number).await?;
+    
+    info!("Input generation for block {} took {} ms", block_number, start_input_gen.elapsed().as_millis());
+
+    Ok((start.elapsed().as_millis(), result))
 }

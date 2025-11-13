@@ -4,6 +4,7 @@ use zisk_distributed_grpc_api::{
     zisk_distributed_api_client::ZiskDistributedApiClient, LaunchProofRequest,
 };
 
+use std::path::PathBuf;
 use crate::state::AppState;
 use ethproofs_common::protocol::BlockInfo;
 
@@ -15,6 +16,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     // Get input file name
     let input_file = block_info.filename();
 
+    let filepath = PathBuf::from(&state.inputs_folder).join(&input_file).to_string_lossy().to_string();
+        
     debug!(
         "Sending coordinator request for block {} with {} compute units",
         block_number, state.compute_capacity
@@ -28,8 +31,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     let launch_proof_request = LaunchProofRequest {
         data_id: block_number.to_string(),
         compute_capacity: state.compute_capacity,
-        input_path: Some(input_file),
-        input_mode: 1,
+        input_path: Some(filepath),
+        input_mode: 2,
         simulated_node: None,
     };
     // Send the coordinator prove request

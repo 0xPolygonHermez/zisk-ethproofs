@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
 use anyhow::Result;
 use chrono::Utc;
@@ -34,7 +34,7 @@ use crate::cliargs::TelegramEvent;
 use crate::metrics::{BLOCK_TIMESTAMP_GAUGE, RECEIVED_TIME_GAUGE, TIME_TO_INPUT_GAUGE, prune_gauge_last_n};
 use crate::state::AppState;
 use ethproofs_common::protocol::{BlockCommand, BlockInfo, BlockMessage};
-use ethproofs_common::inputgen::generate_input_file;
+use ethproofs_common::inputgen::generate_input;
 use crate::telegram::{AlertType, send_telegram_alert};
 
 // Constants
@@ -286,8 +286,6 @@ async fn connect_to_input_gen_server(app_state: AppState) {
 async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
     use ethers::providers::{Provider, Ws, Middleware};
 
-    let inputs_folder = app_state.inputs_folder.clone();
-
     let mut max_input_time: u128 = 0;
     let mut min_input_time: u128 = u128::MAX;
     let mut total_input_time: u128 = 0;
@@ -348,8 +346,10 @@ async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
             };
 
             info!("Generating input file for block {}", block_number);
-            match generate_input_file(app_state.cliargs.guest.clone(), block_info.clone(), inputs_folder.clone()).await {
-                Ok(input_file_time) => {
+            let input_file_result = generate_input(app_state.cliargs.guest.clone(), block_info.clone()).await;
+
+            match input_file_result {
+                Ok((input_file_time, input_result)) => {
                     total_input_time += input_file_time;
                     input_count += 1;
                     max_input_time = max_input_time.max(input_file_time);
@@ -364,15 +364,7 @@ async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
                         min_input_time
                     );
 
-                    let path = PathBuf::from(&inputs_folder).join(block_info.filename());
-                    match fs::read(&path) {
-                        Ok(content) => {
-                            process_input(block_info, &content, &app_state, &queued_start, &mut fired_skipped_alert).await;
-                        }
-                        Err(e) => {
-                            error!("Error reading input file {}: {}", path.display(), e);
-                        }
-                    }
+                    process_input(block_info, &input_result.input, &app_state, &queued_start, &mut fired_skipped_alert).await;
                 }
                 Err(e) => error!("Input file generation failed for block  {}, error: {}", block_number, e),
             }
