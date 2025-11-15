@@ -35,7 +35,6 @@ use tokio_tungstenite::tungstenite::protocol::WebSocketConfig;
 use webhook::start_webhook_server;
 
 use crate::cliargs::TelegramEvent;
-use crate::metrics::LATEST_BLOCK_TIMESTAMP;
 use crate::state::AppState;
 use crate::telegram::{send_telegram_alert, AlertType};
 use ethproofs_common::inputgen::generate_input;
@@ -57,13 +56,6 @@ fn parse_binary_input(data: &[u8]) -> Option<(BlockMessage, &[u8])> {
 
 fn process_queued(block_number: u64, app_state: &AppState, queued_start: &mut std::time::Instant) {
     *queued_start = std::time::Instant::now();
-
-    // Set Prometheus block_timestamp in seconds
-    if app_state.cliargs.enable_metrics {
-        let now_secs = chrono::Utc::now().timestamp();
-        LATEST_BLOCK_TIMESTAMP.set(now_secs);
-        crate::metrics::LATEST_BLOCK_NUMBER.set(block_number as i64);
-    }
 
     info!("Received queued command for block {}", block_number);
 
@@ -141,7 +133,7 @@ async fn process_input(
                 success: false,
             },
         );
-    // Only store the data in the vector; metrics are updated in webhook.rs
+        // Only store the data in the vector; metrics are updated in webhook.rs
     }
 
     info!(
@@ -361,9 +353,6 @@ async fn run_local_block_listener(app_state: AppState) -> anyhow::Result<()> {
             info!("Received block {}, processing...", block_number);
 
             process_queued(block_number, &app_state, &mut queued_start);
-            if app_state.cliargs.enable_metrics {
-                crate::metrics::LATEST_BLOCK_NUMBER.set(block_number as i64);
-            }
 
             let block_info = BlockInfo {
                 block_number,

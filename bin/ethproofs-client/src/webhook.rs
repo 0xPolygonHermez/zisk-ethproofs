@@ -137,6 +137,14 @@ async fn process_webhook(
             let mut shared_metrics = state.shared_metrics.lock().await;
             let entry = shared_metrics.get(&proved_block_number);
             if let Some(metrics) = entry {
+                let previous_block = crate::metrics::LATEST_BLOCK_NUMBER.get() as u64;
+                let diff = if proved_block_number > previous_block {
+                    proved_block_number - previous_block - 1
+                } else {
+                    0
+                };
+                crate::metrics::BLOCKS_MISSING_TOTAL.inc_by(diff);
+
                 crate::metrics::LATEST_BLOCK_NUMBER.set(metrics.block_number as i64);
                 crate::metrics::LATEST_RECEIVED_TIME_MS.set(metrics.received_time_ms);
                 crate::metrics::LATEST_TIME_TO_INPUT_MS.set(metrics.time_to_input_ms);
@@ -145,14 +153,32 @@ async fn process_webhook(
                 crate::metrics::LATEST_PROVING_TIME_MS.set(metrics.proving_time_ms.unwrap_or(0));
                 crate::metrics::LATEST_PROVING_CYCLES.set(metrics.proving_cycles.unwrap_or(0));
                 crate::metrics::LATEST_BLOCK_TIMESTAMP.set(metrics.timestamp);
-                if let Some(submit_time) = metrics.submit_time_ms {
-                    crate::metrics::LATEST_SUBMIT_TIME_MS.set(submit_time);
-                }
+                crate::metrics::LATEST_SUBMIT_TIME_MS.set(metrics.submit_time_ms.unwrap_or(0));
+                crate::metrics::BLOCKS_RECEIVED_TOTAL.inc();
+
                 debug!("Published failure metrics for block {}", metrics.block_number);
                 // Remove the entry for the processed block
                 shared_metrics.remove(&proved_block_number);
             } else {
+                let previous_block = crate::metrics::LATEST_BLOCK_NUMBER.get() as u64;
+                let diff = if proved_block_number > previous_block {
+                    proved_block_number - previous_block - 1
+                } else {
+                    0
+                };
                 crate::metrics::LATEST_BLOCK_NUMBER.set(proved_block_number as i64);
+                crate::metrics::BLOCKS_RECEIVED_TOTAL.inc();
+                crate::metrics::LATEST_BLOCK_TIMESTAMP.set(0);
+                crate::metrics::LATEST_SUBMIT_TIME_MS.set(0);
+                crate::metrics::LATEST_MGAS.set(0);
+                crate::metrics::LATEST_TX_COUNT.set(0);
+                crate::metrics::LATEST_PROVING_TIME_MS.set(0);
+                crate::metrics::LATEST_PROVING_CYCLES.set(0);
+                crate::metrics::LATEST_TIME_TO_INPUT_MS.set(0);
+                crate::metrics::LATEST_RECEIVED_TIME_MS.set(0);
+
+                crate::metrics::BLOCKS_MISSING_TOTAL.inc_by(diff);
+
                 warn!(
                     "No metrics entry found for block {} when trying to publish failure metrics",
                     proved_block_number
@@ -258,9 +284,6 @@ async fn process_webhook(
     }
 
     // Send Telegram alert if enabled
-    if state.cliargs.enable_metrics {
-        crate::metrics::PROOF_SUCCESS_TOTAL.inc();
-    }
     if state.cliargs.telegram_enabled(TelegramEvent::BlockProved) {
         let msg = format!(
             "Proof generated for block {}, proving_time: {}s, cycles: {}",
@@ -283,9 +306,17 @@ async fn process_webhook(
         if let Some(metrics) = entry {
             metrics.proving_time_ms = Some(proving_time_ms as i64);
             metrics.proving_cycles = Some(proving_cycles as i64);
-            metrics.submit_time_ms = if submitted { Some(submit_time as i64) } else { None };
+            metrics.submit_time_ms = if submitted { Some(submit_time as i64) } else { Some(0) };
             metrics.success = payload.success;
+
             // Publish all metrics for the current block
+            let previous_block = crate::metrics::LATEST_BLOCK_NUMBER.get() as u64;
+            let diff = if proved_block_number > previous_block {
+                proved_block_number - previous_block - 1
+            } else {
+                0
+            };
+
             crate::metrics::LATEST_BLOCK_NUMBER.set(metrics.block_number as i64);
             crate::metrics::LATEST_RECEIVED_TIME_MS.set(metrics.received_time_ms);
             crate::metrics::LATEST_TIME_TO_INPUT_MS.set(metrics.time_to_input_ms);
@@ -293,9 +324,41 @@ async fn process_webhook(
             crate::metrics::LATEST_TX_COUNT.set(metrics.tx_count as i64);
             crate::metrics::LATEST_PROVING_TIME_MS.set(metrics.proving_time_ms.unwrap_or(0));
             crate::metrics::LATEST_PROVING_CYCLES.set(metrics.proving_cycles.unwrap_or(0));
-            if let Some(submit_time) = metrics.submit_time_ms {
-                crate::metrics::LATEST_SUBMIT_TIME_MS.set(submit_time);
+
+            crate::metrics::LATEST_SUBMIT_TIME_MS.set(metrics.submit_time_ms.unwrap_or(0));
+            crate::metrics::LATEST_BLOCK_TIMESTAMP.set(metrics.timestamp);
+
+            crate::metrics::BLOCKS_MISSING_TOTAL.inc_by(diff);
+            crate::metrics::BLOCKS_RECEIVED_TOTAL.inc();
+
+            crate::metrics::PROOF_SUCCESS_TOTAL.inc();
+
+            let time_to_proof = metrics.time_to_input_ms
+                + proving_time_ms as i64
+                + metrics.submit_time_ms.unwrap_or(0);
+
+            crate::metrics::TIME_TO_INPUT_HIST
+                .with_label_values(&["block"])
+                .observe(metrics.time_to_input_ms as f64 / 1000.0);
+
+            crate::metrics::TIME_TO_PROOF_HIST
+                .with_label_values(&["block"])
+                .observe(time_to_proof as f64 / 1000.0);
+            if time_to_proof <= 12000 {
+                crate::metrics::TIME_TO_PROOF_UNDER_12S_TOTAL.inc();
+            } else {
+                crate::metrics::TIME_TO_PROOF_OVER_12S_TOTAL.inc();
             }
+
+            crate::metrics::PROVING_TIME_HIST
+                .with_label_values(&["block"])
+                .observe(proving_time_ms as f64 / 1000.0);
+            if proving_time_ms <= 12000 {
+                crate::metrics::PROVING_UNDER_12S_TOTAL.inc();
+            } else {
+                crate::metrics::PROVING_OVER_12S_TOTAL.inc();
+            }
+
             debug!(
                 "Published metrics for block {}, update time: {} ms",
                 metrics.block_number,

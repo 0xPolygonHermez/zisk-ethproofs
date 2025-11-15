@@ -1,13 +1,17 @@
 use std::net::SocketAddr;
 
 use anyhow::{anyhow, Result};
+use axum::routing::get;
 use axum::{http::StatusCode, response::IntoResponse, Router};
-use log::{info};
-use prometheus::{Encoder, TextEncoder, register_int_gauge};
 use lazy_static::lazy_static;
-use axum::{routing::get};
+use log::info;
+use prometheus::register_histogram_vec;
+use prometheus::register_int_counter;
+use prometheus::HistogramVec;
+use prometheus::IntCounter;
+use prometheus::{register_int_gauge, Encoder, TextEncoder};
 
-use crate::{state::AppState};
+use crate::state::AppState;
 
 #[derive(Clone, Debug)]
 pub struct BlockMetrics {
@@ -73,18 +77,51 @@ lazy_static! {
         "input_file_error_total",
         "Total number of input file errors"
     ).unwrap();
-    pub static ref INPUT_TIME_MAX_MS: prometheus::IntGauge = prometheus::register_int_gauge!(
-        "input_time_max_ms",
-        "Maximum input file generation time in ms"
+    pub static ref TIME_TO_INPUT_HIST: HistogramVec = register_histogram_vec!(
+        "time_to_input_hist",
+        "Histogram of time to input per block",
+        &[],
+        vec![1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0, 7000.0, 8000.0, 9000.0, 10000.0, 11000.0, 12000.0, 13000.0, 14000.0, 15000.0]
     ).unwrap();
-    pub static ref INPUT_TIME_MIN_MS: prometheus::IntGauge = prometheus::register_int_gauge!(
-        "input_time_min_ms",
-        "Minimum input file generation time in ms"
+    pub static ref TIME_TO_PROOF_HIST: HistogramVec = register_histogram_vec!(
+        "time_to_proof_hist",
+        "Histogram of time to proof per block",
+        &[],
+        vec![1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0, 7000.0, 8000.0, 9000.0, 10000.0, 11000.0, 12000.0, 13000.0, 14000.0, 15000.0]
     ).unwrap();
-    pub static ref INPUT_TIME_AVG_MS: prometheus::IntGauge = prometheus::register_int_gauge!(
-        "input_time_avg_ms",
-        "Average input file generation time in ms"
+    pub static ref PROVING_TIME_HIST: HistogramVec = register_histogram_vec!(
+        "proving_time_hist",
+        "Histogram of proving time per block",
+        &[],
+        vec![1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0, 7000.0, 8000.0, 9000.0, 10000.0, 11000.0, 12000.0, 13000.0, 14000.0, 15000.0]
     ).unwrap();
+
+    // Counters for block processing
+    pub static ref TIME_TO_PROOF_UNDER_12S_TOTAL: IntCounter = register_int_counter!(
+        "time_to_proof_under_12s_total",
+        "Total number of blocks with time to proof under 12s"
+    ).unwrap();
+    pub static ref TIME_TO_PROOF_OVER_12S_TOTAL: IntCounter = register_int_counter!(
+        "time_to_proof_over_12s_total",
+        "Total number of blocks with time to proof over 12s"
+    ).unwrap();
+    pub static ref PROVING_UNDER_12S_TOTAL: IntCounter = register_int_counter!(
+        "proving_under_12s_total",
+        "Total number of blocks proved in under 12s"
+    ).unwrap();
+    pub static ref PROVING_OVER_12S_TOTAL: IntCounter = register_int_counter!(
+        "proving_over_12s_total",
+        "Total number of blocks proved in over 12s"
+    ).unwrap();
+    pub static ref BLOCKS_MISSING_TOTAL: IntCounter = register_int_counter!(
+        "blocks_missing_total",
+        "Total number of missing blocks (not received)"
+    ).unwrap();
+    pub static ref BLOCKS_RECEIVED_TOTAL: IntCounter = register_int_counter!(
+        "blocks_received_total",
+        "Total number of blocks received"
+    ).unwrap();
+
 }
 
 /// Prune gauge to keep only the last N block labels
@@ -107,8 +144,7 @@ pub async fn start_metrics_server(state: AppState) -> Result<()> {
         .parse()
         .map_err(|e| anyhow!("Invalid metrics bind address, error: {e}"))?;
 
-    let metrics_app = Router::new()
-        .route("/metrics", get(metrics_handler));
+    let metrics_app = Router::new().route("/metrics", get(metrics_handler));
 
     info!("Metrics server running at http://{}", metrics_addr);
 
