@@ -138,7 +138,7 @@ async fn process_webhook(
             let entry = shared_metrics.get(&proved_block_number);
             if let Some(metrics) = entry {
                 let previous_block = crate::metrics::LATEST_BLOCK_NUMBER.get() as u64;
-                let diff = if proved_block_number > previous_block {
+                let diff = if proved_block_number > previous_block && previous_block != 0 {
                     proved_block_number - previous_block - 1
                 } else {
                     0
@@ -161,7 +161,7 @@ async fn process_webhook(
                 shared_metrics.remove(&proved_block_number);
             } else {
                 let previous_block = crate::metrics::LATEST_BLOCK_NUMBER.get() as u64;
-                let diff = if proved_block_number > previous_block {
+                let diff = if proved_block_number > previous_block && previous_block != 0 {
                     proved_block_number - previous_block - 1
                 } else {
                     0
@@ -311,7 +311,7 @@ async fn process_webhook(
 
             // Publish all metrics for the current block
             let previous_block = crate::metrics::LATEST_BLOCK_NUMBER.get() as u64;
-            let diff = if proved_block_number > previous_block {
+            let diff = if proved_block_number > previous_block && previous_block != 0 {
                 proved_block_number - previous_block - 1
             } else {
                 0
@@ -334,16 +334,15 @@ async fn process_webhook(
             crate::metrics::PROOF_SUCCESS_TOTAL.inc();
 
             let time_to_proof = metrics.time_to_input_ms
-                + proving_time_ms as i64
-                + metrics.submit_time_ms.unwrap_or(0);
+                + proving_time_ms as i64;
 
             crate::metrics::TIME_TO_INPUT_HIST
-                .with_label_values(&["block"])
-                .observe(metrics.time_to_input_ms as f64 / 1000.0);
+                .with_label_values(&[] as &[&str])
+                .observe(metrics.time_to_input_ms as f64);
 
             crate::metrics::TIME_TO_PROOF_HIST
-                .with_label_values(&["block"])
-                .observe(time_to_proof as f64 / 1000.0);
+                .with_label_values(&[] as &[&str])
+                .observe(time_to_proof as f64);
             if time_to_proof <= 12000 {
                 crate::metrics::TIME_TO_PROOF_UNDER_12S_TOTAL.inc();
             } else {
@@ -351,8 +350,8 @@ async fn process_webhook(
             }
 
             crate::metrics::PROVING_TIME_HIST
-                .with_label_values(&["block"])
-                .observe(proving_time_ms as f64 / 1000.0);
+                .with_label_values(&[] as &[&str])
+                .observe(proving_time_ms as f64);
             if proving_time_ms <= 12000 {
                 crate::metrics::PROVING_UNDER_12S_TOTAL.inc();
             } else {

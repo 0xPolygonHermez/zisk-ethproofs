@@ -542,6 +542,12 @@ async fn main() -> Result<()> {
         }
     };
 
+    // Ensure all *_over_12s_total and *_under_12s_total counters appear in /metrics
+    crate::metrics::TIME_TO_PROOF_UNDER_12S_TOTAL.inc_by(0);
+    crate::metrics::TIME_TO_PROOF_OVER_12S_TOTAL.inc_by(0);
+    crate::metrics::PROVING_UNDER_12S_TOTAL.inc_by(0);
+    crate::metrics::PROVING_OVER_12S_TOTAL.inc_by(0);
+
     // Ensure input, output, and log directories exist
     create_dir_all(&app_state.inputs_folder).await?;
 
