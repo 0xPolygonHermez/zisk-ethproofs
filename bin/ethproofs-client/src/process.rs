@@ -188,7 +188,7 @@ pub(crate) async fn process_input(
             if app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) && !fired_alerts.failed
             {
                 tokio::spawn(async move {
-                    if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
+                    if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Error).await {
                         warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
                     }
                 });

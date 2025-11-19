@@ -131,6 +131,15 @@ async fn process_webhook(
             proved_block_number, payload.job_id, err_code, err_message
         );
         error!("❌ {}", &msg);
+
+        if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+            tokio::spawn(async move {
+                if let Err(e) = send_telegram_alert(&msg, AlertType::Error).await {
+                    warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                }
+            });
+        }
+
         if state.cliargs.enable_metrics {
             crate::metrics::PROOF_FAILURE_TOTAL.inc();
             // Publish all available metrics for this block
@@ -184,13 +193,6 @@ async fn process_webhook(
                     proved_block_number
                 );
             }
-        }
-        if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
-            tokio::spawn(async move {
-                if let Err(e) = send_telegram_alert(&msg, AlertType::Error).await {
-                    warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
-                }
-            });
         }
         return;
     }
