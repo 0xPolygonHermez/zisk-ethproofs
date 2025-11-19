@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use log::{error, info, warn};
 
@@ -13,18 +13,11 @@ use crate::state::AppState;
 use crate::telegram::{send_telegram_alert, AlertType};
 use ethproofs_common::protocol::BlockInfo;
 
-#[derive(Debug, Default)]
-pub(crate) struct FiredAlerts {
-    pub(crate) skipped: bool,
-    pub(crate) failed: bool,
-}
-
-pub(crate) fn process_queued(
-    block_number: u64,
-    app_state: &AppState,
-    queued_start: &mut std::time::Instant,
-) {
-    *queued_start = std::time::Instant::now();
+pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
+    {
+        let mut queued_start = app_state.queued_start.lock().unwrap();
+        *queued_start = Instant::now();
+    }
 
     info!("Received queued command for block {}", block_number);
 
@@ -51,13 +44,7 @@ pub(crate) fn process_queued(
     }
 }
 
-pub(crate) async fn process_input(
-    block_info: BlockInfo,
-    content: &[u8],
-    app_state: &AppState,
-    queued_start: &std::time::Instant,
-    fired_alerts: &mut FiredAlerts,
-) {
+pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_state: &AppState) {
     let filename = block_info.filename();
     let block_number = block_info.block_number;
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
@@ -74,7 +61,10 @@ pub(crate) async fn process_input(
     file.sync_all()
         .expect(&format!("Failed to sync file {} to disk for block {}", &filename, &block_number));
 
-    let elapsed = queued_start.elapsed().as_millis();
+    let input_time = {
+        let queued_start = app_state.queued_start.lock().unwrap();
+        queued_start.elapsed().as_millis()
+    };
 
     let block_timestamp_ms = block_info.timestamp.as_u64() as u128 * 1000;
     let time_to_input = match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -88,7 +78,7 @@ pub(crate) async fn process_input(
             block_number,
             BlockMetrics {
                 block_number,
-                received_time_ms: elapsed as i64,
+                received_time_ms: input_time as i64,
                 time_to_input_ms: time_to_input as i64,
                 mgas: block_info.mgas,
                 tx_count: block_info.tx_count as u64,
@@ -103,7 +93,7 @@ pub(crate) async fn process_input(
 
     info!(
         "Received and saved input for block {}, file: {}, time: {} ms, time-to-input: {} ms",
-        block_number, filename, elapsed, time_to_input
+        block_number, filename, input_time, time_to_input
     );
 
     if app_state.cliargs.skip_proving {
@@ -129,36 +119,36 @@ pub(crate) async fn process_input(
                 block_number
             );
             warn!("{}", msg_alert);
-            if app_state
-                .cliargs
-                .telegram_enabled(TelegramEvent::SkippedThreshold)
-                && !fired_alerts.skipped
+            let mut alert_handle = None;
+            if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold)
+                && !app_state.skipped_alert()
             {
-                let handle = tokio::spawn(async move {
-                    if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Warning).await {
-                        warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
+                app_state.set_skipped_alert(true);
+                let msg_alert_clone = msg_alert.clone();
+                alert_handle = Some(tokio::spawn(async move {
+                    if let Err(e) = send_telegram_alert(&msg_alert_clone, AlertType::Warning).await
+                    {
+                        warn!("Failed to send Telegram alert: {}, error: {}", msg_alert_clone, e);
                     }
-                });
-                if app_state.cliargs.panic_on_skipped {
-                    handle.await.ok();
-                }
-                fired_alerts.skipped = true;
+                }));
             }
             if app_state.cliargs.panic_on_skipped {
+                if let Some(handle) = alert_handle {
+                    handle.await.ok();
+                }
                 panic!("Skipped blocks exceeded threshold, panicking as per configuration");
             }
-        } else if app_state
-            .cliargs
-            .telegram_enabled(TelegramEvent::SkippedThreshold)
-            && fired_alerts.skipped
+        } else if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold)
+            && app_state.skipped_alert()
         {
+            app_state.set_skipped_alert(false);
             tokio::spawn(async move {
-                let msg_alert = format!("Resumed proving. Now proving block {}.", proving_block_number);
+                let msg_alert =
+                    format!("Resumed proving. Now proving block {}.", proving_block_number);
                 if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
                     warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
                 }
             });
-            fired_alerts.skipped = false;
         }
         return;
     }
@@ -171,28 +161,32 @@ pub(crate) async fn process_input(
             let mut current_job_id = current_job_id_shared_clone.lock().unwrap();
             *current_job_id = job_id;
 
-            if app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) && fired_alerts.failed
-            {
-                let msg_alert = format!("Resumed proving. Now proving block {}.", block_info.block_number);
-                tokio::spawn(async move {
-                    if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
-                        warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
-                    }
-                });
-                fired_alerts.failed = false;
+            if app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+                if app_state.failed_alert() {
+                    app_state.set_failed_alert(false);
+                    let msg_alert =
+                        format!("Resumed proving. Now proving block {}.", block_info.block_number);
+                    tokio::spawn(async move {
+                        if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
+                            warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
+                        }
+                    });
+                }
             }
         }
         Err(e) => {
-            let msg_alert = format!("Proof generation failed for block {}, error: {}", block_number, e);
+            let msg_alert =
+                format!("Proof generation failed for block {}, error: {}", block_number, e);
             error!("❌ {}", &msg_alert);
-            if app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) && !fired_alerts.failed
-            {
-                tokio::spawn(async move {
-                    if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Error).await {
-                        warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
-                    }
-                });
-                fired_alerts.failed = true;
+            if app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+                if !app_state.failed_alert() {
+                    app_state.set_failed_alert(true);
+                    tokio::spawn(async move {
+                        if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Error).await {
+                            warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
+                        }
+                    });
+                }
             }
 
             app_state.delete_input_file(&filename);

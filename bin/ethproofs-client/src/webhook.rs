@@ -335,8 +335,7 @@ async fn process_webhook(
 
             crate::metrics::PROOF_SUCCESS_TOTAL.inc();
 
-            let time_to_proof = metrics.time_to_input_ms
-                + proving_time_ms as i64;
+            let time_to_proof = metrics.time_to_input_ms + proving_time_ms as i64;
 
             crate::metrics::TIME_TO_INPUT_HIST
                 .with_label_values(&[] as &[&str])

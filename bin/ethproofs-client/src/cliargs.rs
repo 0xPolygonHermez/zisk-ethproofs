@@ -76,8 +76,7 @@ pub struct CliArgs {
 
     /// Simulated processed time in milliseconds (only affects 'folder' mode)
     #[clap(long, default_value = "0")]
-    pub simulated_processed_time: u64,
-
+    pub simulated_input_time: u64,
 }
 
 impl CliArgs {

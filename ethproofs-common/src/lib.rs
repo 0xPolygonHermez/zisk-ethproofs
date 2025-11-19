@@ -1,2 +1,2 @@
-pub mod protocol;
 pub mod inputgen;
+pub mod protocol;

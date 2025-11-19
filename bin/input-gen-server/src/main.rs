@@ -1,16 +1,16 @@
+use std::env;
 use std::time::Instant;
-use std::{env};
 use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result};
 use clap::Parser;
 use dotenv::dotenv;
 use ethers::providers::{Middleware, Provider, Ws};
-use futures_util::{SinkExt, StreamExt};
-use input::{GuestProgram};
-use log::{error, info, warn};
-use ethproofs_common::protocol::{BlockCommand, BlockMessage};
 use ethproofs_common::inputgen::generate_input_file;
+use ethproofs_common::protocol::{BlockCommand, BlockMessage};
+use futures_util::{SinkExt, StreamExt};
+use input::GuestProgram;
+use log::{error, info, warn};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::broadcast::{self, Receiver, Sender},
@@ -75,7 +75,7 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
             return Ok(());
         };
 
-        let block_number = if let Some (bn) =block.number {
+        let block_number = if let Some(bn) = block.number {
             bn.as_u64()
         } else {
             warn!("Selected block has no number, skipping...");
@@ -157,9 +157,9 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
 
     // Configure WebSocket connection
     let ws_cfg = WebSocketConfig {
-        max_frame_size:   Some(32 << 20),   // 32 MiB per frame
-        max_message_size: Some(128 << 20),  // 128 MiB per message
-        max_write_buffer_size: 32 << 20,    // 32 MiB write buffer
+        max_frame_size: Some(32 << 20),    // 32 MiB per frame
+        max_message_size: Some(128 << 20), // 128 MiB per message
+        max_write_buffer_size: 32 << 20,   // 32 MiB write buffer
         ..Default::default()
     };
 
@@ -199,13 +199,17 @@ async fn handle_client(stream: TcpStream, mut rx: Receiver<String>) {
                 }
                 BlockCommand::Input => {
                     let file = block_message.info.filename();
-                    info!("Sending input for block {}, file: {}", block_message.info.block_number,file);
+                    info!(
+                        "Sending input for block {}, file: {}",
+                        block_message.info.block_number, file
+                    );
                     let start_send = Instant::now();
                     let filepath = PathBuf::from(&inputs_folder).join(&file);
                     match fs::read(&filepath) {
                         Ok(content) => {
                             let command_bytes = command.as_bytes();
-                            let mut payload = Vec::with_capacity(command_bytes.len() + 1 + content.len());
+                            let mut payload =
+                                Vec::with_capacity(command_bytes.len() + 1 + content.len());
                             payload.extend_from_slice(command_bytes);
                             payload.push(b'\n');
                             payload.extend_from_slice(&content);

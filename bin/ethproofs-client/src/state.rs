@@ -1,6 +1,7 @@
 use std::{
     env,
     sync::{Arc, Mutex},
+    time::Instant,
 };
 
 use anyhow::Context;
@@ -16,6 +17,12 @@ use crate::{
     db::{self, DbBlockProofs},
 };
 
+#[derive(Debug, Default)]
+pub(crate) struct FiredAlerts {
+    pub(crate) skipped: bool,
+    pub(crate) failed: bool,
+}
+
 pub const DEFAULT_INPUTS_FOLDER: &str = "inputs";
 pub const DEFAULT_COORDINATOR_URL: &str = "http://localhost:50051";
 pub const DEFAULT_WEBHOOK_PORT: u16 = 8051;
@@ -30,6 +37,7 @@ pub struct AppState {
     pub proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub next_proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub current_job_id: Arc<Mutex<String>>,
+    pub queued_start: Arc<Mutex<Instant>>,
     pub ethproofs_client: Option<EthProofsApi>,
     pub ethproofs_cluster_id: Option<u32>,
     pub coordinator_channel: Option<Channel>,
@@ -41,6 +49,7 @@ pub struct AppState {
     pub input_gen_server_url: String,
     pub compute_capacity: u32,
     pub db_block_proofs: Option<DbBlockProofs>,
+    pub fired_alerts: Arc<Mutex<FiredAlerts>>,
 }
 
 impl AppState {
@@ -99,6 +108,7 @@ impl AppState {
         let proving_block = Arc::new(Mutex::new(None));
         let next_proving_block = Arc::new(Mutex::new(None));
         let current_job_id = Arc::new(Mutex::new(String::new()));
+        let queued_start = Arc::new(Mutex::new(Instant::now()));
         let webhook_port = env::var("WEBHOOK_PORT")
             .unwrap_or(DEFAULT_WEBHOOK_PORT.to_string())
             .parse()
@@ -152,6 +162,8 @@ impl AppState {
             None
         };
 
+        let fired_alerts = Arc::new(Mutex::new(FiredAlerts::default()));
+
         Ok(Self {
             cliargs,
             proving_block,
@@ -168,6 +180,8 @@ impl AppState {
             input_gen_server_url,
             compute_capacity,
             db_block_proofs,
+            fired_alerts,
+            queued_start,
             shared_metrics: crate::SharedMetrics::default(),
         })
     }
@@ -179,5 +193,21 @@ impl AppState {
                 warn!("Failed to remove input file {}, error: {}", input_file_path, e);
             }
         }
+    }
+
+    pub fn skipped_alert(&self) -> bool {
+        self.fired_alerts.lock().unwrap().skipped
+    }
+
+    pub fn set_skipped_alert(&self, value: bool) {
+        self.fired_alerts.lock().unwrap().skipped = value;
+    }
+
+    pub fn failed_alert(&self) -> bool {
+        self.fired_alerts.lock().unwrap().failed
+    }
+
+    pub fn set_failed_alert(&self, value: bool) {
+        self.fired_alerts.lock().unwrap().failed = value;
     }
 }

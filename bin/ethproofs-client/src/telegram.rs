@@ -18,11 +18,11 @@ pub async fn send_telegram_alert(message: &str, alert_type: AlertType) -> Result
     // Check if the TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID environment variables are set, if not return
     let bot_token = match env::var("TELEGRAM_BOT_TOKEN").ok() {
         Some(token) => token,
-        None => return Ok(()),
+        None => return Err(anyhow::anyhow!("TELEGRAM_BOT_TOKEN not set")),
     };
     let chat_id = match env::var("TELEGRAM_CHAT_ID").ok() {
         Some(id) => id,
-        None => return Ok(()),
+        None => return Err(anyhow::anyhow!("TELEGRAM_CHAT_ID not set")),
     };
     let pre_msg = match env::var("TELEGRAM_PREFIX_MSG") {
         Ok(msg) => format!("{}:", msg),
