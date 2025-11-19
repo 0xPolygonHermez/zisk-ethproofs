@@ -36,7 +36,8 @@ fn parse_binary_input(data: &[u8]) -> Option<(BlockMessage, &[u8])> {
     Some((msg, content))
 }
 
-pub(crate) async fn run_input_gen_server(app_state: AppState) {
+/// Run process to get input files from input-gen-server via WebSocket
+pub(crate) async fn process_inputs_from_server(app_state: AppState) {
     let ws_cfg = WebSocketConfig {
         max_frame_size: Some(32 << 20),
         max_message_size: Some(128 << 20),
@@ -109,7 +110,8 @@ pub(crate) async fn run_input_gen_server(app_state: AppState) {
     }
 }
 
-pub(crate) async fn run_input_gen_local(app_state: AppState) -> Result<()> {
+/// Run process to generate input files locally by connecting to Ethereum node
+pub(crate) async fn process_inputs_locally(app_state: AppState) -> Result<()> {
     let mut max_input_time: u128 = 0;
     let mut min_input_time: u128 = u128::MAX;
     let mut total_input_time: u128 = 0;
@@ -200,7 +202,8 @@ pub(crate) async fn run_input_gen_local(app_state: AppState) -> Result<()> {
     }
 }
 
-pub(crate) async fn run_input_gen_folder(app_state: AppState) -> Result<()> {
+/// Run process to get input files from a folder
+pub(crate) async fn process_inputs_from_folder(app_state: AppState) -> Result<()> {
     let mut current_timestamp = if app_state.cliargs.initial_timestamp == 0 {
         Utc::now().timestamp() as u64
     } else {

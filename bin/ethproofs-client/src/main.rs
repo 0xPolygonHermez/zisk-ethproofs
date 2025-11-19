@@ -26,7 +26,7 @@ mod webhook;
 use webhook::start_webhook_server;
 
 use crate::state::AppState;
-use input::{run_input_gen_folder, run_input_gen_local, run_input_gen_server};
+use input::{process_inputs_from_folder, process_inputs_locally, process_inputs_from_server};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -82,13 +82,13 @@ async fn main() -> Result<()> {
     // Select input generation method
     match app_state.cliargs.input_gen {
         cliargs::InputGen::Server => {
-            run_input_gen_server(app_state).await;
+            process_inputs_from_server(app_state).await;
         }
         cliargs::InputGen::Local => {
-            run_input_gen_local(app_state.clone()).await?;
+            process_inputs_locally(app_state.clone()).await?;
         }
         cliargs::InputGen::Folder => {
-            run_input_gen_folder(app_state.clone()).await?;
+            process_inputs_from_folder(app_state.clone()).await?;
         }
     }
     Ok(())
