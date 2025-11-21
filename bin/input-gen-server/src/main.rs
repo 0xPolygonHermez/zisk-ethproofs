@@ -56,6 +56,7 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
                 continue;
             }
         };
+        info!("Connected to node WS RPC provider");
 
         let mut stream = match rpc_provider.subscribe_blocks().await {
             Ok(s) => s,
