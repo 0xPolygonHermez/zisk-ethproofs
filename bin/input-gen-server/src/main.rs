@@ -2,7 +2,7 @@ use std::env;
 use std::time::Instant;
 use std::{fs, path::PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Parser;
 use dotenv::dotenv;
 use ethers::providers::{Middleware, Provider, Ws};
@@ -11,6 +11,7 @@ use ethproofs_common::protocol::{BlockCommand, BlockMessage};
 use futures_util::{SinkExt, StreamExt};
 use input::GuestProgram;
 use log::{error, info, warn};
+use tokio::time::sleep;
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::broadcast::{self, Receiver, Sender},
@@ -45,11 +46,24 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
     let mut input_count: u64 = 0;
 
     loop {
-        let rpc_provider = Provider::<Ws>::connect(rpc_ws_url.clone())
-            .await
-            .context("Failed to connect to WS RPC provider")?;
+        info!("Connecting to node WS RPC provider at {}", rpc_ws_url);
+        let rpc_provider = match Provider::<Ws>::connect(rpc_ws_url.clone()).await {
+            Ok(p) => p,
+            Err(e) => {
+                error!("Failed to connect to node WS RPC provider, error {}", e);
+                info!("Retrying connection in 5 seconds...");
+                sleep(std::time::Duration::from_secs(5)).await;
+                continue;
+            }
+        };
 
-        let mut stream = rpc_provider.subscribe_blocks().await?;
+        let mut stream = match rpc_provider.subscribe_blocks().await {
+            Ok(s) => s,
+            Err(e) => {
+                error!("Failed to subscribe to blocks, error {}", e);
+                continue;
+            }
+        };
         info!("Listening for new blocks on Ethereum Mainnet...");
 
         let mut selected_block: Option<ethers::types::Block<ethers::types::TxHash>> = None;
