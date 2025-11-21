@@ -118,28 +118,27 @@ pub(crate) async fn process_inputs_locally(app_state: AppState) -> Result<()> {
     let mut input_count: u64 = 0;
 
     loop {
+        info!("Connecting to node WS RPC provider at {}", app_state.rpc_ws_url);
         let provider = match Provider::<Ws>::connect(&app_state.rpc_ws_url).await {
             Ok(p) => p,
             Err(e) => {
-                warn!(
-                    "Failed to connect to WS RPC provider at {}, error: {}",
-                    app_state.rpc_ws_url, e
-                );
-                info!("Retrying in 1 seconds...");
-                time::sleep(Duration::from_secs(1)).await;
+                error!("Failed to connect to node WS RPC provider, error: {}", e);
+                info!("Retrying in 5 seconds...");
+                sleep(Duration::from_secs(5)).await;
                 continue;
             }
         };
+        info!("Connected to node WS RPC provider");
+
         let mut stream = match provider.subscribe_blocks().await {
             Ok(s) => s,
             Err(e) => {
-                warn!("Subscription failed, error: {}", e);
-                info!("Retrying in 1 seconds...");
-                time::sleep(Duration::from_secs(1)).await;
+                error!("Failed to subscribe to blocks, error {}", e);
+                info!("Retrying in 5 seconds...");
+                sleep(Duration::from_secs(5)).await;
                 continue;
             }
         };
-
         info!("Listening for new blocks on Ethereum Mainnet...");
 
         while let Some(block) = stream.next().await {
