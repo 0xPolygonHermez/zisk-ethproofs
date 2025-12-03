@@ -30,4 +30,4 @@ tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "feature/rsp-reth-1.9.1", features = ["execution-witness"]}
+input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "fix/bls", features = ["execution-witness"]}
