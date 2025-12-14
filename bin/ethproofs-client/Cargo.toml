@@ -35,9 +35,9 @@ sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio", "macros", "tls
 tonic = "0.14"
 zstd = "0.13.3"
 
-zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
-zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
+zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.1" }
+zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.1" }
+zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.1" }
 
 ethproofs-common = { path = "../../ethproofs-common" }
 regex = "1.12.2"

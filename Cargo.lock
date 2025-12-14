@@ -2406,7 +2406,7 @@ dependencies = [
 [[package]]
 name = "circuit"
 version = "0.14.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.0#a50d1391e4a4ac097415a2ed371fa1eb6025b395"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.1#c552648025d07576dcc5cdb7bf6f824342263d12"
 
 [[package]]
 name = "clang-sys"
@@ -4835,7 +4835,7 @@ dependencies = [
 [[package]]
 name = "input"
 version = "0.4.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=fix%2Fbls#0b470fe9b8f3ec14bd8e545200e9d3a62ba125b5"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=pre-develop-0.14.1#a75ff742f852667f07eb685a6ad37c30273e68ff"
 dependencies = [
  "alloy",
  "alloy-consensus",
@@ -5159,7 +5159,7 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 [[package]]
 name = "lib-c"
 version = "0.14.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.0#a50d1391e4a4ac097415a2ed371fa1eb6025b395"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.1#c552648025d07576dcc5cdb7bf6f824342263d12"
 
 [[package]]
 name = "libc"
@@ -6596,7 +6596,7 @@ dependencies = [
 [[package]]
 name = "precompiles-helpers"
 version = "0.14.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.0#a50d1391e4a4ac097415a2ed371fa1eb6025b395"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.1#c552648025d07576dcc5cdb7bf6f824342263d12"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -8069,7 +8069,7 @@ dependencies = [
 [[package]]
 name = "riscv"
 version = "0.14.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.0#a50d1391e4a4ac097415a2ed371fa1eb6025b395"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.1#c552648025d07576dcc5cdb7bf6f824342263d12"
 dependencies = [
  "elf",
 ]
@@ -8130,7 +8130,7 @@ dependencies = [
 [[package]]
 name = "rsp-client-executor"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/rsp.git?rev=12ad0292c702f22c8e3f99980e25ecac4a882854#12ad0292c702f22c8e3f99980e25ecac4a882854"
+source = "git+https://github.com/succinctlabs/rsp.git?rev=dff5c97aecab8dd33b70cf5b575904858a78efc3#dff5c97aecab8dd33b70cf5b575904858a78efc3"
 dependencies = [
  "alloy-consensus",
  "alloy-evm",
@@ -8169,7 +8169,7 @@ dependencies = [
 [[package]]
 name = "rsp-host-executor"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/rsp.git?rev=12ad0292c702f22c8e3f99980e25ecac4a882854#12ad0292c702f22c8e3f99980e25ecac4a882854"
+source = "git+https://github.com/succinctlabs/rsp.git?rev=dff5c97aecab8dd33b70cf5b575904858a78efc3#dff5c97aecab8dd33b70cf5b575904858a78efc3"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -8210,7 +8210,7 @@ dependencies = [
 [[package]]
 name = "rsp-mpt"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/rsp.git?rev=12ad0292c702f22c8e3f99980e25ecac4a882854#12ad0292c702f22c8e3f99980e25ecac4a882854"
+source = "git+https://github.com/succinctlabs/rsp.git?rev=dff5c97aecab8dd33b70cf5b575904858a78efc3#dff5c97aecab8dd33b70cf5b575904858a78efc3"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -8225,7 +8225,7 @@ dependencies = [
 [[package]]
 name = "rsp-primitives"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/rsp.git?rev=12ad0292c702f22c8e3f99980e25ecac4a882854#12ad0292c702f22c8e3f99980e25ecac4a882854"
+source = "git+https://github.com/succinctlabs/rsp.git?rev=dff5c97aecab8dd33b70cf5b575904858a78efc3#dff5c97aecab8dd33b70cf5b575904858a78efc3"
 dependencies = [
  "alloy-eips",
  "alloy-genesis",
@@ -8244,7 +8244,7 @@ dependencies = [
 [[package]]
 name = "rsp-provider"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/rsp.git?rev=12ad0292c702f22c8e3f99980e25ecac4a882854#12ad0292c702f22c8e3f99980e25ecac4a882854"
+source = "git+https://github.com/succinctlabs/rsp.git?rev=dff5c97aecab8dd33b70cf5b575904858a78efc3#dff5c97aecab8dd33b70cf5b575904858a78efc3"
 dependencies = [
  "alloy-json-rpc",
  "alloy-provider",
@@ -8256,7 +8256,7 @@ dependencies = [
 [[package]]
 name = "rsp-rpc-db"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/rsp.git?rev=12ad0292c702f22c8e3f99980e25ecac4a882854#12ad0292c702f22c8e3f99980e25ecac4a882854"
+source = "git+https://github.com/succinctlabs/rsp.git?rev=dff5c97aecab8dd33b70cf5b575904858a78efc3#dff5c97aecab8dd33b70cf5b575904858a78efc3"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -11882,7 +11882,7 @@ dependencies = [
 [[package]]
 name = "zisk-common"
 version = "0.14.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.0#a50d1391e4a4ac097415a2ed371fa1eb6025b395"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.1#c552648025d07576dcc5cdb7bf6f824342263d12"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -11904,7 +11904,7 @@ dependencies = [
 [[package]]
 name = "zisk-core"
 version = "0.14.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.0#a50d1391e4a4ac097415a2ed371fa1eb6025b395"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.1#c552648025d07576dcc5cdb7bf6f824342263d12"
 dependencies = [
  "elf",
  "fields",
@@ -11925,7 +11925,7 @@ dependencies = [
 [[package]]
 name = "zisk-distributed-common"
 version = "0.1.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.0#a50d1391e4a4ac097415a2ed371fa1eb6025b395"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.1#c552648025d07576dcc5cdb7bf6f824342263d12"
 dependencies = [
  "anyhow",
  "borsh",
@@ -11944,7 +11944,7 @@ dependencies = [
 [[package]]
 name = "zisk-distributed-grpc-api"
 version = "0.14.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.0#a50d1391e4a4ac097415a2ed371fa1eb6025b395"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.1#c552648025d07576dcc5cdb7bf6f824342263d12"
 dependencies = [
  "anyhow",
  "chrono",
@@ -11963,7 +11963,7 @@ dependencies = [
 [[package]]
 name = "zisk-pil"
 version = "0.14.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.0#a50d1391e4a4ac097415a2ed371fa1eb6025b395"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.1#c552648025d07576dcc5cdb7bf6f824342263d12"
 dependencies = [
  "fields",
  "proofman",
@@ -11977,7 +11977,7 @@ dependencies = [
 [[package]]
 name = "ziskos"
 version = "0.14.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.0#a50d1391e4a4ac097415a2ed371fa1eb6025b395"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.14.1#c552648025d07576dcc5cdb7bf6f824342263d12"
 dependencies = [
  "bincode 2.0.1",
  "cfg-if",
