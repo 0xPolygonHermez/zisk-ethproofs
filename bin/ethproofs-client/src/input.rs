@@ -172,7 +172,7 @@ pub(crate) async fn process_inputs_locally(app_state: AppState) -> Result<()> {
 
             info!("Generating input file for block {}", block_number);
             let input_file_result =
-                generate_input(app_state.cliargs.guest.clone(), block_info.clone()).await;
+                generate_input(block_info.clone()).await;
 
             match input_file_result {
                 Ok((input_file_time, input_result)) => {
@@ -222,7 +222,7 @@ pub(crate) async fn process_inputs_from_folder(app_state: AppState) -> Result<()
         }
     };
 
-    let hash_re = Regex::new(r"^(\d+)_([a-fA-F0-9]+)\\.bin$").unwrap();
+    let hash_re = Regex::new(r"^(\d+)_([a-fA-F0-9]+)\.bin$").unwrap();
     let mut files: Vec<(u64, String, PathBuf)> = vec![];
     for entry in entries {
         if let Ok(entry) = entry {

@@ -30,4 +30,16 @@ tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "pre-develop-0.14.1", features = ["execution-witness"]}
+# input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "feature/hints" }
+input = { path = "../zisk-eth-client/crates/input" }
+
+[patch.crates-io]
+sha3 = { path = "../zisk-patch-sha3/sha3" }
+tiny-keccak = { path = "../zisk-patch-tiny-keccak" }
+# k256 = { path = "../zisk-patch-elliptic-curves/k256"}
+
+alloy-evm ={ path = "../alloy-evm/crates/evm" }
+alloy-primitives = { path = "../core/crates/primitives" }
+
+[patch."https://github.com/paradigmxyz/reth.git"]
+reth-trie-common = { path = "../reth/crates/trie/common" }

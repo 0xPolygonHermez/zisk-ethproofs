@@ -35,9 +35,22 @@ sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio", "macros", "tls
 tonic = "0.14"
 zstd = "0.13.3"
 
-zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.1" }
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.1" }
-zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.1" }
+# rsp-client-executor = { git = "https://github.com/succinctlabs/rsp.git", rev = "545ae85f21ba274b97ee8cb68b86acc5c3dd6b4a" }
+
+# zeth-core = { git = "https://github.com/boundless-xyz/zeth.git", rev = "e8460d3e516fa01e45f00366b233d7d8e5cb8e67" }
+# zeth-chainspec = { git = "https://github.com/boundless-xyz/zeth.git", rev = "e8460d3e516fa01e45f00366b233d7d8e5cb8e67" }
+zeth-core = { path = "../../../zeth/crates/core"}
+zeth-chainspec = { path = "../../../zeth/crates/chainspec" }
+alloy-primitives = { version = "1.4.1", default-features = false, features = ["std", "map", "map-fxhash"] }
+
+zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
+zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
+zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
+ziskos = { path = "../../../zisk/ziskos/entrypoint" }
 
 ethproofs-common = { path = "../../ethproofs-common" }
 regex = "1.12.2"
+
+[features]
+default = []
+zec-rsp = ["input/zec-rsp"]

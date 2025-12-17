@@ -12,3 +12,4 @@ serde_json = "1"
 tokio.workspace = true
 input.workspace = true
 ethers.workspace = true
+url.workspace = true

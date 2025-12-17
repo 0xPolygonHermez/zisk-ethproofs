@@ -12,3 +12,5 @@ output
 prod.env
 staging.env
 proofs
+/inputs_queue
+/*.bin

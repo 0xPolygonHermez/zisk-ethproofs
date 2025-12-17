@@ -5,6 +5,10 @@ use std::sync::Arc;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use log::{error, info, warn};
+// use rsp_client_executor::{executor::EthClientExecutor, io::EthClientExecutorInput};
+use zeth_core::{Input, EthEvmConfig, validate_block};
+use zeth_chainspec::MAINNET;
+use ziskos::hints::{close_precompile_hints, init_precompile_hints};
 
 use crate::cliargs::TelegramEvent;
 use crate::metrics::BlockMetrics;
@@ -49,17 +53,83 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
     let block_number = block_info.block_number;
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
 
-    let mut file = File::create(filepath)
-        .expect(&format!("Cannot create the file: {} for block {}", &filename, &block_number));
+    let start = Instant::now();
+    let hints_file: PathBuf = PathBuf::from(format!("{}_hints.bin", block_number));
+    if let Err(e) = init_precompile_hints(hints_file) {
+        error!("Failed to init precompile hints for block {}, error: {}", block_number, e);
+    return;
+    }
 
-    file.write_all(content)
-        .expect(&format!("Failed to write to file: {} for block {}", &filename, &block_number));
-    file.flush().expect(&format!(
-        "Failed to flush file buffer to OS for file: {} for block {}",
-        &filename, &block_number
-    ));
-    file.sync_all()
-        .expect(&format!("Failed to sync file {} to disk for block {}", &filename, &block_number));
+    // Execute the block to get precompile hints populated
+    info!("Executing {} block", block_number);
+
+    #[cfg(feature = "zec-rsp")]
+    {
+        let start_exec = Instant::now();
+        let input = bincode::deserialize::<EthClientExecutorInput>(&content).unwrap();
+        let executor = EthClientExecutor::eth(
+            Arc::new(
+                (&input.genesis)
+                    .try_into()
+                    .expect("Failed to convert genesis block into the required type"),
+            ),
+            input.custom_beneficiary,
+        );
+
+        let header = match executor.execute(input) {
+            Ok(h) => h,
+            Err(e) => {
+                error!("Failed to execute block {}, error: {}", block_number, e);
+                return;
+            }
+        };
+        // Calculate block hash
+        let block_hash = header.hash_slow();
+        info!("Executed block {} in {} ms, hash: {}", block_number, start_exec.elapsed().as_millis(), block_hash);
+    }
+    #[cfg(not(feature = "zec-rsp"))]
+    {
+        let start_exec = Instant::now();
+        let input = bincode::deserialize::<Input>(&content).unwrap();
+        let block_number = input.block.header.number;
+
+        let evm_config = EthEvmConfig::new(MAINNET.clone());
+
+        let block_hash = validate_block(input.clone(), evm_config).expect("Failed to validate block");
+        info!("Executed block {} in {} ms, txs: {}, hash: {}", block_number, start_exec.elapsed().as_millis(), input.block.body.transactions.len(), block_hash);
+    }
+
+    if let Err(e) = close_precompile_hints() {
+        error!("Failed to close precompile hints for block {}, error: {}", block_number, e);
+        return;
+    }
+    info!("Precompiles for block {} generated in {} ms", block_number, start.elapsed().as_millis());
+
+    // Save the input to a file.
+    let mut file = if let Ok(f) = File::create(filepath) {
+        f
+    } else {
+        error!("Cannot create the file {} for block {}", &filename, &block_number);
+        return;
+    };
+    if let Err(e) = file.write_all(content) {
+        error!("Failed to write to file {} for block {}, error: {}", &filename, &block_number, e);
+        return;
+    }
+    if let Err(e) = file.flush() {
+        error!(
+            "Failed to flush file buffer to OS for file {} for block {}, error: {}",
+            &filename, &block_number, e
+        );
+        return;
+    }
+    if let Err(e) = file.sync_all() {
+        error!(
+            "Failed to sync file {} to disk for block {}, error: {}",
+            &filename, &block_number, e
+        );
+        return;
+    }
 
     let input_time = {
         let queued_start = app_state.queued_start.lock().unwrap();

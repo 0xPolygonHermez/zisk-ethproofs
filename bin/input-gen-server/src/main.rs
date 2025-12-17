@@ -3,13 +3,11 @@ use std::time::Instant;
 use std::{fs, path::PathBuf};
 
 use anyhow::Result;
-use clap::Parser;
 use dotenv::dotenv;
 use ethers::providers::{Middleware, Provider, Ws};
 use ethproofs_common::inputgen::generate_input_file;
 use ethproofs_common::protocol::{BlockCommand, BlockMessage};
 use futures_util::{SinkExt, StreamExt};
-use input::GuestProgram;
 use log::{error, info, warn};
 use tokio::time::sleep;
 use tokio::{
@@ -24,15 +22,8 @@ use tokio_tungstenite::tungstenite::Message;
 const WS_LISTEN_IP: &str = "0.0.0.0";
 const WS_DEFAULT_PORT: &str = "8765";
 
-#[derive(Debug, Clone, Parser)]
-pub struct InputGenServerArgs {
-    /// Guest program for which to generate inputs
-    #[clap(long, short, value_enum, default_value_t = GuestProgram::Rsp)]
-    pub guest: GuestProgram,
-}
-
 /// Listens for new blocks on the Ethereum network and generates input files for them
-async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
+async fn block_listener(tx: Sender<String>) -> Result<()> {
     let rpc_ws_url = env::var("RPC_WS_URL").expect("RPC_WS_URL must be set");
     let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or("inputs".to_string());
     let block_modulus: u64 = env::var("BLOCK_MODULUS")
@@ -125,7 +116,7 @@ async fn block_listener(guest: GuestProgram, tx: Sender<String>) -> Result<()> {
             );
 
             let input_file_time =
-                generate_input_file(guest.clone(), input_message.clone().info, inputs_folder.clone()).await?;
+                generate_input_file(input_message.clone().info, inputs_folder.clone()).await?;
 
             let input_message_json = serde_json::to_string(&input_message).unwrap();
 
@@ -263,7 +254,9 @@ async fn main() {
 
     // Check if LOG_RUST is set; if not, set it to "info"
     if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "input_gen_server=info");
+        unsafe {
+            std::env::set_var("RUST_LOG", "input_gen_server=info");
+        }
     }
 
     // Initialize the logger
@@ -272,15 +265,13 @@ async fn main() {
     // Load environment variables from .env file
     dotenv().ok();
 
-    let args = InputGenServerArgs::parse();
-
     // Create broadcast channel for sending input file metadata + names
     let (tx, _) = broadcast::channel::<String>(100);
 
     // Launch eth block input file generator
     let tx_clone = tx.clone();
     task::spawn(async move {
-        let _ = block_listener(args.guest, tx_clone).await;
+        let _ = block_listener(tx_clone).await;
     });
 
     // Start listening for WebSocket clients

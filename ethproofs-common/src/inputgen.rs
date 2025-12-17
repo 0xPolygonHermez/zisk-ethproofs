@@ -1,20 +1,20 @@
 use crate::protocol::BlockInfo;
 use anyhow::Result;
-use input::{GuestProgram, InputGeneratorResult, Network};
+use input::{InputGenerator, InputGeneratorResult, Network};
 use log::info;
+use url::Url;
 use std::{env, io::Write, path::Path, time::Instant};
 
 /// Generate the guest input file for the given block and return the time taken in milliseconds.
 /// Reads RPC_URL from environment, spawns a blocking task to run the non-Send generation future,
 /// writes the file named using `BlockInfo::filename()`.
 pub async fn generate_input_file(
-    guest: GuestProgram,
     block_info: BlockInfo,
     inputs_folder: String,
 ) -> Result<u128> {
     let start = Instant::now();
     let block_number = block_info.block_number;
-    let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
+    let rpc_url = Url::parse(&env::var("RPC_URL").expect("RPC_URL must be set"))?;
     let input_folder = Path::new(&inputs_folder);
     std::fs::create_dir_all(input_folder)?;
     let input_path = input_folder.join(block_info.filename());
@@ -23,8 +23,8 @@ pub async fn generate_input_file(
     let result = tokio::task::spawn_blocking(move || {
         let rt = tokio::runtime::Handle::current();
         rt.block_on(async move {
-            let input_builder = input::build_input_generator(guest, &rpc_url, Network::Mainnet);
-            input_builder.generate(block_number).await
+            let input_generator = InputGenerator::new(rpc_url, Network::Mainnet);
+            input_generator.generate(block_number).await
         })
     })
     .await??;
@@ -48,17 +48,16 @@ pub async fn generate_input_file(
 }
 
 pub async fn generate_input(
-    guest: GuestProgram,
     block_info: BlockInfo,
 ) -> Result<(u128, InputGeneratorResult)> {
     let start = Instant::now();
     let block_number = block_info.block_number;
-    let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
+    let rpc_url = Url::parse(&env::var("RPC_URL").expect("RPC_URL must be set"))?;
 
     let start_input_gen = Instant::now();
 
-    let input_builder = input::build_input_generator(guest, &rpc_url, Network::Mainnet);
-    let result = input_builder.generate(block_number).await?;
+    let input_generator = InputGenerator::new(rpc_url, Network::Mainnet);
+    let result = input_generator.generate(block_number).await?;
 
     info!(
         "Input generation for block {} took {} ms",
