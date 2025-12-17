@@ -38,8 +38,8 @@ sha3 = { path = "../zisk-patch-sha3/sha3" }
 tiny-keccak = { path = "../zisk-patch-tiny-keccak" }
 # k256 = { path = "../zisk-patch-elliptic-curves/k256"}
 
-alloy-evm ={ path = "../alloy-evm/crates/evm" }
-alloy-primitives = { path = "../core/crates/primitives" }
+alloy-evm ={ path = "../alloy-rs-evm/crates/evm" }
+alloy-primitives = { path = "../alloy-rs-core/crates/primitives" }
 
 [patch."https://github.com/paradigmxyz/reth.git"]
 reth-trie-common = { path = "../reth/crates/trie/common" }
