@@ -1,54 +1,94 @@
-# Zisk-Ethproofs
+# Zisk Ethproofs
 
-## Setup
+## EthProofs Client
 
-Copy the `example.env` file to `.env`, then edit it to set the required variables:
+### Setup
 
-| Variable                     | Description                                                                 | Required | Default |
-|------------------------------|-----------------------------------------------------------------------------|----------|---------|
-| `RPC_URL`                    | HTTP JSON-RPC URL for the Ethereum Mainnet node                             | Yes      | –       |
-| `RPC_WS_URL`                 | WebSocket JSON-RPC URL for the Ethereum Mainnet node                        | Yes      | –       |
-| `ETHPROOFS_API_URL`          | URL of the Ethproofs API                                                    | Yes      | –       |
-| `ETHPROOFS_API_TOKEN`        | Token for accessing the Ethproofs API                                       | Yes      | –       |
-| `ETHPROOFS_CLUSTER`          | Ethproofs cluster ID where proofs will be submitted                         | Yes      | –       |
-| `BLOCK_MODULUS`              | Modulus value used to select which blocks will be proven                    | No       | `100`   |
-| `ELF_FILE`                   | Name of the ELF file used to prove blocks. It must be located in the `./program` folder  | Yes | –     |
-| `DISTRIBUTED_PROVE_PROCESSES`| Number of processes used for distributed proving                            | Yes      | –       |
-| `DISTRIBUTED_PROVE_THREADS`  | Number of threads per process for distributed proving                       | Yes      | –       |
-| `TELEGRAM_BOT_TOKEN`         | Telegram Bot API token for sending alerts. Alerts are disabled if undefined | No       | –       |
-| `TELEGRAM_CHAT_ID`           | Telegram chat ID where alerts will be sent. Alerts are disabled if undefined| No       | –       |
+Copy the file `bin/ethproofs-client/example.env` to `.env`, then edit it to set the environment variables:
 
-## Install
+| Variable               | Description                                                                 |
+|------------------------|-----------------------------------------------------------------------------|
+| `INPUT_GEN_SERVER_URL` | URL of the input-gen-server                                                 |
+| `WEBHOOK_PORT`         | Listening port for the Webhook server                                       |
+| `METRICS_PORT`         | Listening port for the Prometheus metrics server                            |
+| `COORDINATOR_URL`      | URL of the Zisk Coordinator                                                 |
+| `ETHPROOFS_API_URL`    | URL of the EthProofs API                                                    |
+| `ETHPROOFS_API_TOKEN`  | Token used to authenticate with the EthProofs API                           |
+| `ETHPROOFS_CLUSTER`    | EthProofs cluster ID where proofs will be submitted                         |
+| `TELEGRAM_BOT_TOKEN`   | Telegram Bot API token for sending alerts                                   |
+| `TELEGRAM_CHAT_ID`     | Telegram chat ID where alerts will be sent                                  |
+| `INPUTS_FOLDER`        | Folder where input files will be stored                                     |
+| `COMPUTE_CAPACITY`     | Compute capacity required for block proofs                                  |
 
-To install Zisk-ethproofs, use the following command:
-```bash
-cargo install --path .
-```
+### Build
 
-## Run
-
-To run Zisk-Ethproofs and start submitting block proofs to Ethproofs, use the following command:
+To build `ethproofs-client`, run:
 
 ```bash
-zisk-ethproofs
+cargo build --release --bin ethproofs-client
 ```
 
-### Command-line flags
+### Run
 
-| Flag | Description |
-|------|-------------|
-| `-n, --no-ethproofs` | Disable proof status reporting and submission to Ethproofs. Only block proving will be performed |
-| `-b, --block-submit-alert` | Send a Telegram alert when a block proof is successfully submitted to Ethproofs. By default, only error/warning alerts are sent |
-| `-t, --test-block <TEST_BLOCK>` | Generate and submit the proof for a specific block only. Useful for testing or troubleshooting. Example: `-t 22137695` |
-| `-d, --disable-distributed` | Disable distributed proving. The proof will be generated using a single process |
-| `-k, --keep-input` | Keeps the block input file after proof generation (does not delete it) |
+To run `ethproofs-client` and start submitting block proofs to EthProofs, run:
 
-### Folders
+```bash
+target/release/ethproofs-client -s
+```
 
-The following folders will be created during the execution of Zisk-Ethproofs:
+### Command-line Flags
+```
+  -s, --submit-ethproofs
+          Enable proof submission to Ethproofs
+  -t, --telegram-alert <TELEGRAM_ALERT>...
+          Send Telegram alerts for specified events [possible values: block-proved, skipped-threshold, proof-failed]
+  -d, --insert-db
+          Insert block proof data into the database
+  -k, --skip-proving
+          Skip the proving step (useful for testing)
+  -m, --enable-metrics
+          Enable Prometheus metrics server
+  -i, --keep-input
+          Keep the input file after processing
+  -b, --skipped-threshold <SKIPPED_THRESHOLD>
+          Number of skipped blocks before triggering an alert [default: 5]
+  -p, --panic-on-skipped
+          Panic when skipped blocks exceed the threshold
+```
 
-| Folder       | Description                                                                                 |
-|--------------|---------------------------------------------------------------------------------------------|
-| `./input`    | Stores the input file generated for each block                                              |
-| `./proof`    | Stores the proof files generated for each block. A subfolder named after the block number will be created for each block |
-| `./log`      | Stores the log file generated for each block                                                |
+---
+
+## Input Generator Server
+
+### Setup
+
+Copy the file `bin/input-gen-server/example.env` to `.env`, then edit it to set the environment variables:
+
+| Variable             | Description                                                                 |
+|----------------------|-----------------------------------------------------------------------------|
+| `RPC_URL`            | HTTP JSON-RPC URL for Ethereum Mainnet                                      |
+| `RPC_WS_URL`         | WebSocket JSON-RPC URL for Ethereum Mainnet                                 |
+| `WS_PORT`            | Listening port for the input-gen-server WebSocket server                    |
+| `INPUTS_FOLDER`      | Folder where the block input files are stored                               |
+| `BLOCK_MODULUS`      | Modulus used to select which blocks will generate input files               |
+
+### Build
+
+To build `input-gen-server`, run:
+
+```bash
+cargo build --release --bin input-gen-server
+```
+
+### Run
+
+To run `input-gen-server` and start generating block inputs for the `zec-rsp.elf` client, run:
+
+```bash
+target/release/input-gen-server
+```
+
+### Command-line Flags
+```
+  -g, --guest <GUEST>  Guest program for which to generate inputs [default: rsp] [possible values: rsp, zeth]
+```
