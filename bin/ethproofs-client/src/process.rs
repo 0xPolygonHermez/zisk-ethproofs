@@ -53,11 +53,14 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
     let block_number = block_info.block_number;
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
 
-    let start = Instant::now();
-    let hints_file: PathBuf = PathBuf::from(format!("{}_hints.bin", block_number));
-    if let Err(e) = init_precompile_hints(hints_file) {
-        error!("Failed to init precompile hints for block {}, error: {}", block_number, e);
-    return;
+    #[cfg(feature = "zisk-hints")]
+    {
+        let start_hints = Instant::now();
+        let hints_file: PathBuf = PathBuf::from(format!("{}_hints.bin", block_number));
+        if let Err(e) = init_precompile_hints(hints_file) {
+            error!("Failed to init precompile hints for block {}, error: {}", block_number, e);
+        return;
+        }
     }
 
     // Execute the block to get precompile hints populated
@@ -99,11 +102,14 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
         info!("Executed block {} in {} ms, txs: {}, hash: {}", block_number, start_exec.elapsed().as_millis(), input.block.body.transactions.len(), block_hash);
     }
 
-    if let Err(e) = close_precompile_hints() {
-        error!("Failed to close precompile hints for block {}, error: {}", block_number, e);
-        return;
+    #[cfg(feature = "zisk-hints")]
+    {
+        if let Err(e) = close_precompile_hints() {
+            error!("Failed to close precompile hints for block {}, error: {}", block_number, e);
+            return;
+        }
+        info!("Precompiles for block {} generated in {} ms", block_number, start_hints.elapsed().as_millis());
     }
-    info!("Precompiles for block {} generated in {} ms", block_number, start.elapsed().as_millis());
 
     // Save the input to a file.
     let mut file = if let Ok(f) = File::create(filepath) {
