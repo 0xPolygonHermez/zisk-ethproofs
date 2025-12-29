@@ -37,7 +37,7 @@ input = { path = "../zisk-eth-client/crates/input" }
 sha3 = { path = "../zisk-patch-sha3/sha3" }
 tiny-keccak = { path = "../zisk-patch-tiny-keccak" }
 sha2 = { path = "../zisk-patch-sha2/sha2" }
-# k256 = { path = "../zisk-patch-elliptic-curves/k256"}
+k256 = { path = "../zisk-patch-k256/k256"}
 # aurora-engine-modexp = { path = "../zisk-patch-modexp/engine-modexp" }
 
 alloy-evm ={ path = "../alloy-rs-evm/crates/evm" }

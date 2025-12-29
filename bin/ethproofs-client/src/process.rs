@@ -8,6 +8,7 @@ use log::{error, info, warn};
 // use rsp_client_executor::{executor::EthClientExecutor, io::EthClientExecutorInput};
 use zeth_core::{Input, EthEvmConfig, validate_block};
 use zeth_chainspec::MAINNET;
+#[cfg(feature = "zisk-hints")]
 use ziskos::hints::{close_precompile_hints, init_precompile_hints};
 
 use crate::cliargs::TelegramEvent;
@@ -54,12 +55,14 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
 
     #[cfg(feature = "zisk-hints")]
+    let start_hints = Instant::now();
+
+    #[cfg(feature = "zisk-hints")]
     {
-        let start_hints = Instant::now();
         let hints_file: PathBuf = PathBuf::from(format!("{}_hints.bin", block_number));
         if let Err(e) = init_precompile_hints(hints_file) {
             error!("Failed to init precompile hints for block {}, error: {}", block_number, e);
-        return;
+            return;
         }
     }
 
