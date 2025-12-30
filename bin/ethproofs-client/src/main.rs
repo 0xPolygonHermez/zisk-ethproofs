@@ -109,7 +109,7 @@ async fn main() -> Result<()> {
     // Check if LOG_RUST is set; if not, set it to "info"
     if std::env::var("RUST_LOG").is_err() {
         unsafe {
-            std::env::set_var("RUST_LOG", "ethproofs_client=info");
+            std::env::set_var("RUST_LOG", "info");
         }
     }
 

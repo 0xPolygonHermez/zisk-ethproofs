@@ -52,6 +52,8 @@ ethproofs-common = { path = "../../ethproofs-common" }
 regex = "1.12.2"
 
 [features]
-default = ["zisk-hints"]
+default = ["hints"]
 zec-rsp = ["input/zec-rsp"]
-zisk-hints = []
+hints = []
+hints-metrics = ["ziskos/hints-metrics"]
+hints-reference = ["ziskos/hints-reference"]

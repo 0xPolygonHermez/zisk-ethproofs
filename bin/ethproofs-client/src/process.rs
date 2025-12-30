@@ -8,7 +8,7 @@ use log::{error, info, warn};
 // use rsp_client_executor::{executor::EthClientExecutor, io::EthClientExecutorInput};
 use zeth_core::{Input, EthEvmConfig, validate_block};
 use zeth_chainspec::MAINNET;
-#[cfg(feature = "zisk-hints")]
+#[cfg(feature = "hints")]
 use ziskos::hints::{close_precompile_hints, init_precompile_hints};
 
 use crate::cliargs::TelegramEvent;
@@ -54,10 +54,10 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
     let block_number = block_info.block_number;
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
 
-    #[cfg(feature = "zisk-hints")]
+    #[cfg(feature = "hints")]
     let start_hints = Instant::now();
 
-    #[cfg(feature = "zisk-hints")]
+    #[cfg(feature = "hints")]
     {
         let hints_file: PathBuf = PathBuf::from(format!("{}_hints.bin", block_number));
         if let Err(e) = init_precompile_hints(hints_file) {
@@ -105,7 +105,7 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
         info!("Executed block {} in {} ms, txs: {}, hash: {}", block_number, start_exec.elapsed().as_millis(), input.block.body.transactions.len(), block_hash);
     }
 
-    #[cfg(feature = "zisk-hints")]
+    #[cfg(feature = "hints")]
     {
         if let Err(e) = close_precompile_hints() {
             error!("Failed to close precompile hints for block {}, error: {}", block_number, e);
