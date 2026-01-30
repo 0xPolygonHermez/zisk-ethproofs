@@ -34,14 +34,22 @@ url = "2.5.4"
 input = { path = "../zisk-eth-client/crates/input" }
 
 [patch.crates-io]
-sha3 = { path = "../zisk-patch-sha3/sha3" }
-tiny-keccak = { path = "../zisk-patch-tiny-keccak" }
-sha2 = { path = "../zisk-patch-sha2/sha2" }
-k256 = { path = "../zisk-patch-k256/k256"}
+# ruint = { path = "../zisk-patch-ruint" }
+# sha3 = { path = "../zisk-patch-sha3/sha3" }
+# tiny-keccak = { path = "../zisk-patch-tiny-keccak" }
+# sha2 = { path = "../zisk-patch-sha2/sha2" }
+# k256 = { path = "../zisk-patch-k256/k256"}
+# substrate-bn = { path = "../zisk-patch-bn" }
+# # blst = { path = "../zisk-patch-blst/bindings/rust" }
 # aurora-engine-modexp = { path = "../zisk-patch-modexp/engine-modexp" }
 
-alloy-evm ={ path = "../alloy-rs-evm/crates/evm" }
-alloy-primitives = { path = "../alloy-rs-core/crates/primitives" }
+# Enable this for deterministic Hashmap sort
+alloy-evm = { git = "https://github.com/0xPolygonHermez/zisk-patch-alloy-evm.git", branch = "zisk-hints" }
+# Local development
+# alloy-evm = { path = "../alloy-rs-evm/crates/evm" }
 
 [patch."https://github.com/paradigmxyz/reth.git"]
-reth-trie-common = { path = "../reth/crates/trie/common" }
+# Enable this for deterministic Hashmap sort
+reth-trie-common = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints"}
+# Local development
+# reth-trie-common = { path = "../zisk-patch-reth/crates/trie/common" }

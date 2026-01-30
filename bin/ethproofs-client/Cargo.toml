@@ -37,23 +37,39 @@ zstd = "0.13.3"
 
 # rsp-client-executor = { git = "https://github.com/succinctlabs/rsp.git", rev = "545ae85f21ba274b97ee8cb68b86acc5c3dd6b4a" }
 
-# zeth-core = { git = "https://github.com/boundless-xyz/zeth.git", rev = "e8460d3e516fa01e45f00366b233d7d8e5cb8e67" }
-# zeth-chainspec = { git = "https://github.com/boundless-xyz/zeth.git", rev = "e8460d3e516fa01e45f00366b233d7d8e5cb8e67" }
-zeth-core = { path = "../../../zeth/crates/core"}
-zeth-chainspec = { path = "../../../zeth/crates/chainspec" }
-alloy-primitives = { version = "1.4.1", default-features = false, features = ["std", "map", "map-fxhash"] }
+zeth-core = { git = "https://github.com/0xPolygonHermez/zisk-patch-zeth", branch = "zisk-hints" }
+zeth-chainspec = { git = "https://github.com/0xPolygonHermez/zisk-patch-zeth", branch = "zisk-hints" }
+# zeth-core = { path = "../../../zeth/crates/core"}
+# zeth-chainspec = { path = "../../../zeth/crates/chainspec" }
 
-zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
-zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
-ziskos = { path = "../../../zisk/ziskos/entrypoint" }
+# zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
+# zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
+# zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
+# ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
+# Local development
+zisk-distributed-common = { path = "../../../zisk/distributed/crates/common" }
+zisk-common = { path = "../../../zisk/common" }
+zisk-distributed-grpc-api = { path = "../../../zisk/distributed/crates/grpc-api" }
+ziskos-hints = { path = "../../../zisk/ziskos-hints" }
 
 ethproofs-common = { path = "../../ethproofs-common" }
 regex = "1.12.2"
 
+blst = { version = "=0.3.15" }
+revm = { version = "31.0.2", default-features = false }
+
+alloy-consensus = { version = "1.0.37", default-features = false, features = ["crypto-backend"] }
+crypto = { path = "../../../zisk-eth-client/crates/crypto" }
+
+[target.'cfg(zisk_hints)'.dependencies]
+alloy-primitives = { version = "1.5.0", default-features = false, features = ["native-keccak"] }
+
+# [target.'cfg(not(zisk_hints))'.dependencies]
+# alloy-primitives = { version = "1.5.0", default-features = false }
+
 [features]
-default = ["hints"]
+default = []
 zec-rsp = ["input/zec-rsp"]
-hints = []
-hints-metrics = ["ziskos/hints-metrics"]
-hints-reference = ["ziskos/hints-reference"]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zisk_hints)'] }

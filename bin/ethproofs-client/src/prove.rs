@@ -32,10 +32,13 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     let launch_proof_request = LaunchProofRequest {
         data_id: block_number.to_string(),
         compute_capacity: state.compute_capacity,
-        input_path: Some(filepath),
-        input_mode: 2,
+        inputs_uri: Some(filepath),
+        inputs_mode: 2,
+        hints_mode: 1,
+        hints_uri: None,
         simulated_node: None,
     };
+
     // Send the coordinator prove request
     let response = client.launch_proof(launch_proof_request).await?;
 

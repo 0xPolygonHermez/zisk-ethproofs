@@ -8,8 +8,11 @@ use log::{error, info, warn};
 // use rsp_client_executor::{executor::EthClientExecutor, io::EthClientExecutorInput};
 use zeth_core::{Input, EthEvmConfig, validate_block};
 use zeth_chainspec::MAINNET;
-#[cfg(feature = "hints")]
-use ziskos::hints::{close_precompile_hints, init_precompile_hints};
+
+#[cfg(zisk_hints)]
+use ziskos_hints::hints::{close_hints, init_hints_file};
+#[cfg(zisk_hints)]
+use zisk_common::io::{StreamWrite, UnixSocketStreamWriter};
 
 use crate::cliargs::TelegramEvent;
 use crate::metrics::BlockMetrics;
@@ -17,6 +20,63 @@ use crate::prove::generate_proof;
 use crate::state::AppState;
 use crate::telegram::{send_telegram_alert, AlertType};
 use ethproofs_common::protocol::BlockInfo;
+
+#[cfg(zisk_hints)]
+fn generate_hints(block_number: u64, content: &[u8]) {
+    let start_hints = Instant::now();
+
+    let hints_file: PathBuf = PathBuf::from(format!("{}_hints.bin", block_number));
+    if let Err(e) = init_hints_file(hints_file) {
+        error!("Failed to init precompile hints for block {}, error: {}", block_number, e);
+        return;
+    }
+
+    // Execute the block to get precompile hints populated
+    info!("Executing {} block", block_number);
+
+    #[cfg(feature = "zec-rsp")]
+    {
+        let start_exec = Instant::now();
+        let input = bincode::deserialize::<EthClientExecutorInput>(&content).unwrap();
+        let executor = EthClientExecutor::eth(
+            Arc::new(
+                (&input.genesis)
+                    .try_into()
+                    .expect("Failed to convert genesis block into the required type"),
+            ),
+            input.custom_beneficiary,
+        );
+
+        let header = match executor.execute(input) {
+            Ok(h) => h,
+            Err(e) => {
+                error!("Failed to execute block {}, error: {}", block_number, e);
+                return;
+            }
+        };
+        // Calculate block hash
+        let block_hash = header.hash_slow();
+        info!("Executed block {} in {} ms, hash: {}", block_number, start_exec.elapsed().as_millis(), block_hash);
+    }
+    #[cfg(not(feature = "zec-rsp"))]
+    {
+        let start_exec = Instant::now();
+
+        let input = bincode::deserialize::<Input>(&content).unwrap();
+        let block_number = input.block.header.number;
+
+        let evm_config = EthEvmConfig::new(MAINNET.clone());
+
+        let block_hash = validate_block(input.clone(), evm_config).expect("Failed to validate block");
+        info!("Executed block {} in {} ms, txs: {}, hash: {}", block_number, start_exec.elapsed().as_millis(), input.block.body.transactions.len(), block_hash);
+    }
+
+    if let Err(e) = close_hints() {
+        error!("Failed to close precompile hints for block {}, error: {}", block_number, e);
+        return;
+    }
+    info!("Precompiles for block {} generated in {} ms", block_number, start_hints.elapsed().as_millis());
+}
 
 pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
     {
@@ -53,66 +113,6 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
     let filename = block_info.filename();
     let block_number = block_info.block_number;
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
-
-    #[cfg(feature = "hints")]
-    let start_hints = Instant::now();
-
-    #[cfg(feature = "hints")]
-    {
-        let hints_file: PathBuf = PathBuf::from(format!("{}_hints.bin", block_number));
-        if let Err(e) = init_precompile_hints(hints_file) {
-            error!("Failed to init precompile hints for block {}, error: {}", block_number, e);
-            return;
-        }
-    }
-
-    // Execute the block to get precompile hints populated
-    info!("Executing {} block", block_number);
-
-    #[cfg(feature = "zec-rsp")]
-    {
-        let start_exec = Instant::now();
-        let input = bincode::deserialize::<EthClientExecutorInput>(&content).unwrap();
-        let executor = EthClientExecutor::eth(
-            Arc::new(
-                (&input.genesis)
-                    .try_into()
-                    .expect("Failed to convert genesis block into the required type"),
-            ),
-            input.custom_beneficiary,
-        );
-
-        let header = match executor.execute(input) {
-            Ok(h) => h,
-            Err(e) => {
-                error!("Failed to execute block {}, error: {}", block_number, e);
-                return;
-            }
-        };
-        // Calculate block hash
-        let block_hash = header.hash_slow();
-        info!("Executed block {} in {} ms, hash: {}", block_number, start_exec.elapsed().as_millis(), block_hash);
-    }
-    #[cfg(not(feature = "zec-rsp"))]
-    {
-        let start_exec = Instant::now();
-        let input = bincode::deserialize::<Input>(&content).unwrap();
-        let block_number = input.block.header.number;
-
-        let evm_config = EthEvmConfig::new(MAINNET.clone());
-
-        let block_hash = validate_block(input.clone(), evm_config).expect("Failed to validate block");
-        info!("Executed block {} in {} ms, txs: {}, hash: {}", block_number, start_exec.elapsed().as_millis(), input.block.body.transactions.len(), block_hash);
-    }
-
-    #[cfg(feature = "hints")]
-    {
-        if let Err(e) = close_precompile_hints() {
-            error!("Failed to close precompile hints for block {}, error: {}", block_number, e);
-            return;
-        }
-        info!("Precompiles for block {} generated in {} ms", block_number, start_hints.elapsed().as_millis());
-    }
 
     // Save the input to a file.
     let mut file = if let Ok(f) = File::create(filepath) {
@@ -174,6 +174,9 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
         "Received and saved input for block {}, file: {}, time: {} ms, time-to-input: {} ms",
         block_number, filename, input_time, time_to_input
     );
+
+    #[cfg(zisk_hints)]
+    generate_hints(block_number, content);
 
     if app_state.cliargs.skip_proving {
         info!("Skipping proving for block {} as per configuration", block_number);
