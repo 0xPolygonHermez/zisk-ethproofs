@@ -28,7 +28,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
     // Get gRPC client
     let mut client = ZiskDistributedApiClient::new(state.coordinator_channel.clone().unwrap());
-    
+
     // Build request
     let hints_mode = if state.cliargs.hints == crate::cliargs::Hints::Socket {
         2
@@ -45,6 +45,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
         hints_uri: Some(state.cliargs.hints_socket),
         simulated_node: None,
     };
+
+    info!("launch_proof_request: {:?}", launch_proof_request);
 
     // Send the coordinator prove request
     let response = client.launch_proof(launch_proof_request).await?;
