@@ -14,6 +14,13 @@ pub enum InputGen {
     Folder,
 }
 
+#[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
+pub enum Hints {
+    File,
+    Socket,
+}
+
+
 // Command line arguments
 #[derive(Clone, Parser)]
 pub struct CliArgs {
@@ -57,9 +64,13 @@ pub struct CliArgs {
     #[arg(short = 'e', long, default_value = ".env")]
     pub env_file: String,
 
-    /// Hints URI
-    #[clap(long, default_value = "unix:///tmp/hints.sock")]
-    pub hints_uri: String,
+    /// Enable hints generation
+    #[clap(long, value_enum, default_value_t = Hints::Socket)]
+    pub hints: Hints,
+
+    /// Hints socket path (only when using 'socket' hints mode)
+    #[clap(long, default_value = "/tmp/hints.sock", required_if_eq("hints", "Socket"))]
+    pub hints_socket: String,
 
     /// Directory to read input files from in local mode (only affects 'folder' mode)
     #[clap(long, default_value = "inputs_queue")]

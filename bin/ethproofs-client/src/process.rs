@@ -9,8 +9,6 @@ use log::{error, info, warn};
 #[cfg(zisk_hints)]
 use ziskos_hints::hints::{close_hints, init_hints_socket, init_hints_file};
 #[cfg(zisk_hints)]
-use zisk_common::io::{StreamWrite, UnixSocketStreamWriter};
-#[cfg(zisk_hints)]
 use zeth_core::{Input, EthEvmConfig, validate_block};
 #[cfg(zisk_hints)]
 use zeth_chainspec::MAINNET;
@@ -29,16 +27,13 @@ fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
 
     let start_hints = Instant::now();
 
-    // TODO: Move this code to init_hints function
-    let hints_uri = &app_state.cliargs.hints_uri;
-    let hints_init_result = if hints_uri.starts_with("unix://") {
-        // Remove prefix "unix://" from hints_uri
-        let socket_path = hints_uri.strip_prefix("unix://").unwrap();
-        init_hints_socket(PathBuf::from(socket_path))
-    } else {
-        // Remove prefix "file://" from hints_uri
-        let file_path = hints_uri.strip_prefix("file://").unwrap();
-        init_hints_file(PathBuf::from(file_path))
+    let hints_init_result = match app_state.cliargs.hints {
+        crate::cliargs::Hints::Socket => {
+            init_hints_socket(PathBuf::from(&app_state.cliargs.hints_socket))
+        }
+        crate::cliargs::Hints::File => {
+            init_hints_file(PathBuf::from(format!("{}_hints.bin", block_number)))
+        }
     };
 
     if let Err(e) = hints_init_result {

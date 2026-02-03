@@ -28,15 +28,21 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
     // Get gRPC client
     let mut client = ZiskDistributedApiClient::new(state.coordinator_channel.clone().unwrap());
+    
     // Build request
+    let hints_mode = if state.cliargs.hints == crate::cliargs::Hints::Socket {
+        2
+    } else {
+        1
+    };
     let launch_proof_request = LaunchProofRequest {
         data_id: block_number.to_string(),
         compute_capacity: state.compute_capacity,
         minimal_compute_capacity: state.compute_capacity,
         inputs_uri: Some(filepath),
         inputs_mode: 2,
-        hints_mode: 2,
-        hints_uri: Some("unix:///tmp/hints.sock".to_string()),
+        hints_mode,
+        hints_uri: Some(state.cliargs.hints_socket),
         simulated_node: None,
     };
 

@@ -57,11 +57,6 @@ impl AppState {
         // Parse the command line arguments
         let cliargs = CliArgs::parse();
 
-        // Check hints_uri flag has valid prefix
-        if !cliargs.hints_uri.starts_with("unix://") && !cliargs.hints_uri.starts_with("file://") {
-            panic!("hints_uri must start with 'unix://' or 'file://'");
-        }
-
         // Load environment variables from env file
         dotenv::from_filename(&cliargs.env_file).ok();
 
