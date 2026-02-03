@@ -33,7 +33,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     let hints_mode = if state.cliargs.hints == crate::cliargs::Hints::Socket {
         2
     } else {
-        1
+        0
     };
     let launch_proof_request = LaunchProofRequest {
         data_id: block_number.to_string(),
