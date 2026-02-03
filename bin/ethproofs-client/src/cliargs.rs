@@ -57,6 +57,10 @@ pub struct CliArgs {
     #[arg(short = 'e', long, default_value = ".env")]
     pub env_file: String,
 
+    /// Hints URI
+    #[clap(long, default_value = "unix:///tmp/hints.sock")]
+    pub hints_uri: String,
+
     /// Directory to read input files from in local mode (only affects 'folder' mode)
     #[clap(long, default_value = "inputs_queue")]
     pub inputs_queue: String,

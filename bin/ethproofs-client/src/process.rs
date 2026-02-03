@@ -5,14 +5,15 @@ use std::sync::Arc;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use log::{error, info, warn};
-// use rsp_client_executor::{executor::EthClientExecutor, io::EthClientExecutorInput};
-use zeth_core::{Input, EthEvmConfig, validate_block};
-use zeth_chainspec::MAINNET;
 
 #[cfg(zisk_hints)]
-use ziskos_hints::hints::{close_hints, init_hints_file};
+use ziskos_hints::hints::{close_hints, init_hints_socket, init_hints_file};
 #[cfg(zisk_hints)]
 use zisk_common::io::{StreamWrite, UnixSocketStreamWriter};
+#[cfg(zisk_hints)]
+use zeth_core::{Input, EthEvmConfig, validate_block};
+#[cfg(zisk_hints)]
+use zeth_chainspec::MAINNET;
 
 use crate::cliargs::TelegramEvent;
 use crate::metrics::BlockMetrics;
@@ -22,17 +23,28 @@ use crate::telegram::{send_telegram_alert, AlertType};
 use ethproofs_common::protocol::BlockInfo;
 
 #[cfg(zisk_hints)]
-fn generate_hints(block_number: u64, content: &[u8]) {
+fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
+    // Execute the block to get precompile hints populated
+    info!("Generating hints for block {}", block_number);
+
     let start_hints = Instant::now();
 
-    let hints_file: PathBuf = PathBuf::from(format!("{}_hints.bin", block_number));
-    if let Err(e) = init_hints_file(hints_file) {
-        error!("Failed to init precompile hints for block {}, error: {}", block_number, e);
+    // TODO: Move this code to init_hints function
+    let hints_uri = &app_state.cliargs.hints_uri;
+    let hints_init_result = if hints_uri.starts_with("unix://") {
+        // Remove prefix "unix://" from hints_uri
+        let socket_path = hints_uri.strip_prefix("unix://").unwrap();
+        init_hints_socket(PathBuf::from(socket_path))
+    } else {
+        // Remove prefix "file://" from hints_uri
+        let file_path = hints_uri.strip_prefix("file://").unwrap();
+        init_hints_file(PathBuf::from(file_path))
+    };
+
+    if let Err(e) = hints_init_result {
+        error!("Failed to init hints for block {}, error: {}", block_number, e);
         return;
     }
-
-    // Execute the block to get precompile hints populated
-    info!("Executing {} block", block_number);
 
     #[cfg(feature = "zec-rsp")]
     {
@@ -175,9 +187,6 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
         block_number, filename, input_time, time_to_input
     );
 
-    #[cfg(zisk_hints)]
-    generate_hints(block_number, content);
-
     if app_state.cliargs.skip_proving {
         info!("Skipping proving for block {} as per configuration", block_number);
         app_state.delete_input_file(&filename);
@@ -234,6 +243,18 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
         }
         return;
     }
+
+    #[cfg(zisk_hints)]
+    {
+        let content_clone = content.to_vec();
+        let app_state_clone = app_state.clone();
+        tokio::spawn(async move {
+            generate_hints(block_number, content_clone.as_slice(), app_state_clone);
+        });
+    }
+
+    // Sleep 50 ms to ensure hints generation starts before proving
+    tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
 
     let result = generate_proof(block_info.clone(), app_state.clone()).await;
     match result {

@@ -32,10 +32,11 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     let launch_proof_request = LaunchProofRequest {
         data_id: block_number.to_string(),
         compute_capacity: state.compute_capacity,
+        minimal_compute_capacity: state.compute_capacity,
         inputs_uri: Some(filepath),
         inputs_mode: 2,
-        hints_mode: 1,
-        hints_uri: None,
+        hints_mode: 2,
+        hints_uri: Some("unix:///tmp/hints.sock".to_string()),
         simulated_node: None,
     };
 
