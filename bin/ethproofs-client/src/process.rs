@@ -7,7 +7,7 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use log::{error, info, warn};
 
 #[cfg(zisk_hints)]
-use ziskos_hints::hints::{close_hints, init_hints_socket, init_hints_file};
+use ziskos::hints::{close_hints, init_hints_socket, init_hints_file};
 #[cfg(zisk_hints)]
 use zeth_core::{Input, EthEvmConfig, validate_block};
 #[cfg(zisk_hints)]

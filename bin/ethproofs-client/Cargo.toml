@@ -50,7 +50,7 @@ zeth-chainspec = { git = "https://github.com/0xPolygonHermez/zisk-patch-zeth", b
 zisk-distributed-common = { path = "../../../zisk/distributed/crates/common" }
 zisk-common = { path = "../../../zisk/common" }
 zisk-distributed-grpc-api = { path = "../../../zisk/distributed/crates/grpc-api" }
-ziskos-hints = { path = "../../../zisk/ziskos-hints" }
+ziskos = { path = "../../../zisk/ziskos/entrypoint" }
 
 ethproofs-common = { path = "../../ethproofs-common" }
 regex = "1.12.2"

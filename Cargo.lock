@@ -3956,7 +3956,7 @@ dependencies = [
  "zisk-common",
  "zisk-distributed-common",
  "zisk-distributed-grpc-api",
- "ziskos-hints",
+ "ziskos",
  "zstd 0.13.3",
 ]
 
@@ -12908,7 +12908,7 @@ dependencies = [
  "sha2",
  "tiny-keccak",
  "zisk-pil",
- "ziskos",
+ "ziskos-hints",
 ]
 
 [[package]]
@@ -12964,36 +12964,13 @@ dependencies = [
 name = "ziskos"
 version = "0.16.0"
 dependencies = [
- "bincode",
- "cfg-if",
- "fields",
- "getrandom 0.2.17",
- "lazy_static",
- "lib-c",
- "num-bigint 0.4.6",
- "num-integer",
- "num-traits",
- "precompiles-helpers",
- "rand 0.8.5",
- "serde",
- "sha2",
- "static_assertions",
- "tiny-keccak",
-]
-
-[[package]]
-name = "ziskos-hints"
-version = "0.16.0"
-dependencies = [
  "anyhow",
  "bincode",
  "bytes",
  "cfg-if",
  "ctor",
- "elliptic-curve",
  "fields",
  "getrandom 0.2.17",
- "k256",
  "lazy_static",
  "lib-c",
  "num-bigint 0.4.6",
@@ -13008,6 +12985,31 @@ dependencies = [
  "static_assertions",
  "tiny-keccak",
  "zisk-common",
+]
+
+[[package]]
+name = "ziskos-hints"
+version = "0.16.0"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "cfg-if",
+ "elliptic-curve",
+ "fields",
+ "getrandom 0.2.17",
+ "k256",
+ "lazy_static",
+ "lib-c",
+ "num-bigint 0.4.6",
+ "num-integer",
+ "num-traits",
+ "paste",
+ "precompiles-helpers",
+ "rand 0.8.5",
+ "serde",
+ "sha2",
+ "static_assertions",
+ "tiny-keccak",
 ]
 
 [[package]]
