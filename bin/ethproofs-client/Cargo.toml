@@ -24,6 +24,7 @@ tokio.workspace = true
 tokio-tungstenite.workspace = true
 url.workspace = true
 input.workspace = true
+guest.workspace = true
 
 lazy_static = "1.4"
 axum = { version = "0.7", features = ["macros", "json"] }
@@ -34,13 +35,6 @@ serde_json = "1.0.143"
 sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio", "macros", "tls-rustls"] }
 tonic = "0.14"
 zstd = "0.13.3"
-
-# rsp-client-executor = { git = "https://github.com/succinctlabs/rsp.git", rev = "545ae85f21ba274b97ee8cb68b86acc5c3dd6b4a" }
-
-zeth-core = { git = "https://github.com/0xPolygonHermez/zisk-patch-zeth", branch = "zisk-hints" }
-zeth-chainspec = { git = "https://github.com/0xPolygonHermez/zisk-patch-zeth", branch = "zisk-hints" }
-# zeth-core = { path = "../../../zeth/crates/core"}
-# zeth-chainspec = { path = "../../../zeth/crates/chainspec" }
 
 # zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
 # zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.14.0" }
@@ -59,17 +53,16 @@ blst = { version = "=0.3.15" }
 revm = { version = "31.0.2", default-features = false }
 
 alloy-consensus = { version = "1.0.37", default-features = false, features = ["crypto-backend"] }
-crypto = { path = "../../../zisk-eth-client/crates/crypto" }
+stateless-validator-reth = { git = "https://github.com/eth-act/ere-guests.git", rev = "c696d4bb8073190208a481174b48781544052c4d", features = ["host"]}
+
+crypto = { path = "../../../zec-reth/crates/crypto" }
 
 [target.'cfg(zisk_hints)'.dependencies]
 alloy-primitives = { version = "1.5.0", default-features = false, features = ["native-keccak"] }
+alloy-consensus = { version = "1.0.37", default-features = false, features = ["crypto-backend"] }
 
 # [target.'cfg(not(zisk_hints))'.dependencies]
 # alloy-primitives = { version = "1.5.0", default-features = false }
-
-[features]
-default = []
-zec-rsp = ["input/zec-rsp"]
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zisk_hints)'] }

@@ -8,10 +8,6 @@ use log::{error, info, warn};
 
 #[cfg(zisk_hints)]
 use ziskos::hints::{close_hints, init_hints_socket, init_hints_file};
-#[cfg(zisk_hints)]
-use zeth_core::{Input, EthEvmConfig, validate_block};
-#[cfg(zisk_hints)]
-use zeth_chainspec::MAINNET;
 
 use crate::cliargs::TelegramEvent;
 use crate::metrics::BlockMetrics;
@@ -41,42 +37,14 @@ fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
         return;
     }
 
-    #[cfg(feature = "zec-rsp")]
-    {
-        let start_exec = Instant::now();
-        let input = bincode::deserialize::<EthClientExecutorInput>(&content).unwrap();
-        let executor = EthClientExecutor::eth(
-            Arc::new(
-                (&input.genesis)
-                    .try_into()
-                    .expect("Failed to convert genesis block into the required type"),
-            ),
-            input.custom_beneficiary,
-        );
+    let reth_input: StatelessValidatorRethInput = bincode::deserialize(content).unwrap_or_else(|e| {
+        panic!(
+            "Failed to deserialize input for block {}, error: {}",
+            block_number, e
+        )
+    });
 
-        let header = match executor.execute(input) {
-            Ok(h) => h,
-            Err(e) => {
-                error!("Failed to execute block {}, error: {}", block_number, e);
-                return;
-            }
-        };
-        // Calculate block hash
-        let block_hash = header.hash_slow();
-        info!("Executed block {} in {} ms, hash: {}", block_number, start_exec.elapsed().as_millis(), block_hash);
-    }
-    #[cfg(not(feature = "zec-rsp"))]
-    {
-        let start_exec = Instant::now();
-
-        let input = bincode::deserialize::<Input>(&content).unwrap();
-        let block_number = input.block.header.number;
-
-        let evm_config = EthEvmConfig::new(MAINNET.clone());
-
-        let block_hash = validate_block(input.clone(), evm_config).expect("Failed to validate block");
-        info!("Executed block {} in {} ms, txs: {}, hash: {}", block_number, start_exec.elapsed().as_millis(), input.block.body.transactions.len(), block_hash);
-    }
+    guest::validate_block(reth_input);
 
     if let Err(e) = close_hints() {
         error!("Failed to close precompile hints for block {}, error: {}", block_number, e);

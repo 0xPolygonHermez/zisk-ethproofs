@@ -26,6 +26,3 @@ input.workspace = true
 
 ethproofs-common = { path = "../../ethproofs-common" }
 
-[features]
-default = []
-zec-rsp = ["input/zec-rsp"]

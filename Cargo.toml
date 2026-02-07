@@ -30,26 +30,35 @@ tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-# input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "feature/hints" }
-input = { path = "../zisk-eth-client/crates/input" }
+# input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git" }
+input = { path = "../zec-reth/crates/input" }
+# guest = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git" }
+guest = { path = "../zec-reth/crates/guest" }
 
-[patch.crates-io]
-# ruint = { path = "../zisk-patch-ruint" }
-# sha3 = { path = "../zisk-patch-sha3/sha3" }
-# tiny-keccak = { path = "../zisk-patch-tiny-keccak" }
-# sha2 = { path = "../zisk-patch-sha2/sha2" }
-# k256 = { path = "../zisk-patch-k256/k256"}
-# substrate-bn = { path = "../zisk-patch-bn" }
-# # blst = { path = "../zisk-patch-blst/bindings/rust" }
-# aurora-engine-modexp = { path = "../zisk-patch-modexp/engine-modexp" }
+# [patch.crates-io]
+# # This patch removes "ring" as a dependency, that is not compatible with the ZisK toolchain
+# ethereum_hashing = { git = "https://github.com/jsign/ethereum_hashing", rev = "08c88633b700d7447ef840d19ce7b369c44311de" }
 
-# Enable this for deterministic Hashmap sort
-alloy-evm = { git = "https://github.com/0xPolygonHermez/zisk-patch-alloy-evm.git", branch = "zisk-hints" }
-# Local development
-# alloy-evm = { path = "../alloy-rs-evm/crates/evm" }
+# sparsestate = { path = "../zisk-patch-zkvm-ethereum-mpt/crates/sparsestate" }
 
-[patch."https://github.com/paradigmxyz/reth.git"]
-# Enable this for deterministic Hashmap sort
-reth-trie-common = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints"}
-# Local development
+# # Enable this for deterministic Hashmap sort
+# # alloy-evm = { git = "https://github.com/0xPolygonHermez/zisk-patch-alloy-evm.git", branch = "zisk-hints/v0.27.2" }
+# # Local development
+# alloy-evm = { path = "../zisk-patch-alloy-evm/crates/evm" }
+
+# # TODO: This can be removed when a new version of reth is released
+# [patch."https://github.com/paradigmxyz/reth.git"]
+# # reth-stateless = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "chore/clean-brec-up" }
+# # reth-chainspec = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "chore/clean-brec-up" }
+# # reth-evm-ethereum = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "chore/clean-brec-up" }
+# # # The following are needed for compilation
+# # reth-errors = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "chore/clean-brec-up" }
+# # reth-trie-common = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "chore/clean-brec-up" }
+# # Local development
+# reth-stateless = { path = "../zisk-patch-reth/crates/stateless" }
+# reth-chainspec = { path = "../zisk-patch-reth/crates/chainspec" }
+# reth-evm-ethereum = { path = "../zisk-patch-reth/crates/ethereum/evm" }
+# # Needed for compilation
+# reth-errors = { path = "../zisk-patch-reth/crates/errors" }
+# # Needed for compilation and deterministic Hashmap sort
 # reth-trie-common = { path = "../zisk-patch-reth/crates/trie/common" }

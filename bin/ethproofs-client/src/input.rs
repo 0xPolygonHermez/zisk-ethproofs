@@ -1,3 +1,4 @@
+use std::env;
 use std::{fs, path::PathBuf, sync::Arc};
 
 use anyhow::Result;
@@ -14,7 +15,6 @@ use tokio_tungstenite::{
 };
 
 use ethproofs_common::{
-    inputgen::generate_input,
     protocol::{BlockCommand, BlockInfo, BlockMessage},
 };
 
@@ -171,11 +171,14 @@ pub(crate) async fn process_inputs_locally(app_state: AppState) -> Result<()> {
             };
 
             info!("Generating input file for block {}", block_number);
+            let rpc_url = &env::var("RPC_URL").expect("RPC_URL must be set");
+            let start_time = Instant::now();
             let input_file_result =
-                generate_input(block_info.clone()).await;
+                input::reth_input_from_rpc(rpc_url, block_number).await;
+            let input_file_time = start_time.elapsed().as_millis();
 
             match input_file_result {
-                Ok((input_file_time, input_result)) => {
+                Ok(reth_input) => {
                     total_input_time += input_file_time;
                     input_count += 1;
                     max_input_time = max_input_time.max(input_file_time);
@@ -189,7 +192,7 @@ pub(crate) async fn process_inputs_locally(app_state: AppState) -> Result<()> {
                         max_input_time,
                         min_input_time
                     );
-                    process_input(block_info, &input_result.input, &app_state).await;
+                    process_input(block_info, &reth_input, &app_state).await;
                 }
                 Err(e) => {
                     error!("Input file generation failed for block  {}, error: {}", block_number, e)
