@@ -30,10 +30,10 @@ tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-# input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git" }
-input = { path = "../zec-reth/crates/input" }
-# guest = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git" }
-guest = { path = "../zec-reth/crates/guest" }
+input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "main-reth" }
+# input = { path = "../zec-reth/crates/input" }
+guest = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "main-reth" }
+# guest = { path = "../zec-reth/crates/guest" }
 
 [patch.crates-io]
 # This patch removes "ring" as a dependency, that is not compatible with the ZisK toolchain
