@@ -49,20 +49,15 @@ ziskos = { path = "../../../zisk/ziskos/entrypoint" }
 ethproofs-common = { path = "../../ethproofs-common" }
 regex = "1.12.2"
 
-blst = { version = "=0.3.15" }
-revm = { version = "31.0.2", default-features = false }
-
-alloy-consensus = { version = "1.0.37", default-features = false, features = ["crypto-backend"] }
-stateless-validator-reth = { git = "https://github.com/eth-act/ere-guests.git", rev = "c696d4bb8073190208a481174b48781544052c4d", features = ["host"]}
-
-crypto = { path = "../../../zec-reth/crates/crypto" }
-
 [target.'cfg(zisk_hints)'.dependencies]
 alloy-primitives = { version = "1.5.0", default-features = false, features = ["native-keccak"] }
 alloy-consensus = { version = "1.0.37", default-features = false, features = ["crypto-backend"] }
+revm = { version = "34.0.0", default-features = false }
+stateless-validator-reth = { git = "https://github.com/eth-act/ere-guests.git", rev = "c696d4bb8073190208a481174b48781544052c4d", features = ["host"]}
 
-# [target.'cfg(not(zisk_hints))'.dependencies]
-# alloy-primitives = { version = "1.5.0", default-features = false }
+crypto = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "main-reth" }
+# Local development
+# crypto = { path = "../../../zec-reth/crates/crypto" }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zisk_hints)'] }

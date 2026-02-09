@@ -19,6 +19,8 @@ use ethproofs_common::protocol::BlockInfo;
 #[cfg(zisk_hints)]
 fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
     // Execute the block to get precompile hints populated
+
+    use stateless_validator_reth::guest::StatelessValidatorRethInput;
     info!("Generating hints for block {}", block_number);
 
     let start_hints = Instant::now();
@@ -44,7 +46,10 @@ fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
         )
     });
 
-    guest::validate_block(reth_input);
+    if let Err(e) = guest::validate_block(reth_input) {
+        error!("Failed to execute block {} for hints generation, error: {}", block_number, e);
+        return;
+    }
 
     if let Err(e) = close_hints() {
         error!("Failed to close precompile hints for block {}, error: {}", block_number, e);
