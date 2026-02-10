@@ -20,7 +20,8 @@ use ethproofs_common::protocol::BlockInfo;
 fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
     // Execute the block to get precompile hints populated
 
-    use stateless_validator_reth::guest::StatelessValidatorRethInput;
+    use guest::RethInput;
+
     info!("Generating hints for block {}", block_number);
 
     let start_hints = Instant::now();
@@ -39,7 +40,7 @@ fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
         return;
     }
 
-    let reth_input: StatelessValidatorRethInput = bincode::deserialize(content).unwrap_or_else(|e| {
+    let reth_input: RethInput = bincode::deserialize(content).unwrap_or_else(|e| {
         panic!(
             "Failed to deserialize input for block {}, error: {}",
             block_number, e
@@ -52,10 +53,10 @@ fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
     }
 
     if let Err(e) = close_hints() {
-        error!("Failed to close precompile hints for block {}, error: {}", block_number, e);
+        error!("Failed to close hints for block {}, error: {}", block_number, e);
         return;
     }
-    info!("Precompiles for block {} generated in {} ms", block_number, start_hints.elapsed().as_millis());
+    info!("Hints for block {} generated in {} ms", block_number, start_hints.elapsed().as_millis());
 }
 
 pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
@@ -216,9 +217,13 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
     {
         let content_clone = content.to_vec();
         let app_state_clone = app_state.clone();
-        tokio::spawn(async move {
+        let handle = tokio::spawn(async move {
             generate_hints(block_number, content_clone.as_slice(), app_state_clone);
         });
+
+        if app_state.cliargs.hints == crate::cliargs::Hints::File {
+            handle.await.ok();
+        }
     }
 
     // Sleep 50 ms to ensure hints generation starts before proving

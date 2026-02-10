@@ -16,7 +16,6 @@ pub enum InputGen {
 
 #[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
 pub enum Hints {
-    None,
     File,
     Socket,
 }
@@ -66,10 +65,12 @@ pub struct CliArgs {
     pub env_file: String,
 
     /// Enable hints generation
-    #[clap(long, value_enum, default_value_t = Hints::None)]
+    #[cfg(zisk_hints)]
+    #[clap(long, value_enum, default_value_t = Hints::Socket)]
     pub hints: Hints,
 
     /// Hints socket path (only when using 'socket' hints mode)
+    #[cfg(zisk_hints)]
     #[clap(long, default_value = "/tmp/hints.sock", required_if_eq("hints", "Socket"))]
     pub hints_socket: String,
 
