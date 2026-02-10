@@ -76,6 +76,24 @@ async fn process_webhook(
         }
 
         let next_block = next_block.unwrap();
+
+        #[cfg(zisk_hints)]
+        {
+            use crate::process::init_hints;
+
+            let input_filename = format!("{}/{}", state.inputs_folder.clone(), next_block.filename());
+
+            // TODO: avoid read input file, store in app_state or read inside init_hints_file async
+            let input = std::fs::read(&input_filename)
+                .unwrap_or_else(|e| panic!(
+                    "Failed to read input file {} for hints generation, error: {}",
+                    input_filename, e
+                ));
+
+            init_hints(next_block.block_number, input, &state).await;
+        }
+
+
         let result = generate_proof(next_block.clone(), state.clone()).await;
 
         match result {

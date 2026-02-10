@@ -14,10 +14,28 @@ use crate::metrics::BlockMetrics;
 use crate::prove::generate_proof;
 use crate::state::AppState;
 use crate::telegram::{send_telegram_alert, AlertType};
+use tokio::sync::oneshot;
 use ethproofs_common::protocol::BlockInfo;
 
 #[cfg(zisk_hints)]
-fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
+#[inline(always)]
+pub async fn init_hints(block_number: u64, content: Vec<u8>, app_state: &AppState) {
+    let app_state_clone = app_state.clone();
+    let (ready_tx, ready_rx) = tokio::sync::oneshot::channel::<()>();
+
+    let handle = tokio::task::spawn_blocking(move || {
+        generate_hints(block_number, content.as_slice(), app_state_clone, Some(ready_tx));
+    });
+
+    let _ = ready_rx.await;
+
+    if app_state.cliargs.hints == crate::cliargs::Hints::File {
+        handle.await.ok();
+    }
+}
+
+#[cfg(zisk_hints)]
+pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, ready: Option<oneshot::Sender<()>>) {
     // Execute the block to get precompile hints populated
 
     use guest::RethInput;
@@ -28,8 +46,7 @@ fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
 
     let hints_init_result = match app_state.cliargs.hints {
         crate::cliargs::Hints::Socket => {
-            let res = init_hints_socket(PathBuf::from(&app_state.cliargs.hints_socket));
-            info!("Hints socket initialized at {}", &app_state.cliargs.hints_socket);
+            let res = init_hints_socket(PathBuf::from(&app_state.cliargs.hints_socket), ready);
             res
         }
         crate::cliargs::Hints::File => {
@@ -38,7 +55,7 @@ fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
             if !hints_dir.exists() {
                 std::fs::create_dir_all(&hints_dir).expect("Failed to create hints directory");
             }
-            init_hints_file(PathBuf::from(format!("{}/{}_hints.bin", hints_dir.display(), block_number)))
+            init_hints_file(PathBuf::from(format!("{}/{}_hints.bin", hints_dir.display(), block_number)), ready)
         }
     };
 
@@ -223,18 +240,8 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
     #[cfg(zisk_hints)]
     {
         let content_clone = content.to_vec();
-        let app_state_clone = app_state.clone();
-        let handle = tokio::spawn(async move {
-            generate_hints(block_number, content_clone.as_slice(), app_state_clone);
-        });
-
-        if app_state.cliargs.hints == crate::cliargs::Hints::File {
-            handle.await.ok();
-        }
+        init_hints(block_number, content_clone, app_state).await;
     }
-
-    // Sleep 50 ms to ensure hints generation starts before proving
-    tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
 
     let result = generate_proof(block_info.clone(), app_state.clone()).await;
     match result {
