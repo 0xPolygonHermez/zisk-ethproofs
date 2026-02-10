@@ -28,7 +28,9 @@ fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
 
     let hints_init_result = match app_state.cliargs.hints {
         crate::cliargs::Hints::Socket => {
-            init_hints_socket(PathBuf::from(&app_state.cliargs.hints_socket))
+            let res = init_hints_socket(PathBuf::from(&app_state.cliargs.hints_socket));
+            info!("Hints socket initialized at {}", &app_state.cliargs.hints_socket);
+            res
         }
         crate::cliargs::Hints::File => {
             // Create ./hints directory if it doesn't exist
