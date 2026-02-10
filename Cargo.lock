@@ -3468,6 +3468,7 @@ dependencies = [
 [[package]]
 name = "guest"
 version = "0.4.0"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=test%2Finput2#c5d45313779155d74ec8c89b188bbc9894a4bf7d"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -4046,6 +4047,7 @@ dependencies = [
 [[package]]
 name = "input"
 version = "0.4.0"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=test%2Finput2#c5d45313779155d74ec8c89b188bbc9894a4bf7d"
 dependencies = [
  "alloy",
  "alloy-consensus",
