@@ -31,7 +31,12 @@ fn generate_hints(block_number: u64, content: &[u8], app_state: AppState) {
             init_hints_socket(PathBuf::from(&app_state.cliargs.hints_socket))
         }
         crate::cliargs::Hints::File => {
-            init_hints_file(PathBuf::from(format!("{}_hints.bin", block_number)))
+            // Create ./hints directory if it doesn't exist
+            let hints_dir = std::path::PathBuf::from("./hints");
+            if !hints_dir.exists() {
+                std::fs::create_dir_all(&hints_dir).expect("Failed to create hints directory");
+            }
+            init_hints_file(PathBuf::from(format!("{}/{}_hints.bin", hints_dir.display(), block_number)))
         }
     };
 
