@@ -5,7 +5,6 @@ use std::{fs, path::PathBuf};
 use anyhow::Result;
 use dotenv::dotenv;
 use ethers::providers::{Middleware, Provider, Ws};
-use ethproofs_common::inputgen::generate_input_file;
 use ethproofs_common::protocol::{BlockCommand, BlockMessage};
 use futures_util::{SinkExt, StreamExt};
 use log::{error, info, warn};
@@ -25,7 +24,7 @@ const WS_DEFAULT_PORT: &str = "8765";
 /// Listens for new blocks on the Ethereum network and generates input files for them
 async fn block_listener(tx: Sender<String>) -> Result<()> {
     let rpc_ws_url = env::var("RPC_WS_URL").expect("RPC_WS_URL must be set");
-    let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or("inputs".to_string());
+    let _inputs_folder_ = env::var("INPUTS_FOLDER").unwrap_or("inputs".to_string());
     let block_modulus: u64 = env::var("BLOCK_MODULUS")
         .unwrap_or("100".to_string())
         .parse()
@@ -115,8 +114,12 @@ async fn block_listener(tx: Sender<String>) -> Result<()> {
                 block.gas_used.as_u64() / 1_000_000,
             );
 
-            let input_file_time =
-                generate_input_file(input_message.clone().info, inputs_folder.clone()).await?;
+            // TODO: Implement this
+            // let input_file_time =
+            //     generate_input_file(input_message.clone().info, inputs_folder.clone()).await?;
+
+            // TODO: Remove this when generate_input_file is implemented, this is just a placeholder to simulate input file generation time
+            let input_file_time = 0;
 
             let input_message_json = serde_json::to_string(&input_message).unwrap();
 

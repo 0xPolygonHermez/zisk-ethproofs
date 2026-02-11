@@ -14,8 +14,10 @@ use crate::metrics::BlockMetrics;
 use crate::prove::generate_proof;
 use crate::state::AppState;
 use crate::telegram::{send_telegram_alert, AlertType};
-use tokio::sync::oneshot;
 use ethproofs_common::protocol::BlockInfo;
+
+#[cfg(zisk_hints)]
+use tokio::sync::oneshot;
 
 #[cfg(zisk_hints)]
 #[inline(always)]
@@ -38,7 +40,7 @@ pub async fn init_hints(block_number: u64, content: Vec<u8>, app_state: &AppStat
 pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, ready: Option<oneshot::Sender<()>>) {
     // Execute the block to get precompile hints populated
 
-    use guest::RethInput;
+    use stateless_validator_reth::guest::StatelessValidatorRethInput;
 
     info!("Generating hints for block {}", block_number);
 
@@ -64,7 +66,7 @@ pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, re
         return;
     }
 
-    let reth_input: RethInput = bincode::deserialize(content).unwrap_or_else(|e| {
+    let reth_input: StatelessValidatorRethInput = bincode::deserialize(content).unwrap_or_else(|e| {
         panic!(
             "Failed to deserialize input for block {}, error: {}",
             block_number, e
@@ -114,7 +116,7 @@ pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
     }
 }
 
-pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_state: &AppState) {
+pub(crate) async fn x(block_info: BlockInfo, content: &[u8], app_state: &AppState) {
     let filename = block_info.filename();
     let block_number = block_info.block_number;
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
@@ -176,7 +178,7 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
     }
 
     info!(
-        "Received and saved input for block {}, file: {}, time: {} ms, time-to-input: {} ms",
+        "Saved input for block {}, file: {}, time: {} ms, time-to-input: {} ms",
         block_number, filename, input_time, time_to_input
     );
 

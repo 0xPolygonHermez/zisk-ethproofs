@@ -31,15 +31,12 @@ tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "test/input2" }
-# input = { path = "../zec-reth/crates/input" }
-guest = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "test/input2" }
-# guest = { path = "../zec-reth/crates/guest" }
+input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "main-reth" }
+# input = { path = "../zisk-eth-client/crates/input" }
+guest = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "main-reth" }
+# guest = { path = "../zisk-eth-client/crates/guest" }
 
 [patch.crates-io]
-# This patch removes "ring" as a dependency, that is not compatible with the ZisK toolchain
-# ethereum_hashing = { git = "https://github.com/jsign/ethereum_hashing", rev = "08c88633b700d7447ef840d19ce7b369c44311de" }
-
 # Enable this for deterministic Hashmap sort
 alloy-evm = { git = "https://github.com/0xPolygonHermez/zisk-patch-alloy-evm.git", branch = "zisk-hints/v0.27.2" }
 # Local development
@@ -54,77 +51,6 @@ reth-evm-ethereum = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.
 reth-errors = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
 # Needed for compilation and deterministic Hashmap sort
 reth-trie-common = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# Needed for compilation
-# reth-storage-api        = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-storage-errors     = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-tasks              = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-tokio-util         = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-tracing-otlp       = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-tracing            = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-transaction-pool   = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-trie-db            = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-trie-sparse        = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-trie               = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-zstd-compressors   = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-basic-payload-builder       = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-chain-state                 = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-cli-util                    = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-codecs                      = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-codecs-derive               = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-config                      = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-consensus                   = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-consensus-common            = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-db                          = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-db-api                      = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-db-common                   = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-db-models                   = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-discv4                      = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-discv5                      = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-dns-discovery               = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-ecies                       = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-engine-local                = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-engine-primitives           = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-ethereum-consensus          = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-ethereum-engine-primitives  = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-ethereum-forks              = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-ethereum-primitives         = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-eth-wire                    = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-eth-wire-types              = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-etl                         = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-evm                         = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-execution-errors            = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-execution-types             = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-fs-util                     = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-libmdbx                     = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-mdbx-sys                    = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-metrics                     = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-net-banlist                 = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-net-nat                     = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-network                     = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-network-api                 = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-network-p2p                 = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-network-peers               = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-network-types               = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-nippy-jar                   = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-node-api                    = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-node-core                   = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-node-types                  = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-payload-builder             = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-payload-builder-primitives  = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-payload-primitives          = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-payload-validator           = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-primitives-traits           = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-provider                    = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-prune-types                 = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-revm                        = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-rpc-api                     = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-rpc-convert                 = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-rpc-eth-api                 = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-rpc-eth-types               = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-rpc-server-types            = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-stages-types                = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-# reth-static-file-types           = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.10.2" }
-
 # Local development
 # reth-stateless = { path = "../zisk-patch-reth/crates/stateless" }
 # reth-chainspec = { path = "../zisk-patch-reth/crates/chainspec" }
