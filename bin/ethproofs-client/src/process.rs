@@ -116,7 +116,7 @@ pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
     }
 }
 
-pub(crate) async fn x(block_info: BlockInfo, content: &[u8], app_state: &AppState) {
+pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_state: &AppState) {
     let filename = block_info.filename();
     let block_number = block_info.block_number;
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
