@@ -1,8 +1,10 @@
 use std::env;
+use std::fs::File;
+use std::io::Write;
 use std::time::Instant;
 use std::{fs, path::PathBuf};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use dotenv::dotenv;
 use ethers::providers::{Middleware, Provider, Ws};
 use ethproofs_common::protocol::{BlockCommand, BlockMessage};
@@ -24,7 +26,7 @@ const WS_DEFAULT_PORT: &str = "8765";
 /// Listens for new blocks on the Ethereum network and generates input files for them
 async fn block_listener(tx: Sender<String>) -> Result<()> {
     let rpc_ws_url = env::var("RPC_WS_URL").expect("RPC_WS_URL must be set");
-    let _inputs_folder_ = env::var("INPUTS_FOLDER").unwrap_or("inputs".to_string());
+    let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or("inputs".to_string());
     let block_modulus: u64 = env::var("BLOCK_MODULUS")
         .unwrap_or("100".to_string())
         .parse()
@@ -47,7 +49,7 @@ async fn block_listener(tx: Sender<String>) -> Result<()> {
             }
         };
 
-        let mut stream = match rpc_provider.subscribe_blocks().await {
+            let mut stream = match rpc_provider.subscribe_blocks().await {
             Ok(s) => s,
             Err(e) => {
                 error!("Failed to subscribe to blocks, error {}", e);
@@ -76,14 +78,14 @@ async fn block_listener(tx: Sender<String>) -> Result<()> {
             block
         } else {
             warn!("No block selected for processing, skipping...");
-            return Ok(());
+            continue;
         };
 
         let block_number = if let Some(bn) = block.number {
             bn.as_u64()
         } else {
             warn!("Selected block has no number, skipping...");
-            return Ok(());
+            continue;
         };
 
         if let Err(e) = async {
@@ -113,31 +115,69 @@ async fn block_listener(tx: Sender<String>) -> Result<()> {
                 block.transactions.len(),
                 block.gas_used.as_u64() / 1_000_000,
             );
+            let input_filename = input_message.info.filename();
 
-            // TODO: Implement this
-            // let input_file_time =
-            //     generate_input_file(input_message.clone().info, inputs_folder.clone()).await?;
+            info!("Generating input file for block {}", block_number);
 
-            // TODO: Remove this when generate_input_file is implemented, this is just a placeholder to simulate input file generation time
-            let input_file_time = 0;
+            let start_input_time = Instant::now();
+            let rpc_url = &env::var("RPC_URL").expect("RPC_URL must be set");
+            let input_result =
+                input::reth_input_from_rpc(rpc_url, block_number).await;
 
-            let input_message_json = serde_json::to_string(&input_message).unwrap();
+            match input_result {
+                Ok(input) => {
+                    // Save input file to disk
 
-            total_input_time += input_file_time;
+                    let file_path = PathBuf::from(&inputs_folder).join(&input_filename);
+
+                    let mut file = if let Ok(f) = File::create(file_path) {
+                        f
+                    } else {
+                        return Err(anyhow!("Cannot create the file {} for block {}",
+                            &input_filename, &block_number
+                        ));
+                    };
+                    if let Err(e) = file.write_all(&input) {
+                        return Err(anyhow!("Failed to write to file {} for block {}, error: {}",
+                            &input_filename, &block_number, e
+                        ));
+                    }
+                    if let Err(e) = file.flush() {
+                        return Err(anyhow!("Failed to flush file buffer to OS for file {} for block {}, error: {}",
+                            &input_filename, &block_number, e
+                        ));
+                    }
+                    if let Err(e) = file.sync_all() {
+                        return Err(anyhow!("Failed to sync file {} to disk for block {}, error: {}",
+                            &input_filename, &block_number, e
+                        ));
+                    }
+                }
+                Err(e) => {
+                    return Err(anyhow!("Failed to generate input file for block {}, error: {}",
+                        block_number, e
+                    ));
+                }
+            }
+
+            let input_time = start_input_time.elapsed().as_millis();
+
+            total_input_time += input_time;
             input_count += 1;
 
-            max_input_time = max_input_time.max(input_file_time);
-            min_input_time = min_input_time.min(input_file_time);
+            max_input_time = max_input_time.max(input_time);
+            min_input_time = min_input_time.min(input_time);
 
             info!(
                 "Input file generated for block {}, time: {} ms, avg: {} ms, max: {} ms, min: {} ms",
                 block_number,
-                input_file_time,
+                input_time,
                 total_input_time / input_count as u128,
                 max_input_time,
                 min_input_time
             );
 
+            let input_message_json = serde_json::to_string(&input_message).unwrap();
             if tx.send(input_message_json).is_err() {
                 warn!("No active receivers for broadcast channel");
             }

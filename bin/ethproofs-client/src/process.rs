@@ -178,7 +178,7 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
     }
 
     info!(
-        "Saved input for block {}, file: {}, time: {} ms, time-to-input: {} ms",
+        "Input file saved for block {}, file: {}, time: {} ms, time-to-input: {} ms",
         block_number, filename, input_time, time_to_input
     );
 
