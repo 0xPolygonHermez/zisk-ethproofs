@@ -90,7 +90,7 @@ async fn process_webhook(
                     input_filename, e
                 ));
 
-            init_hints(next_block.block_number, input, &state).await;
+            init_hints(&next_block, input, &state).await;
         }
 
 

@@ -34,6 +34,7 @@ pub const DEFAULT_METRICS_PORT: u16 = 8384;
 pub struct AppState {
     pub shared_metrics: crate::SharedMetrics,
     pub cliargs: CliArgs,
+    pub calling_reth: Arc<tokio::sync::Semaphore>,
     pub proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub next_proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub current_job_id: Arc<Mutex<String>>,
@@ -105,6 +106,7 @@ impl AppState {
             "".to_string()
         };
 
+        let calling_reth = Arc::new(tokio::sync::Semaphore::new(1));
         let proving_block = Arc::new(Mutex::new(None));
         let next_proving_block = Arc::new(Mutex::new(None));
         let current_job_id = Arc::new(Mutex::new(String::new()));
@@ -166,6 +168,7 @@ impl AppState {
 
         Ok(Self {
             cliargs,
+            calling_reth,
             proving_block,
             next_proving_block,
             current_job_id,

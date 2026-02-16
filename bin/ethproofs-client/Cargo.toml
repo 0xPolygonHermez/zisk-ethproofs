@@ -36,10 +36,10 @@ sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio", "macros", "tls
 tonic = "0.14"
 zstd = "0.13.3"
 
-zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feat/large-hints" }
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feat/large-hints" }
-zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feat/large-hints" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feat/large-hints" }
+zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.16.0" }
+zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.16.0" }
+zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.16.0" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.16.0" }
 # Local development
 # zisk-distributed-common = { path = "../../../zisk/distributed/crates/common" }
 # zisk-common = { path = "../../../zisk/common" }
@@ -58,6 +58,10 @@ stateless-validator-reth = { git = "https://github.com/eth-act/ere-guests.git", 
 crypto = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "main-reth" }
 # Local development
 # crypto = { path = "../../../zisk-eth-client/crates/crypto" }
+
+[features]
+default = []
+hints_debug = []
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zisk_hints)'] }

@@ -171,10 +171,12 @@ pub(crate) async fn process_inputs_locally(app_state: AppState) -> Result<()> {
             };
 
             info!("Generating input file for block {}", block_number);
-            let rpc_url = &env::var("RPC_URL").expect("RPC_URL must be set");
+            let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
             let start_time = Instant::now();
-            let input_file_result =
-                input::reth_input_from_rpc(rpc_url, block_number).await;
+            let input_file_result = {
+                let _permit = app_state.calling_reth.acquire().await.unwrap();
+                input::reth_input_from_rpc(&rpc_url, block_number).await
+            };
             let input_file_time = start_time.elapsed().as_millis();
 
             match input_file_result {

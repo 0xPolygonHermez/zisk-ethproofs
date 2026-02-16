@@ -21,11 +21,61 @@ use tokio::sync::oneshot;
 
 #[cfg(zisk_hints)]
 #[inline(always)]
-pub async fn init_hints(block_number: u64, content: Vec<u8>, app_state: &AppState) {
+pub async fn init_hints(block_info: &BlockInfo, content: Vec<u8>, app_state: &AppState) {
+    let block_number = block_info.block_number;
     let app_state_clone = app_state.clone();
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel::<()>();
 
+    #[cfg(feature = "hints_debug")]
+    {
+        use std::process::Command;
+
+        std::env::remove_var("DEBUG_HINTS_FILE");
+        std::env::remove_var("DEBUG_HINTS_REF");
+
+        // Construimos el patrón con wildcard
+        let input_pattern = format!(
+            "/root/git/zisk-ethproofs/inputs/{}",
+            block_info.filename
+        );
+
+        let copy_cmd = format!(
+            "cp {} /root/git/zisk-eth-client/bin/guest/build/input.bin",
+            input_pattern
+        );
+
+        let status_cp = Command::new("bash")
+            .arg("-c")
+            .arg(&copy_cmd)
+            .status()
+            .expect("Failed to execute cp command");
+
+        if !status_cp.success() {
+            panic!("cp command failed with status {:?}", status_cp);
+        }
+
+        println!("Executing zec-reth");
+        // Ejecutar zec-reth
+        let status_run = Command::new("./target/debug/zec-reth")
+            .current_dir("/root/git/zisk-eth-client/bin/guest")
+            .status()
+            .expect("Failed to execute zec-reth");
+
+
+        std::env::set_var("DEBUG_HINTS_FILE", format!("/root/git/zisk-ethproofs/hints/{}_hints_debug.bin", block_number));
+        std::env::set_var("DEBUG_HINTS_REF", format!("/root/git/zisk-eth-client/bin/guest/hints/{}_hints.bin", block_number));
+    }
+
+    let permit = app_state_clone
+    .calling_reth
+    .clone()
+    .acquire_owned()
+    .await
+    .expect("Semaphore closed");
+
     let handle = tokio::task::spawn_blocking(move || {
+        let _permit = permit;
+
         generate_hints(block_number, content.as_slice(), app_state_clone, Some(ready_tx));
     });
 
@@ -61,6 +111,8 @@ pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, re
         }
     };
 
+    let start_execution = Instant::now();
+
     if let Err(e) = hints_init_result {
         error!("Failed to init hints for block {}, error: {}", block_number, e);
         return;
@@ -77,6 +129,8 @@ pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, re
         error!("Failed to execute block {} for hints generation, error: {}", block_number, e);
         return;
     }
+
+    info!("Block {} execution done in {} ms", block_number, start_execution.elapsed().as_millis());
 
     if let Err(e) = close_hints() {
         error!("Failed to close hints for block {}, error: {}", block_number, e);
@@ -242,7 +296,7 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
     #[cfg(zisk_hints)]
     {
         let content_clone = content.to_vec();
-        init_hints(block_number, content_clone, app_state).await;
+        init_hints(&block_info, content_clone, app_state).await;
     }
 
     let result = generate_proof(block_info.clone(), app_state.clone()).await;

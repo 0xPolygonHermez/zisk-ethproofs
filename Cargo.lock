@@ -1739,7 +1739,7 @@ dependencies = [
 [[package]]
 name = "circuit"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feat%2Flarge-hints#4a359540f62ae64faee4e7d2f513551dc0c6fc44"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
 
 [[package]]
 name = "clang-sys"
@@ -4317,12 +4317,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "json"
-version = "0.12.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "078e285eafdfb6c4b434e0d31e8cfcb5115b651496faca5749b88fafd4f23bfd"
-
-[[package]]
 name = "jsonwebtoken"
 version = "8.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4424,7 +4418,12 @@ checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 [[package]]
 name = "lib-c"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feat%2Flarge-hints#4a359540f62ae64faee4e7d2f513551dc0c6fc44"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
+
+[[package]]
+name = "lib-float"
+version = "0.16.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
 
 [[package]]
 name = "libc"
@@ -5531,7 +5530,7 @@ dependencies = [
 [[package]]
 name = "precompiles-helpers"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feat%2Flarge-hints#4a359540f62ae64faee4e7d2f513551dc0c6fc44"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -7067,10 +7066,7 @@ dependencies = [
 [[package]]
 name = "riscv"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feat%2Flarge-hints#4a359540f62ae64faee4e7d2f513551dc0c6fc44"
-dependencies = [
- "elf",
-]
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
 
 [[package]]
 name = "rlp"
@@ -7593,15 +7589,6 @@ dependencies = [
  "serde",
  "serde_core",
  "typeid",
-]
-
-[[package]]
-name = "serde_arrays"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94a16b99c5ea4fe3daccd14853ad260ec00ea043b2708d1fd1da3106dcd8d9df"
-dependencies = [
- "serde",
 ]
 
 [[package]]
@@ -10283,7 +10270,7 @@ dependencies = [
 [[package]]
 name = "zisk-common"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feat%2Flarge-hints#4a359540f62ae64faee4e7d2f513551dc0c6fc44"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -10302,38 +10289,32 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber 0.3.22",
- "witness",
  "zisk-core",
- "zisk-pil",
- "zstd 0.13.3",
 ]
 
 [[package]]
 name = "zisk-core"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feat%2Flarge-hints#4a359540f62ae64faee4e7d2f513551dc0c6fc44"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
 dependencies = [
  "elf",
  "fields",
- "indexmap 2.13.0",
- "json",
  "lib-c",
+ "lib-float",
  "paste",
  "precompiles-helpers",
  "rayon",
  "riscv",
  "serde",
- "serde_json",
  "sha2",
  "tiny-keccak",
- "zisk-pil",
  "ziskos-hints",
 ]
 
 [[package]]
 name = "zisk-distributed-common"
 version = "0.1.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feat%2Flarge-hints#4a359540f62ae64faee4e7d2f513551dc0c6fc44"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
 dependencies = [
  "anyhow",
  "borsh",
@@ -10353,7 +10334,7 @@ dependencies = [
 [[package]]
 name = "zisk-distributed-grpc-api"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feat%2Flarge-hints#4a359540f62ae64faee4e7d2f513551dc0c6fc44"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
 dependencies = [
  "anyhow",
  "chrono",
@@ -10370,23 +10351,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "zisk-pil"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feat%2Flarge-hints#4a359540f62ae64faee4e7d2f513551dc0c6fc44"
-dependencies = [
- "fields",
- "proofman",
- "proofman-common",
- "proofman-macros",
- "rayon",
- "serde",
- "serde_arrays",
-]
-
-[[package]]
 name = "ziskos"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feat%2Flarge-hints#4a359540f62ae64faee4e7d2f513551dc0c6fc44"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -10406,7 +10373,6 @@ dependencies = [
  "rand 0.8.5",
  "serde",
  "sha2",
- "static_assertions",
  "tiny-keccak",
  "tokio",
  "zisk-common",
@@ -10415,15 +10381,13 @@ dependencies = [
 [[package]]
 name = "ziskos-hints"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feat%2Flarge-hints#4a359540f62ae64faee4e7d2f513551dc0c6fc44"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
  "cfg-if",
- "elliptic-curve",
  "fields",
  "getrandom 0.2.17",
- "k256",
  "lazy_static",
  "lib-c",
  "num-bigint",
@@ -10434,7 +10398,6 @@ dependencies = [
  "rand 0.8.5",
  "serde",
  "sha2",
- "static_assertions",
  "tiny-keccak",
 ]
 
