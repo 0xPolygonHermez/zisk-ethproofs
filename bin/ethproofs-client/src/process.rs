@@ -36,7 +36,7 @@ pub async fn init_hints(block_info: &BlockInfo, content: Vec<u8>, app_state: &Ap
         // Construimos el patrón con wildcard
         let input_pattern = format!(
             "/root/git/zisk-ethproofs/inputs/{}",
-            block_info.filename
+            block_info.filename()
         );
 
         let copy_cmd = format!(
@@ -56,7 +56,7 @@ pub async fn init_hints(block_info: &BlockInfo, content: Vec<u8>, app_state: &Ap
 
         println!("Executing zec-reth");
         // Ejecutar zec-reth
-        let status_run = Command::new("./target/debug/zec-reth")
+        let _ = Command::new("./target/debug/zec-reth")
             .current_dir("/root/git/zisk-eth-client/bin/guest")
             .status()
             .expect("Failed to execute zec-reth");

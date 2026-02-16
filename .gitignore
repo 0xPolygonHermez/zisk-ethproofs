@@ -14,4 +14,6 @@ staging.env
 proofs
 /inputs_queue
 /*.bin
-hints
+/hints
+/test
+/input_test
