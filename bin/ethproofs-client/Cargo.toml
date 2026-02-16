@@ -61,7 +61,7 @@ crypto = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branc
 
 [features]
 default = []
-hints_debug = []
+hints-debug = []
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zisk_hints)'] }
