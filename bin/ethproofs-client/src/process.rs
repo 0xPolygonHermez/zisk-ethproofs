@@ -26,7 +26,7 @@ pub async fn init_hints(block_info: &BlockInfo, content: Vec<u8>, app_state: &Ap
     let app_state_clone = app_state.clone();
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel::<()>();
 
-    #[cfg(feature = "hints_debug")]
+    #[cfg(feature = "hints-debug")]
     {
         use std::process::Command;
 
