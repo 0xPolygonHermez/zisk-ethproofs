@@ -95,11 +95,19 @@ pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, re
 
     let hints_init_result = match app_state.cliargs.hints {
         crate::cliargs::Hints::Socket => {
-            let hint_debug_file = if app_state.cliargs.hints_debug {
-                Some(PathBuf::from(format!("{}/{}_hints_debug.bin", app_state.cliargs.hints_debug_path, block_number)))
-            } else {
-                None
-            };
+            #[cfg(zisk_hints)]
+            let hint_debug_file = app_state
+                .cliargs
+                .hints_debug
+                .then(|| PathBuf::from(format!(
+                    "{}/{}_hints_debug.bin",
+                    app_state.cliargs.hints_debug_path,
+                    block_number
+                )));
+
+            #[cfg(not(zisk_hints))]
+            let hint_debug_file: Option<PathBuf> = None;
+            
             let res = init_hints_socket(PathBuf::from(&app_state.cliargs.hints_socket), hint_debug_file, ready);
             res
         }
