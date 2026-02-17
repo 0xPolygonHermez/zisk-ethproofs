@@ -59,7 +59,6 @@ pub async fn launch_hints_generation(block_info: &BlockInfo, content: Vec<u8>, a
             .status()
             .expect("Failed to execute zec-reth");
 
-
         std::env::set_var("DEBUG_HINTS_REF", format!("/root/git/zisk-eth-client/bin/guest/hints/{}_hints.bin", block_number));
     }
 
@@ -107,9 +106,8 @@ pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, re
 
             #[cfg(not(zisk_hints))]
             let hint_debug_file: Option<PathBuf> = None;
-            
-            let res = init_hints_socket(PathBuf::from(&app_state.cliargs.hints_socket), hint_debug_file, ready);
-            res
+
+            init_hints_socket(PathBuf::from(&app_state.cliargs.hints_socket), hint_debug_file, ready)
         }
         crate::cliargs::Hints::File => {
             // Create ./hints directory if it doesn't exist
@@ -121,12 +119,12 @@ pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, re
         }
     };
 
-    let start_execution = Instant::now();
-
     if let Err(e) = hints_init_result {
         error!("Failed to init hints for block {}, error: {}", block_number, e);
         return;
     }
+
+    let start_execution = Instant::now();
 
     let reth_input: StatelessValidatorRethInput = bincode::deserialize(content).unwrap_or_else(|e| {
         panic!(
