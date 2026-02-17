@@ -1739,7 +1739,7 @@ dependencies = [
 [[package]]
 name = "circuit"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=test%2Fhint-buffer#d2c3497888c58add0e23814e4a90db4b648c00b3"
 
 [[package]]
 name = "clang-sys"
@@ -4418,12 +4418,12 @@ checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 [[package]]
 name = "lib-c"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=test%2Fhint-buffer#d2c3497888c58add0e23814e4a90db4b648c00b3"
 
 [[package]]
 name = "lib-float"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=test%2Fhint-buffer#d2c3497888c58add0e23814e4a90db4b648c00b3"
 
 [[package]]
 name = "libc"
@@ -5530,7 +5530,7 @@ dependencies = [
 [[package]]
 name = "precompiles-helpers"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=test%2Fhint-buffer#d2c3497888c58add0e23814e4a90db4b648c00b3"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -7066,7 +7066,7 @@ dependencies = [
 [[package]]
 name = "riscv"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=test%2Fhint-buffer#d2c3497888c58add0e23814e4a90db4b648c00b3"
 
 [[package]]
 name = "rlp"
@@ -10270,7 +10270,7 @@ dependencies = [
 [[package]]
 name = "zisk-common"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=test%2Fhint-buffer#d2c3497888c58add0e23814e4a90db4b648c00b3"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -10295,7 +10295,7 @@ dependencies = [
 [[package]]
 name = "zisk-core"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=test%2Fhint-buffer#d2c3497888c58add0e23814e4a90db4b648c00b3"
 dependencies = [
  "elf",
  "fields",
@@ -10314,7 +10314,7 @@ dependencies = [
 [[package]]
 name = "zisk-distributed-common"
 version = "0.1.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=test%2Fhint-buffer#d2c3497888c58add0e23814e4a90db4b648c00b3"
 dependencies = [
  "anyhow",
  "borsh",
@@ -10334,7 +10334,7 @@ dependencies = [
 [[package]]
 name = "zisk-distributed-grpc-api"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=test%2Fhint-buffer#d2c3497888c58add0e23814e4a90db4b648c00b3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -10353,7 +10353,7 @@ dependencies = [
 [[package]]
 name = "ziskos"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=test%2Fhint-buffer#d2c3497888c58add0e23814e4a90db4b648c00b3"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -10381,7 +10381,7 @@ dependencies = [
 [[package]]
 name = "ziskos-hints"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#0749466f42deb14d1f21a12018800024ba5a1551"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=test%2Fhint-buffer#d2c3497888c58add0e23814e4a90db4b648c00b3"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
