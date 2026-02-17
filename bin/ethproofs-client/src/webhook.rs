@@ -79,7 +79,7 @@ async fn process_webhook(
 
         #[cfg(zisk_hints)]
         {
-            use crate::process::init_hints;
+            use crate::process::launch_hints_generation;
 
             let input_filename = format!("{}/{}", state.inputs_folder.clone(), next_block.filename());
 
@@ -90,7 +90,7 @@ async fn process_webhook(
                     input_filename, e
                 ));
 
-            init_hints(&next_block, input, &state).await;
+            launch_hints_generation(&next_block, input, &state).await;
         }
 
 

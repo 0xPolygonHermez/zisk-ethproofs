@@ -15,5 +15,6 @@ proofs
 /inputs_queue
 /*.bin
 /hints
+/hints_debug
 /test
 /inputs_test

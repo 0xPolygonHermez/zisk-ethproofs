@@ -21,7 +21,7 @@ use tokio::sync::oneshot;
 
 #[cfg(zisk_hints)]
 #[inline(always)]
-pub async fn init_hints(block_info: &BlockInfo, content: Vec<u8>, app_state: &AppState) {
+pub async fn launch_hints_generation(block_info: &BlockInfo, content: Vec<u8>, app_state: &AppState) {
     let block_number = block_info.block_number;
     let app_state_clone = app_state.clone();
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel::<()>();
@@ -30,7 +30,6 @@ pub async fn init_hints(block_info: &BlockInfo, content: Vec<u8>, app_state: &Ap
     {
         use std::process::Command;
 
-        std::env::remove_var("DEBUG_HINTS_FILE");
         std::env::remove_var("DEBUG_HINTS_REF");
 
         // Construimos el patrón con wildcard
@@ -62,7 +61,6 @@ pub async fn init_hints(block_info: &BlockInfo, content: Vec<u8>, app_state: &Ap
             .expect("Failed to execute zec-reth");
 
 
-        std::env::set_var("DEBUG_HINTS_FILE", format!("/root/git/zisk-ethproofs/hints/{}_hints_debug.bin", block_number));
         std::env::set_var("DEBUG_HINTS_REF", format!("/root/git/zisk-eth-client/bin/guest/hints/{}_hints.bin", block_number));
     }
 
@@ -98,7 +96,12 @@ pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, re
 
     let hints_init_result = match app_state.cliargs.hints {
         crate::cliargs::Hints::Socket => {
-            let res = init_hints_socket(PathBuf::from(&app_state.cliargs.hints_socket), ready);
+            let hint_debug_file = if app_state.cliargs.hints_debug {
+                Some(PathBuf::from(format!("{}/{}_hints_debug.bin", app_state.cliargs.hints_debug_path, block_number)))
+            } else {
+                None
+            };
+            let res = init_hints_socket(PathBuf::from(&app_state.cliargs.hints_socket), hint_debug_file, ready);
             res
         }
         crate::cliargs::Hints::File => {
@@ -296,7 +299,7 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
     #[cfg(zisk_hints)]
     {
         let content_clone = content.to_vec();
-        init_hints(&block_info, content_clone, app_state).await;
+        launch_hints_generation(&block_info, content_clone, app_state).await;
     }
 
     let result = generate_proof(block_info.clone(), app_state.clone()).await;
