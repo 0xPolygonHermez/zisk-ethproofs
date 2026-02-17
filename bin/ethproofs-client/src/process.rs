@@ -53,7 +53,6 @@ pub async fn launch_hints_generation(block_info: &BlockInfo, content: Vec<u8>, a
             panic!("cp command failed with status {:?}", status_cp);
         }
 
-        println!("Executing zec-reth");
         // Ejecutar zec-reth
         let _ = Command::new("./target/debug/zec-reth")
             .current_dir("/root/git/zisk-eth-client/bin/guest")
