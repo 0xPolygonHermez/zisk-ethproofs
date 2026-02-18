@@ -26,43 +26,7 @@ pub async fn launch_hints_generation(block_info: &BlockInfo, content: Vec<u8>, a
     let app_state_clone = app_state.clone();
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel::<()>();
 
-    #[cfg(feature = "hints-debug")]
-    {
-        use std::process::Command;
-
-        std::env::remove_var("DEBUG_HINTS_REF");
-
-        // Construimos el patrón con wildcard
-        let input_pattern = format!(
-            "/root/git/zisk-ethproofs/inputs/{}",
-            block_info.filename()
-        );
-
-        let copy_cmd = format!(
-            "cp {} /root/git/zisk-eth-client/bin/guest/build/input.bin",
-            input_pattern
-        );
-
-        let status_cp = Command::new("bash")
-            .arg("-c")
-            .arg(&copy_cmd)
-            .status()
-            .expect("Failed to execute cp command");
-
-        if !status_cp.success() {
-            panic!("cp command failed with status {:?}", status_cp);
-        }
-
-        // Ejecutar zec-reth
-        let _ = Command::new("./target/debug/zec-reth")
-            .current_dir("/root/git/zisk-eth-client/bin/guest")
-            .status()
-            .expect("Failed to execute zec-reth");
-
-        std::env::set_var("DEBUG_HINTS_REF", format!("/root/git/zisk-eth-client/bin/guest/hints/{}_hints.bin", block_number));
-    }
-
-    let permit = app_state_clone
+    let permit_reth = app_state_clone
     .calling_reth
     .clone()
     .acquire_owned()
@@ -70,7 +34,7 @@ pub async fn launch_hints_generation(block_info: &BlockInfo, content: Vec<u8>, a
     .expect("Semaphore closed");
 
     let handle = tokio::task::spawn_blocking(move || {
-        let _permit = permit;
+        let _permit_reth = permit_reth;
 
         generate_hints(block_number, content.as_slice(), app_state_clone, Some(ready_tx));
     });
