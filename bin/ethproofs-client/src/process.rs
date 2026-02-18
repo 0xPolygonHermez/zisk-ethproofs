@@ -7,7 +7,7 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use log::{error, info, warn};
 
 #[cfg(zisk_hints)]
-use ziskos::hints::{close_hints, init_hints_socket, init_hints_file};
+use ziskos::hints::{close_hints, init_hints_file, init_hints_socket};
 
 use crate::cliargs::TelegramEvent;
 use crate::metrics::BlockMetrics;
@@ -21,17 +21,17 @@ use tokio::sync::oneshot;
 
 #[cfg(zisk_hints)]
 #[inline(always)]
-pub async fn launch_hints_generation(block_info: &BlockInfo, content: Vec<u8>, app_state: &AppState) {
+pub async fn launch_hints_generation(
+    block_info: &BlockInfo,
+    content: Vec<u8>,
+    app_state: &AppState,
+) {
     let block_number = block_info.block_number;
     let app_state_clone = app_state.clone();
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel::<()>();
 
-    let permit_reth = app_state_clone
-    .calling_reth
-    .clone()
-    .acquire_owned()
-    .await
-    .expect("Semaphore closed");
+    let permit_reth =
+        app_state_clone.calling_reth.clone().acquire_owned().await.expect("Semaphore closed");
 
     let handle = tokio::task::spawn_blocking(move || {
         let _permit_reth = permit_reth;
@@ -47,7 +47,12 @@ pub async fn launch_hints_generation(block_info: &BlockInfo, content: Vec<u8>, a
 }
 
 #[cfg(zisk_hints)]
-pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, ready: Option<oneshot::Sender<()>>) {
+pub fn generate_hints(
+    block_number: u64,
+    content: &[u8],
+    app_state: AppState,
+    ready: Option<oneshot::Sender<()>>,
+) {
     // Execute the block to get precompile hints populated
 
     use stateless_validator_reth::guest::StatelessValidatorRethInput;
@@ -59,19 +64,21 @@ pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, re
     let hints_init_result = match app_state.cliargs.hints {
         crate::cliargs::Hints::Socket => {
             #[cfg(zisk_hints)]
-            let hint_debug_file = app_state
-                .cliargs
-                .hints_debug
-                .then(|| PathBuf::from(format!(
+            let hint_debug_file = app_state.cliargs.hints_debug.then(|| {
+                PathBuf::from(format!(
                     "{}/{}_hints_debug.bin",
-                    app_state.cliargs.hints_debug_path,
-                    block_number
-                )));
+                    app_state.cliargs.hints_debug_path, block_number
+                ))
+            });
 
             #[cfg(not(zisk_hints))]
             let hint_debug_file: Option<PathBuf> = None;
 
-            init_hints_socket(PathBuf::from(&app_state.cliargs.hints_socket), hint_debug_file, ready)
+            init_hints_socket(
+                PathBuf::from(&app_state.cliargs.hints_socket),
+                hint_debug_file,
+                ready,
+            )
         }
         crate::cliargs::Hints::File => {
             // Create ./hints directory if it doesn't exist
@@ -79,7 +86,10 @@ pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, re
             if !hints_dir.exists() {
                 std::fs::create_dir_all(&hints_dir).expect("Failed to create hints directory");
             }
-            init_hints_file(PathBuf::from(format!("{}/{}_hints.bin", hints_dir.display(), block_number)), ready)
+            init_hints_file(
+                PathBuf::from(format!("{}/{}_hints.bin", hints_dir.display(), block_number)),
+                ready,
+            )
         }
     };
 
@@ -90,12 +100,10 @@ pub fn generate_hints(block_number: u64, content: &[u8], app_state: AppState, re
 
     let start_execution = Instant::now();
 
-    let reth_input: StatelessValidatorRethInput = bincode::deserialize(content).unwrap_or_else(|e| {
-        panic!(
-            "Failed to deserialize input for block {}, error: {}",
-            block_number, e
-        )
-    });
+    let reth_input: StatelessValidatorRethInput =
+        bincode::deserialize(content).unwrap_or_else(|e| {
+            panic!("Failed to deserialize input for block {}, error: {}", block_number, e)
+        });
 
     if let Err(e) = guest::validate_block(reth_input) {
         error!("Failed to execute block {} for hints generation, error: {}", block_number, e);

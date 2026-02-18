@@ -81,18 +81,19 @@ async fn process_webhook(
         {
             use crate::process::launch_hints_generation;
 
-            let input_filename = format!("{}/{}", state.inputs_folder.clone(), next_block.filename());
+            let input_filename =
+                format!("{}/{}", state.inputs_folder.clone(), next_block.filename());
 
             // TODO: avoid read input file, store in app_state or read inside init_hints_file async
-            let input = std::fs::read(&input_filename)
-                .unwrap_or_else(|e| panic!(
+            let input = std::fs::read(&input_filename).unwrap_or_else(|e| {
+                panic!(
                     "Failed to read input file {} for hints generation, error: {}",
                     input_filename, e
-                ));
+                )
+            });
 
             launch_hints_generation(&next_block, input, &state).await;
         }
-
 
         let result = generate_proof(next_block.clone(), state.clone()).await;
 

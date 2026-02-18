@@ -168,7 +168,8 @@ impl AppState {
 
         #[cfg(zisk_hints)]
         if cliargs.hints_debug {
-            std::fs::create_dir_all(&cliargs.hints_debug_path).context("Failed to create hints debug directory")?;
+            std::fs::create_dir_all(&cliargs.hints_debug_path)
+                .context("Failed to create hints debug directory")?;
         }
 
         Ok(Self {

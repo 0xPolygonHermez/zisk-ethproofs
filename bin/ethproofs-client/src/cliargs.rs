@@ -20,7 +20,6 @@ pub enum Hints {
     Socket,
 }
 
-
 // Command line arguments
 #[derive(Clone, Parser)]
 pub struct CliArgs {

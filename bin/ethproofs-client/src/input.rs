@@ -14,9 +14,7 @@ use tokio_tungstenite::{
     tungstenite::{protocol::WebSocketConfig, Message},
 };
 
-use ethproofs_common::{
-    protocol::{BlockCommand, BlockInfo, BlockMessage},
-};
+use ethproofs_common::protocol::{BlockCommand, BlockInfo, BlockMessage};
 
 use crate::{
     metrics,

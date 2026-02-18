@@ -14,6 +14,10 @@
     "rust-analyzer.cargo.extraEnv": {
         "RUSTFLAGS": "--cfg=zisk_hints"
     },
+    "rust-analyzer.rustfmt.extraArgs": [
+        "--config-path",
+        "${workspaceFolder}/rustfmt.toml"
+    ],
     "files.associations": {
         "*.ejs": "html",
         "new": "cpp"

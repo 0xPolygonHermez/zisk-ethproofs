@@ -49,7 +49,7 @@ async fn block_listener(tx: Sender<String>) -> Result<()> {
             }
         };
 
-            let mut stream = match rpc_provider.subscribe_blocks().await {
+        let mut stream = match rpc_provider.subscribe_blocks().await {
             Ok(s) => s,
             Err(e) => {
                 error!("Failed to subscribe to blocks, error {}", e);
