@@ -55,7 +55,7 @@ alloy-consensus = { version = "1.0.37", default-features = false, features = ["c
 revm = { version = "34.0.0", default-features = false }
 stateless-validator-reth = { git = "https://github.com/eth-act/ere-guests.git", rev = "885398bc1478e777096a8456bc925b2ab28a8d0f" }
 
-crypto = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "main-reth" }
+crypto = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "fix-resume" }
 # Local development
 # crypto = { path = "../../../zisk-eth-client/crates/crypto" }
 
