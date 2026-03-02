@@ -77,6 +77,7 @@ pub fn generate_hints(
             init_hints_socket(
                 PathBuf::from(&app_state.cliargs.hints_socket),
                 hint_debug_file,
+                None,
                 ready,
             )
         }
