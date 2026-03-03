@@ -1216,9 +1216,9 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "aws-lc-rs"
-version = "1.15.4"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b7b6141e96a8c160799cc2d5adecd5cbbe5054cb8c7c4af53da0f83bb7ad256"
+checksum = "d9a7b350e3bb1767102698302bc37256cbd48422809984b98d292c40e2579aa9"
 dependencies = [
  "aws-lc-sys",
  "zeroize",
@@ -1739,7 +1739,7 @@ dependencies = [
 [[package]]
 name = "circuit"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#1e0c43dbd3f8bb568e67dd7d6d06b67841c6ba8e"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Finput-hint#1b2b5659b9da78f4fa6ce47d72a4ecee9cc90441"
 
 [[package]]
 name = "clang-sys"
@@ -2146,7 +2146,7 @@ dependencies = [
 [[package]]
 name = "curves"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#8f129b767a75551348d1492bac5e32f05186a66b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#73479fc2b507b5c833d69a753a8be104e1818f3a"
 dependencies = [
  "fields",
  "num-bigint",
@@ -3173,7 +3173,7 @@ dependencies = [
 [[package]]
 name = "fields"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#8f129b767a75551348d1492bac5e32f05186a66b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#73479fc2b507b5c833d69a753a8be104e1818f3a"
 dependencies = [
  "cfg-if",
  "num-bigint",
@@ -4408,12 +4408,12 @@ checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 [[package]]
 name = "lib-c"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#1e0c43dbd3f8bb568e67dd7d6d06b67841c6ba8e"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Finput-hint#1b2b5659b9da78f4fa6ce47d72a4ecee9cc90441"
 
 [[package]]
 name = "lib-float"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#1e0c43dbd3f8bb568e67dd7d6d06b67841c6ba8e"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Finput-hint#1b2b5659b9da78f4fa6ce47d72a4ecee9cc90441"
 
 [[package]]
 name = "libc"
@@ -5123,15 +5123,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "papergrid"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "608b6444acf7f5ea39e8bd06dd6037e34a4b5ddfb29ae840edad49ea798e9e79"
-dependencies = [
- "unicode-width",
-]
-
-[[package]]
 name = "parity-scale-codec"
 version = "3.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5396,7 +5387,7 @@ dependencies = [
 [[package]]
 name = "pil-std-lib"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#8f129b767a75551348d1492bac5e32f05186a66b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#73479fc2b507b5c833d69a753a8be104e1818f3a"
 dependencies = [
  "colored",
  "fields",
@@ -5514,7 +5505,7 @@ dependencies = [
 [[package]]
 name = "precompiles-helpers"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#1e0c43dbd3f8bb568e67dd7d6d06b67841c6ba8e"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Finput-hint#1b2b5659b9da78f4fa6ce47d72a4ecee9cc90441"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5626,7 +5617,7 @@ dependencies = [
 [[package]]
 name = "proofman"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#8f129b767a75551348d1492bac5e32f05186a66b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#73479fc2b507b5c833d69a753a8be104e1818f3a"
 dependencies = [
  "bincode 1.3.3",
  "blake3",
@@ -5662,7 +5653,7 @@ dependencies = [
 [[package]]
 name = "proofman-common"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#8f129b767a75551348d1492bac5e32f05186a66b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#73479fc2b507b5c833d69a753a8be104e1818f3a"
 dependencies = [
  "bincode 1.3.3",
  "borsh",
@@ -5684,7 +5675,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sysinfo",
- "tabled",
  "thiserror 2.0.18",
  "tracing",
  "tracing-subscriber 0.3.22",
@@ -5694,7 +5684,7 @@ dependencies = [
 [[package]]
 name = "proofman-hints"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#8f129b767a75551348d1492bac5e32f05186a66b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#73479fc2b507b5c833d69a753a8be104e1818f3a"
 dependencies = [
  "fields",
  "itoa",
@@ -5707,7 +5697,7 @@ dependencies = [
 [[package]]
 name = "proofman-macros"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#8f129b767a75551348d1492bac5e32f05186a66b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#73479fc2b507b5c833d69a753a8be104e1818f3a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5717,7 +5707,7 @@ dependencies = [
 [[package]]
 name = "proofman-starks-lib-c"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#8f129b767a75551348d1492bac5e32f05186a66b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#73479fc2b507b5c833d69a753a8be104e1818f3a"
 dependencies = [
  "crossbeam-channel",
  "tracing",
@@ -5726,7 +5716,7 @@ dependencies = [
 [[package]]
 name = "proofman-util"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#8f129b767a75551348d1492bac5e32f05186a66b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#73479fc2b507b5c833d69a753a8be104e1818f3a"
 dependencies = [
  "bincode 1.3.3",
  "bytemuck",
@@ -5738,7 +5728,7 @@ dependencies = [
 [[package]]
 name = "proofman-verifier"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#8f129b767a75551348d1492bac5e32f05186a66b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#73479fc2b507b5c833d69a753a8be104e1818f3a"
 dependencies = [
  "bytemuck",
  "fields",
@@ -5841,9 +5831,9 @@ dependencies = [
 
 [[package]]
 name = "pulldown-cmark"
-version = "0.13.0"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e8bbe1a966bd2f362681a44f6edce3c2310ac21e4d5067a6e7ec396297a6ea0"
+checksum = "83c41efbf8f90ac44de7f3a868f0867851d261b56291732d0cbf7cceaaeb55a6"
 dependencies = [
  "bitflags 2.11.0",
  "memchr",
@@ -7051,7 +7041,7 @@ dependencies = [
 [[package]]
 name = "riscv"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#1e0c43dbd3f8bb568e67dd7d6d06b67841c6ba8e"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Finput-hint#1b2b5659b9da78f4fa6ce47d72a4ecee9cc90441"
 
 [[package]]
 name = "rlp"
@@ -8358,27 +8348,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tabled"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2407502760ccfd538f2fb1f843dd87b6daf1a17848d57bc5a25617e408ef4c7a"
-dependencies = [
- "papergrid",
- "tabled_derive",
-]
-
-[[package]]
-name = "tabled_derive"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "278ea3921cee8c5a69e0542998a089f7a14fa43c9c4e4f9951295da89bd0c943"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "tap"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8754,9 +8723,9 @@ dependencies = [
 
 [[package]]
 name = "tonic-build"
-version = "0.14.4"
+version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce6d8958ed3be404120ca43ffa0fb1e1fc7be214e96c8d33bd43a131b6eebc9e"
+checksum = "1882ac3bf5ef12877d7ed57aad87e75154c11931c2ba7e6cde5e22d63522c734"
 dependencies = [
  "prettyplease",
  "proc-macro2",
@@ -8766,9 +8735,9 @@ dependencies = [
 
 [[package]]
 name = "tonic-prost"
-version = "0.14.4"
+version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f86539c0089bfd09b1f8c0ab0239d80392af74c21bc9e0f15e1b4aca4c1647f"
+checksum = "a55376a0bbaa4975a3f10d009ad763d8f4108f067c7c2e74f3001fb49778d309"
 dependencies = [
  "bytes",
  "prost",
@@ -8777,9 +8746,9 @@ dependencies = [
 
 [[package]]
 name = "tonic-prost-build"
-version = "0.14.4"
+version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65873ace111e90344b8973e94a1fc817c924473affff24629281f90daed1cd2e"
+checksum = "f3144df636917574672e93d0f56d7edec49f90305749c668df5101751bb8f95a"
 dependencies = [
  "prettyplease",
  "proc-macro2",
@@ -9090,12 +9059,6 @@ name = "unicode-segmentation"
 version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6ccf251212114b54433ec949fd6a7841275f9ada20dddd2f29e9ceea4501493"
-
-[[package]]
-name = "unicode-width"
-version = "0.1.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af"
 
 [[package]]
 name = "unicode-xid"
@@ -10008,7 +9971,7 @@ dependencies = [
 [[package]]
 name = "witness"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#8f129b767a75551348d1492bac5e32f05186a66b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#73479fc2b507b5c833d69a753a8be104e1818f3a"
 dependencies = [
  "colored",
  "fields",
@@ -10242,7 +10205,7 @@ dependencies = [
 [[package]]
 name = "zisk-common"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#1e0c43dbd3f8bb568e67dd7d6d06b67841c6ba8e"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Finput-hint#1b2b5659b9da78f4fa6ce47d72a4ecee9cc90441"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -10267,7 +10230,7 @@ dependencies = [
 [[package]]
 name = "zisk-core"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#1e0c43dbd3f8bb568e67dd7d6d06b67841c6ba8e"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Finput-hint#1b2b5659b9da78f4fa6ce47d72a4ecee9cc90441"
 dependencies = [
  "elf",
  "fields",
@@ -10280,13 +10243,19 @@ dependencies = [
  "serde",
  "sha2",
  "tiny-keccak",
+ "zisk-definitions",
  "ziskos-hints",
 ]
 
 [[package]]
+name = "zisk-definitions"
+version = "0.16.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Finput-hint#1b2b5659b9da78f4fa6ce47d72a4ecee9cc90441"
+
+[[package]]
 name = "zisk-distributed-common"
 version = "0.1.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#1e0c43dbd3f8bb568e67dd7d6d06b67841c6ba8e"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Finput-hint#1b2b5659b9da78f4fa6ce47d72a4ecee9cc90441"
 dependencies = [
  "anyhow",
  "borsh",
@@ -10306,7 +10275,7 @@ dependencies = [
 [[package]]
 name = "zisk-distributed-grpc-api"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#1e0c43dbd3f8bb568e67dd7d6d06b67841c6ba8e"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Finput-hint#1b2b5659b9da78f4fa6ce47d72a4ecee9cc90441"
 dependencies = [
  "anyhow",
  "chrono",
@@ -10325,7 +10294,7 @@ dependencies = [
 [[package]]
 name = "ziskos"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#1e0c43dbd3f8bb568e67dd7d6d06b67841c6ba8e"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Finput-hint#1b2b5659b9da78f4fa6ce47d72a4ecee9cc90441"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -10348,12 +10317,13 @@ dependencies = [
  "tiny-keccak",
  "tokio",
  "zisk-common",
+ "zisk-definitions",
 ]
 
 [[package]]
 name = "ziskos-hints"
 version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.16.0#1e0c43dbd3f8bb568e67dd7d6d06b67841c6ba8e"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Finput-hint#1b2b5659b9da78f4fa6ce47d72a4ecee9cc90441"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",

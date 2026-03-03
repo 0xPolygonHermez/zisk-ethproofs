@@ -20,6 +20,16 @@ use ethproofs_common::protocol::BlockInfo;
 use tokio::sync::oneshot;
 
 #[cfg(zisk_hints)]
+extern "C" {
+    fn hint_input_data(input_data_ptr: *const u8, input_data_len: usize);
+}
+
+#[cfg(zisk_hints_debug)]
+extern "C" {
+    fn hint_log_c(msg: *const c_char);
+}
+
+#[cfg(zisk_hints)]
 #[inline(always)]
 pub async fn launch_hints_generation(
     block_info: &BlockInfo,
@@ -101,6 +111,23 @@ pub fn generate_hints(
 
     let start_execution = Instant::now();
 
+    #[cfg(zisk_hints)]
+    unsafe {
+        hint_input_data(content.as_ptr(), content.len());
+    }
+
+    #[cfg(zisk_hints_debug)]
+    {
+        let start_bytes = &content[..content.len().min(64)];
+        let ellipsis = if content.len() > 64 { "..." } else { "" };
+        hint_log_c(format!(
+            "hint_input_data (input_data: {:x?}{} , input_data_len: {}",
+            start_bytes,
+            ellipsis,
+            content.len()
+        ));
+    }
+    
     let reth_input: StatelessValidatorRethInput =
         bincode::deserialize(content).unwrap_or_else(|e| {
             panic!("Failed to deserialize input for block {}, error: {}", block_number, e)

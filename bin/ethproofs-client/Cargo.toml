@@ -36,10 +36,10 @@ sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio", "macros", "tls
 tonic = "0.14"
 zstd = "0.13.3"
 
-zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/hints-write-buf" }
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/hints-write-buf" }
-zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/hints-write-buf" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/hints-write-buf" }
+zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-hint" }
+zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-hint" }
+zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-hint" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-hint" }
 # Local development
 # zisk-distributed-common = { path = "../../../zisk/distributed/crates/common" }
 # zisk-common = { path = "../../../zisk/common" }
@@ -64,4 +64,4 @@ default = []
 hints-debug = []
 
 [lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zisk_hints)'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zisk_hints)','cfg(zisk_hints_debug)'] }
