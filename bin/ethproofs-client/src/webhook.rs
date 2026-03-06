@@ -92,6 +92,29 @@ async fn process_webhook(
                 )
             });
 
+            // Get input data length from first 8 bytes of input file
+            if input.len() < 8 {
+                panic!(
+                    "Input file {} is too short ({} bytes) to contain length header",
+                    input_filename,
+                    input.len()
+                );
+            }
+
+            let input_len = u64::from_le_bytes(input[..8].try_into().unwrap()) as usize;
+
+            if input.len() < 8 + input_len {
+                panic!(
+                    "Input file {} is too short: header says {} bytes of input, but file has only {} bytes total",
+                    input_filename,
+                    input_len,
+                    input.len() - 8
+                );
+            }
+
+            // Get the actual input data after the 8 byte length header
+            let input = input[8..8 + input_len].to_vec();
+
             launch_hints_generation(&next_block, input, &state).await;
         }
 
