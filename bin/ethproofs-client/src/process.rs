@@ -196,7 +196,7 @@ pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
     }
 }
 
-pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_state: &AppState) {
+pub(crate) async fn process_input(block_info: BlockInfo, input: &[u8], app_state: &AppState) {
     let filename = block_info.filename();
     let block_number = block_info.block_number;
     let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
@@ -208,10 +208,28 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
         error!("Cannot create the file {} for block {}", &filename, &block_number);
         return;
     };
-    if let Err(e) = file.write_all(content) {
+    // Write the length of the input as a 64-bit little-endian integer
+    let input_len: u64 = input.len() as u64;
+    let input_len_bytes: [u8; 8] = input_len.to_le_bytes();
+    if let Err(e) = file.write_all(&input_len_bytes) {
+        error!("Failed to write input length to file {} for block {}, error: {}", &filename, &block_number, e);
+        return;
+    }
+    // Write the input data
+    if let Err(e) = file.write_all(input) {
         error!("Failed to write to file {} for block {}, error: {}", &filename, &block_number, e);
         return;
     }
+    // Write padding to align to 8 bytes if necessary
+    let padding_len = (8 - (input.len() & 7)) & 7;
+    if padding_len > 0 {
+        let padding = vec![0u8; padding_len];
+        if let Err(e) = file.write_all(&padding) {
+            error!("Failed to write padding to file {} for block {}, error: {}", &filename, &block_number, e);
+            return;
+        }
+    }
+    // Flush the file buffer to ensure all data is written to the OS, and then sync to ensure it's on disk
     if let Err(e) = file.flush() {
         error!(
             "Failed to flush file buffer to OS for file {} for block {}, error: {}",
@@ -321,8 +339,8 @@ pub(crate) async fn process_input(block_info: BlockInfo, content: &[u8], app_sta
 
     #[cfg(zisk_hints)]
     {
-        let content_clone = content.to_vec();
-        launch_hints_generation(&block_info, content_clone, app_state).await;
+        let input_clone = input.to_vec();
+        launch_hints_generation(&block_info, input_clone, app_state).await;
     }
 
     let result = generate_proof(block_info.clone(), app_state.clone()).await;
