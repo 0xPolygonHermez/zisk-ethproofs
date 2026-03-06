@@ -36,15 +36,15 @@ sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio", "macros", "tls
 tonic = "0.14"
 zstd = "0.13.3"
 
-zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-hint" }
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-hint" }
-zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-hint" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-hint" }
+# zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream" }
+# zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream" }
+# zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream" }
+# ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream" }
 # Local development
-# zisk-distributed-common = { path = "../../../zisk/distributed/crates/common" }
-# zisk-common = { path = "../../../zisk/common" }
-# zisk-distributed-grpc-api = { path = "../../../zisk/distributed/crates/grpc-api" }
-# ziskos = { path = "../../../zisk/ziskos/entrypoint" }
+zisk-distributed-common = { path = "../../../zisk/distributed/crates/common" }
+zisk-common = { path = "../../../zisk/common" }
+zisk-distributed-grpc-api = { path = "../../../zisk/distributed/crates/grpc-api" }
+ziskos = { path = "../../../zisk/ziskos/entrypoint" }
 
 ethproofs-common = { path = "../../ethproofs-common" }
 regex = "1.12.2"
@@ -64,4 +64,4 @@ default = []
 hints-debug = []
 
 [lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zisk_hints)','cfg(zisk_hints_debug)'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_vendor, values("zisk"))', 'cfg(zisk_hints)', 'cfg(zisk_hints_debug)'] }

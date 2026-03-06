@@ -26,7 +26,25 @@ extern "C" {
 
 #[cfg(zisk_hints_debug)]
 extern "C" {
-    fn hint_log_c(msg: *const c_char);
+    fn hint_log_c(msg: *const std::os::raw::c_char);
+}
+
+#[cfg(zisk_hints_debug)]
+pub fn hint_log<S: AsRef<str>>(msg: S) {
+    // On native we call external C function to log hints, since it controls if hints are paused or not
+    #[cfg(not(all(target_os = "zkvm", target_vendor = "zisk")))]
+    {
+        use std::ffi::CString;
+
+        if let Ok(c) = CString::new(msg.as_ref()) {
+            unsafe { hint_log_c(c.as_ptr()) };
+        }
+    }
+    // On zkvm/zisk, we can just print directly
+    #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+    {
+        println!("{}", msg.as_ref());
+    }
 }
 
 #[cfg(zisk_hints)]
@@ -120,14 +138,14 @@ pub fn generate_hints(
     {
         let start_bytes = &content[..content.len().min(64)];
         let ellipsis = if content.len() > 64 { "..." } else { "" };
-        hint_log_c(format!(
+        hint_log(format!(
             "hint_input_data (input_data: {:x?}{} , input_data_len: {}",
             start_bytes,
             ellipsis,
             content.len()
         ));
     }
-    
+
     let reth_input: StatelessValidatorRethInput =
         bincode::deserialize(content).unwrap_or_else(|e| {
             panic!("Failed to deserialize input for block {}, error: {}", block_number, e)
