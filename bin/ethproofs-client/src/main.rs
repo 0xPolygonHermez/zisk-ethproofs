@@ -16,7 +16,7 @@ use tokio::task;
 #[cfg(zisk_hints)]
 use alloy_consensus::crypto::install_default_provider;
 #[cfg(zisk_hints)]
-use crypto::CustomEvmCrypto;
+use guest_reth::CustomEvmCrypto;
 #[cfg(zisk_hints)]
 use revm::install_crypto;
 
@@ -54,7 +54,7 @@ async fn main() -> Result<()> {
         .init();
 
     // Initialize application state
-    let app_state = match AppState::new().await {
+    let mut app_state = match AppState::new().await {
         Ok(state) => state,
         Err(e) => {
             error!("Failed to initialize application state, error: {}", e);
@@ -99,13 +99,13 @@ async fn main() -> Result<()> {
     // Select input generation method
     match app_state.cliargs.input_gen {
         cliargs::InputGen::Server => {
-            process_inputs_from_server(app_state).await;
+            process_inputs_from_server(&mut app_state).await;
         }
         cliargs::InputGen::Local => {
-            process_inputs_locally(app_state.clone()).await?;
+            process_inputs_locally(&mut app_state).await?;
         }
         cliargs::InputGen::Folder => {
-            process_inputs_from_folder(app_state.clone()).await?;
+            process_inputs_from_folder(&mut app_state).await?;
         }
     }
     Ok(())

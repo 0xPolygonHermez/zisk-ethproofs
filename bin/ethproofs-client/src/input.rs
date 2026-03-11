@@ -1,10 +1,13 @@
 use std::env;
 use std::{fs, path::PathBuf, sync::Arc};
 
+use alloy_provider::network::any;
 use anyhow::Result;
 use chrono::Utc;
 use ethers::providers::{Middleware, Provider, Ws};
 use futures_util::{SinkExt, StreamExt};
+use guest_reth::{RethInputPublic, RethInputWitness};
+use input::FromRpc;
 use log::{debug, error, info, warn};
 use regex::Regex;
 use tokio::sync::Mutex;
@@ -15,6 +18,7 @@ use tokio_tungstenite::{
 };
 
 use ethproofs_common::protocol::{BlockCommand, BlockInfo, BlockMessage};
+use zisk_sdk::{ZiskFileStdin, ZiskIO};
 
 use crate::{
     metrics,
@@ -35,7 +39,7 @@ fn parse_binary_input(data: &[u8]) -> Option<(BlockMessage, &[u8])> {
 }
 
 /// Run process to get input files from input-gen-server via WebSocket
-pub(crate) async fn process_inputs_from_server(app_state: AppState) {
+pub(crate) async fn process_inputs_from_server(app_state: &mut AppState) {
     let ws_cfg = WebSocketConfig {
         max_frame_size: Some(32 << 20),
         max_message_size: Some(128 << 20),
@@ -78,7 +82,7 @@ pub(crate) async fn process_inputs_from_server(app_state: AppState) {
                             if let Some((block_msg, content)) = parse_binary_input(&payload) {
                                 match block_msg.command {
                                     BlockCommand::Queued => process_queued(block_msg.info.block_number, &app_state),
-                                    BlockCommand::Input => process_input(block_msg.info, content, &app_state).await,
+                                    BlockCommand::Input => {}, // process_input(block_msg.info, content, app_state).await,
                                 }
                             } else {
                                 error!("Malformed binary message received (cannot parse header JSON)");
@@ -109,7 +113,7 @@ pub(crate) async fn process_inputs_from_server(app_state: AppState) {
 }
 
 /// Run process to generate input files locally by connecting to Ethereum node
-pub(crate) async fn process_inputs_locally(app_state: AppState) -> Result<()> {
+pub(crate) async fn process_inputs_locally(app_state: &mut AppState) -> Result<()> {
     let mut max_input_time: u128 = 0;
     let mut min_input_time: u128 = u128::MAX;
     let mut total_input_time: u128 = 0;
@@ -171,33 +175,45 @@ pub(crate) async fn process_inputs_locally(app_state: AppState) -> Result<()> {
             info!("Generating input file for block {}", block_number);
             let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
             let start_time = Instant::now();
-            let input_file_result = {
+
+            let inputs_result = {
                 let _permit_reth = app_state.calling_reth.acquire().await.unwrap();
-                input::reth_input_from_rpc(&rpc_url, block_number).await
+                async {
+                    let pk = guest_reth::RethInputPublic::from_rpc(&rpc_url, block_number)
+                        .await
+                        .map_err(|e| format!("Public input generation failed: {e}"))?;
+                    let witness = guest_reth::RethInputWitness::from_rpc(&rpc_url, block_number)
+                        .await
+                        .map_err(|e| format!("Witness input generation failed: {e}"))?;
+                    Ok::<_, String>((pk, witness))
+                }
+                .await
             };
-            let input_file_time = start_time.elapsed().as_millis();
 
-            match input_file_result {
-                Ok(reth_input) => {
-                    total_input_time += input_file_time;
-                    input_count += 1;
-                    max_input_time = max_input_time.max(input_file_time);
-                    min_input_time = min_input_time.min(input_file_time);
+            let (input_pk, input_witness) = match inputs_result {
+                Ok(result) => result,
+                Err(msg) => {
+                    error!("{} for block {}, skipping...", msg, block_number);
+                    continue;
+                }
+            };
 
-                    info!(
-                        "Input file generated for block {}, time: {} ms, avg: {} ms, max: {} ms, min: {} ms",
-                        block_number,
-                        input_file_time,
-                        total_input_time / input_count as u128,
-                        max_input_time,
-                        min_input_time
-                    );
-                    process_input(block_info, &reth_input, &app_state).await;
-                }
-                Err(e) => {
-                    error!("Input file generation failed for block  {}, error: {}", block_number, e)
-                }
-            }
+            let input_time = start_time.elapsed().as_millis();
+            total_input_time += input_time;
+            input_count += 1;
+            max_input_time = max_input_time.max(input_time);
+            min_input_time = min_input_time.min(input_time);
+
+            info!(
+                "Input file generated for block {}, time: {} ms, avg: {} ms, max: {} ms, min: {} ms",
+                block_number,
+                input_time,
+                total_input_time / input_count as u128,
+                max_input_time,
+                min_input_time
+            );
+
+            process_input(block_info, &input_pk, &input_witness, app_state).await;
         }
 
         warn!("Block subscription ended, reconnecting...");
@@ -205,7 +221,7 @@ pub(crate) async fn process_inputs_locally(app_state: AppState) -> Result<()> {
 }
 
 /// Run process to get input files from a folder
-pub(crate) async fn process_inputs_from_folder(app_state: AppState) -> Result<()> {
+pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Result<()> {
     let mut current_timestamp = if app_state.cliargs.initial_timestamp == 0 {
         Utc::now().timestamp() as u64
     } else {
@@ -287,17 +303,23 @@ pub(crate) async fn process_inputs_from_folder(app_state: AppState) -> Result<()
         );
 
         let path = PathBuf::from(&app_state.inputs_folder).join(block_info.filename());
-        match fs::read(&path) {
-            Ok(content) => {
-                process_input(block_info, &content, &app_state).await;
-            }
+        let zisk_stdin_file = ZiskFileStdin::new(&path)?;
+        let input_pk: RethInputPublic = match zisk_stdin_file.read() {
+            Ok(pk) => pk,
             Err(e) => {
-                error!("Error reading input file {}: {}", path.display(), e);
-                if app_state.cliargs.enable_metrics {
-                    metrics::INPUT_FILE_ERROR_TOTAL.inc();
-                }
+                error!("Error reading public input from file {}: {}", path.display(), e);
+                continue;
             }
-        }
+        };
+        let input_witness: RethInputWitness = match zisk_stdin_file.read() {
+            Ok(witness) => witness,
+            Err(e) => {
+                error!("Error reading witness input from file {}: {}", path.display(), e);
+                continue;
+            }
+        };
+        process_input(block_info, &input_pk, &input_witness, app_state).await;
+
         sleep(Duration::from_secs(app_state.cliargs.interval_secs)).await;
     }
 

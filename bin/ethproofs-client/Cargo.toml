@@ -24,7 +24,7 @@ tokio.workspace = true
 tokio-tungstenite.workspace = true
 url.workspace = true
 input.workspace = true
-guest.workspace = true
+guest-reth.workspace = true
 
 lazy_static = "1.4"
 axum = { version = "0.7", features = ["macros", "json"] }
@@ -36,28 +36,25 @@ sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio", "macros", "tls
 tonic = "0.14"
 zstd = "0.13.3"
 
-# zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream" }
-# zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream" }
-# zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream" }
-# ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream" }
+zisk-distributed-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream-merge" }
+zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream-merge" }
+zisk-distributed-grpc-api = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream-merge" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream-merge" }
+zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/input-stream-merge" }
 # Local development
-zisk-distributed-common = { path = "../../../zisk/distributed/crates/common" }
-zisk-common = { path = "../../../zisk/common" }
-zisk-distributed-grpc-api = { path = "../../../zisk/distributed/crates/grpc-api" }
-ziskos = { path = "../../../zisk/ziskos/entrypoint" }
+# zisk-distributed-common = { path = "../../../zisk/distributed/crates/common" }
+# zisk-common = { path = "../../../zisk/common" }
+# zisk-distributed-grpc-api = { path = "../../../zisk/distributed/crates/grpc-api" }
+# ziskos = { path = "../../../zisk/ziskos/entrypoint" }
+# zisk-sdk = { path = "../../../zisk/sdk" }
 
 ethproofs-common = { path = "../../ethproofs-common" }
 regex = "1.12.2"
 
 [target.'cfg(zisk_hints)'.dependencies]
-alloy-primitives = { version = "1.5.0", default-features = false, features = ["native-keccak"] }
-alloy-consensus = { version = "1.0.37", default-features = false, features = ["crypto-backend"] }
+alloy-primitives = { version = "1.5.6", default-features = false, features = ["native-keccak"] }
+alloy-consensus = { version = "1.7.3", default-features = false, features = ["crypto-backend"] }
 revm = { version = "34.0.0", default-features = false }
-stateless-validator-reth = { git = "https://github.com/eth-act/ere-guests.git", rev = "885398bc1478e777096a8456bc925b2ab28a8d0f" }
-
-crypto = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "main-reth" }
-# Local development
-# crypto = { path = "../../../zisk-eth-client/crates/crypto" }
 
 [features]
 default = []

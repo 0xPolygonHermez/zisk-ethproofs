@@ -79,43 +79,51 @@ async fn process_webhook(
 
         #[cfg(zisk_hints)]
         {
+            use std::path::PathBuf;
+            use std::sync::Arc;
+            use crate::state::ZiskStdinWrapper;
+            use guest_reth::{RethInputPublic, RethInputWitness};
+            use zisk_sdk::{ZiskFileStdin, ZiskIO};
+
             use crate::process::launch_hints_generation;
 
             let input_filename =
                 format!("{}/{}", state.inputs_folder.clone(), next_block.filename());
 
-            // TODO: avoid read input file, store in app_state or read inside init_hints_file async
-            let input = std::fs::read(&input_filename).unwrap_or_else(|e| {
-                panic!(
-                    "Failed to read input file {} for hints generation, error: {}",
-                    input_filename, e
-                )
-            });
+            let path = PathBuf::from(&input_filename);
+            let zisk_stdin_file = match ZiskFileStdin::new(&path) {
+                Ok(stdin) => stdin,
+                Err(e) => {
+                    error!("Error opening input file {}: {}", path.display(), e);
+                    return;
+                }
+            };
+            let input_pk: RethInputPublic = match zisk_stdin_file.read() {
+                Ok(pk) => pk,
+                Err(e) => {
+                    error!("Error reading public input from file {}: {}", path.display(), e);
+                    return;
+                }
+            };
+            let input_witness: RethInputWitness = match zisk_stdin_file.read() {
+                Ok(witness) => witness,
+                Err(e) => {
+                    error!("Error reading witness input from file {}: {}", path.display(), e);
+                    return;
+                }
+            };
 
-            // Get input data length from first 8 bytes of input file
-            if input.len() < 8 {
-                panic!(
-                    "Input file {} is too short ({} bytes) to contain length header",
-                    input_filename,
-                    input.len()
-                );
+            {
+                let zisk_stdin = ZiskStdinWrapper::new();
+                zisk_stdin.write(&input_pk);
+                zisk_stdin.write(&input_witness);
+
+                let zisk_stdin_shared = Arc::clone(&state.zisk_stdin);
+                let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
+                *zisk_stdin_lock = Some(zisk_stdin);
             }
 
-            let input_len = u64::from_le_bytes(input[..8].try_into().unwrap()) as usize;
-
-            if input.len() < 8 + input_len {
-                panic!(
-                    "Input file {} is too short: header says {} bytes of input, but file has only {} bytes total",
-                    input_filename,
-                    input_len,
-                    input.len() - 8
-                );
-            }
-
-            // Get the actual input data after the 8 byte length header
-            let input = input[8..8 + input_len].to_vec();
-
-            launch_hints_generation(&next_block, input, &state).await;
+            launch_hints_generation(&next_block, &state).await;
         }
 
         let result = generate_proof(next_block.clone(), state.clone()).await;
