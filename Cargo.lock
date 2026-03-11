@@ -3627,6 +3627,7 @@ dependencies = [
 [[package]]
 name = "guest-reth"
 version = "0.5.0"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=feat%2Fstream#2f818bc1eee444216d68e297d05a5b5a7690b69d"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -4210,6 +4211,7 @@ dependencies = [
 [[package]]
 name = "input"
 version = "0.5.0"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=feat%2Fstream#2f818bc1eee444216d68e297d05a5b5a7690b69d"
 dependencies = [
  "alloy-genesis",
  "alloy-provider",

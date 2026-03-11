@@ -33,7 +33,7 @@ tokio-tungstenite = "0.21"
 url = "2.5.4"
 input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "feat/stream" }
 # input = { path = "../zisk-eth-client/crates/input" }
-guest = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "feat/stream" }
+guest-reth = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "feat/stream" }
 # guest-reth = { path = "../zisk-eth-client/crates/guest-reth" }
 
 [patch.crates-io]
