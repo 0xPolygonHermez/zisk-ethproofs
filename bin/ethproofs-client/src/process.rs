@@ -325,7 +325,7 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
                 sem.add_permits(1);
             },
             None => {
-                error!("zisk_stdin_ready semaphore is not initialized for block {}", block_number);
+                error!("zisk_stdin_ready semaphore is not initialized for block {} when calling add_permits", block_number);
                 return;
             }
         }
