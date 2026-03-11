@@ -129,18 +129,18 @@ pub fn generate_hints(
         }
     };
 
-    // Wait for the signal that witness input is ready
-    match app_state.zisk_stdin_ready.clone() {
-        Some(sem) => tokio::task::block_in_place(|| {
-            let _permit = tokio::runtime::Handle::current().block_on(async {
-                sem.acquire_owned().await.expect("semaphore closed")
-            });
-        }),
-        None => {
-            error!("zisk_stdin_ready semaphore is not initialized for block {}", block_number);
-            return;
-        }
-    }
+    // // Wait for the signal that witness input is ready
+    // match app_state.zisk_stdin_ready.clone() {
+    //     Some(sem) => tokio::task::block_in_place(|| {
+    //         let _permit = tokio::runtime::Handle::current().block_on(async {
+    //             sem.acquire_owned().await.expect("semaphore closed")
+    //         });
+    //     }),
+    //     None => {
+    //         error!("zisk_stdin_ready semaphore is not initialized for block {}", block_number);
+    //         return;
+    //     }
+    // }
 
     let input_witness: RethInputWitness = {
         let zisk_stdin_shared = Arc::clone(&app_state.zisk_stdin);
@@ -221,8 +221,8 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
         *zisk_stdin_lock = Some(zisk_stdin);
     }
 
-    let zisk_input_ready = Arc::new(tokio::sync::Semaphore::new(0));
-    app_state.zisk_stdin_ready = Some(zisk_input_ready.clone());
+    // let zisk_input_ready = Arc::new(tokio::sync::Semaphore::new(0));
+    // app_state.zisk_stdin_ready = Some(zisk_input_ready.clone());
 
     let input_time = {
         let queued_start = app_state.queued_start.lock().unwrap();
@@ -320,15 +320,15 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
     {
         let handle = launch_hints_generation(&block_info, app_state).await;
 
-        match app_state.zisk_stdin_ready.as_ref() {
-            Some(sem) => {
-                sem.add_permits(1);
-            },
-            None => {
-                error!("zisk_stdin_ready semaphore is not initialized for block {} when calling add_permits", block_number);
-                return;
-            }
-        }
+        // match app_state.zisk_stdin_ready.as_ref() {
+        //     Some(sem) => {
+        //         sem.add_permits(1);
+        //     },
+        //     None => {
+        //         error!("zisk_stdin_ready semaphore is not initialized for block {} when calling add_permits", block_number);
+        //         return;
+        //     }
+        // }
 
         // If we are using file-based hints, we need to wait for the hint generation to finish before generating the proof, otherwise the proof generation will fail due to missing hints.
         // If we are using socket-based hints, we can generate the proof in parallel with hint generation, so we don't wait.
