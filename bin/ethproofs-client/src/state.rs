@@ -10,7 +10,7 @@ use log::warn;
 // serde derive imports no longer needed after moving protocol types
 use ethproofs_common::protocol::BlockInfo;
 use serde::de::DeserializeOwned;
-use tokio::sync::Semaphore;
+//use tokio::sync::Semaphore;
 use tonic::transport::Channel;
 use zisk_sdk::ZiskStdin;
 
@@ -110,7 +110,7 @@ pub struct AppState {
     pub proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub next_proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub zisk_stdin: Arc<Mutex<Option<ZiskStdinWrapper>>>,
-    pub zisk_stdin_ready: Option<Arc<Semaphore>>,
+    // pub zisk_stdin_ready: Option<Arc<Semaphore>>,
     pub current_job_id: Arc<Mutex<String>>,
     pub queued_start: Arc<Mutex<Instant>>,
     pub ethproofs_client: Option<EthProofsApi>,
@@ -184,7 +184,7 @@ impl AppState {
         let proving_block = Arc::new(Mutex::new(None));
         let next_proving_block = Arc::new(Mutex::new(None));
         let zisk_stdin = Arc::new(Mutex::new(None));
-        let zisk_stdin_ready = None;
+        //let zisk_stdin_ready = None;
         let current_job_id = Arc::new(Mutex::new(String::new()));
         let queued_start = Arc::new(Mutex::new(Instant::now()));
         let webhook_port = env::var("WEBHOOK_PORT")
@@ -254,7 +254,7 @@ impl AppState {
             proving_block,
             next_proving_block,
             zisk_stdin,
-            zisk_stdin_ready,
+            //zisk_stdin_ready,
             current_job_id,
             ethproofs_client,
             ethproofs_cluster_id,

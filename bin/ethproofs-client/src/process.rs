@@ -1,15 +1,17 @@
 use std::path::PathBuf;
 use std::sync::Arc;
-#[cfg(zisk_hints)]
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-#[cfg(zisk_hints)]
-use guest_reth::{RethInputWitness, validate_block_stateless};
+use ethproofs_common::protocol::BlockInfo;
+use guest_reth::RethInputWitness;
 use log::{error, info, warn};
-use zisk_sdk::ZiskStdin;
-use guest_reth::{
-    RethInputPublic, get_chain_spec, verify_signatures,
-};
+use guest_reth::RethInputPublic;
+
+#[cfg(zisk_hints)]
+use guest_reth::{get_chain_spec, validate_block_stateless, verify_signatures};
+
+#[cfg(zisk_hints)]
+use tokio::sync::oneshot;
 
 #[cfg(zisk_hints)]
 use ziskos::hints::{close_hints, init_hints_file, init_hints_socket};
@@ -18,13 +20,8 @@ use crate::cliargs::TelegramEvent;
 use crate::metrics::BlockMetrics;
 use crate::prove::generate_proof;
 use crate::state::AppState;
-#[cfg(zisk_hints)]
 use crate::state::ZiskStdinWrapper;
 use crate::telegram::{send_telegram_alert, AlertType};
-use ethproofs_common::protocol::BlockInfo;
-
-#[cfg(zisk_hints)]
-use tokio::sync::oneshot;
 
 #[cfg(zisk_hints)]
 #[inline(always)]

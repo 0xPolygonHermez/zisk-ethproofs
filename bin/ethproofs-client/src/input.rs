@@ -79,7 +79,7 @@ pub(crate) async fn process_inputs_from_server(app_state: &mut AppState) {
                     match next {
                         Some(Ok(Message::Binary(payload))) => {
                             last_activity = Instant::now();
-                            if let Some((block_msg, content)) = parse_binary_input(&payload) {
+                            if let Some((block_msg, _content)) = parse_binary_input(&payload) {
                                 match block_msg.command {
                                     BlockCommand::Queued => process_queued(block_msg.info.block_number, &app_state),
                                     BlockCommand::Input => {}, // process_input(block_msg.info, content, app_state).await,
