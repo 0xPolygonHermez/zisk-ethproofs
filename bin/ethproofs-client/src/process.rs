@@ -221,10 +221,10 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
         Err(_) => 0,
     };
 
-    info!(
-        "Input generated for block {}, time: {} ms, time-to-input: {} ms",
-        block_number, input_time, time_to_input
-    );
+    // info!(
+    //     "Input generated for block {}, time: {} ms, time-to-input: {} ms",
+    //     block_number, input_time, time_to_input
+    // );
 
     if app_state.cliargs.enable_metrics {
         let mut metrics_map = app_state.shared_metrics.lock().await;

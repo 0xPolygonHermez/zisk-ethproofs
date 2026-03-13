@@ -170,7 +170,7 @@ pub(crate) async fn process_inputs_locally(app_state: &mut AppState) -> Result<(
                 mgas: block.gas_used.as_u64() / 1_000_000,
             };
 
-            info!("Generating input file for block {}", block_number);
+            info!("Fetching input for block {}", block_number);
             let rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
             let start_time = Instant::now();
 
@@ -203,7 +203,7 @@ pub(crate) async fn process_inputs_locally(app_state: &mut AppState) -> Result<(
             min_input_time = min_input_time.min(input_time);
 
             info!(
-                "Input file generated for block {}, time: {} ms, avg: {} ms, max: {} ms, min: {} ms",
+                "Input fetched for block {}, time: {} ms, avg: {} ms, max: {} ms, min: {} ms",
                 block_number,
                 input_time,
                 total_input_time / input_count as u128,
