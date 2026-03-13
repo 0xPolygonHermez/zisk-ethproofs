@@ -3,13 +3,11 @@ use std::sync::Arc;
 #[cfg(zisk_hints)]
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
+use guest_reth::{get_chain_spec, verify_signatures, RethInputPublic};
 #[cfg(zisk_hints)]
-use guest_reth::{RethInputWitness, validate_block_stateless};
+use guest_reth::{validate_block_stateless, RethInputWitness};
 use log::{error, info, warn};
 use zisk_sdk::ZiskStdin;
-use guest_reth::{
-    RethInputPublic, get_chain_spec, verify_signatures,
-};
 
 #[cfg(zisk_hints)]
 use ziskos::hints::{close_hints, init_hints_file, init_hints_socket};
@@ -31,7 +29,7 @@ use tokio::sync::oneshot;
 pub async fn launch_hints_generation(
     block_info: &BlockInfo,
     app_state: &AppState,
-) ->  tokio::task::JoinHandle<()> {
+) -> tokio::task::JoinHandle<()> {
     let block_number = block_info.block_number;
     let app_state_clone = app_state.clone();
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel::<()>();
@@ -52,23 +50,19 @@ pub async fn launch_hints_generation(
 }
 
 #[cfg(zisk_hints)]
-pub fn generate_hints(
-    block_number: u64,
-    app_state: AppState,
-    ready: Option<oneshot::Sender<()>>,
-) {
+pub fn generate_hints(block_number: u64, app_state: AppState, ready: Option<oneshot::Sender<()>>) {
     // Execute the block to get precompile hints populated
     info!("Generating hints for block {}", block_number);
 
     let start_hints = Instant::now();
 
-    let hints_init_result = match app_state.cliargs.hints {
-        crate::cliargs::Hints::Socket => {
+    let hints_init_result = match app_state.cliargs.hints.mode {
+        crate::cliargs::HintsMode::Socket => {
             #[cfg(zisk_hints)]
-            let hint_debug_file = app_state.cliargs.hints_debug.then(|| {
+            let hint_debug_file = app_state.cliargs.hints.debug.then(|| {
                 PathBuf::from(format!(
                     "{}/{}_hints_debug.bin",
-                    app_state.cliargs.hints_debug_path, block_number
+                    app_state.cliargs.hints.debug_path, block_number
                 ))
             });
 
@@ -76,13 +70,13 @@ pub fn generate_hints(
             let hint_debug_file: Option<PathBuf> = None;
 
             init_hints_socket(
-                PathBuf::from(&app_state.cliargs.hints_socket),
+                PathBuf::from(&app_state.cliargs.hints.socket),
                 hint_debug_file,
                 None,
                 ready,
             )
         }
-        crate::cliargs::Hints::File => {
+        crate::cliargs::HintsMode::File => {
             // Create ./hints directory if it doesn't exist
             let hints_dir = std::path::PathBuf::from("./hints");
             if !hints_dir.exists() {
@@ -109,7 +103,10 @@ pub fn generate_hints(
         match zisk_stdin.read() {
             Ok(input) => input,
             Err(e) => {
-                error!("Failed to read public keys input for block {} from zisk_stdin, error: {}", block_number, e);
+                error!(
+                    "Failed to read public keys input for block {} from zisk_stdin, error: {}",
+                    block_number, e
+                );
                 return;
             }
         }
@@ -132,9 +129,8 @@ pub fn generate_hints(
     // Wait for the signal that witness input is ready
     match app_state.zisk_stdin_ready.clone() {
         Some(sem) => tokio::task::block_in_place(|| {
-            let _permit = tokio::runtime::Handle::current().block_on(async {
-                sem.acquire_owned().await.expect("semaphore closed")
-            });
+            let _permit = tokio::runtime::Handle::current()
+                .block_on(async { sem.acquire_owned().await.expect("semaphore closed") });
         }),
         None => {
             error!("zisk_stdin_ready semaphore is not initialized for block {}", block_number);
@@ -149,7 +145,10 @@ pub fn generate_hints(
         match zisk_stdin.read() {
             Ok(input) => input,
             Err(e) => {
-                error!("Failed to read witness input for block {} from zisk_stdin, error: {}", block_number, e);
+                error!(
+                    "Failed to read witness input for block {} from zisk_stdin, error: {}",
+                    block_number, e
+                );
                 return;
             }
         }
@@ -201,7 +200,12 @@ pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
     }
 }
 
-pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPublic, input_witness: &RethInputWitness, app_state: &mut AppState) {
+pub(crate) async fn process_input(
+    block_info: BlockInfo,
+    input_pk: &RethInputPublic,
+    input_witness: &RethInputWitness,
+    app_state: &mut AppState,
+) {
     let filename = block_info.filename();
     let block_number = block_info.block_number;
 
@@ -212,7 +216,12 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
 
         let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
         if let Err(e) = zisk_stdin.save(&filepath) {
-            error!("Failed to save input to file {} for block {}, error: {}", filepath.display(), block_number, e);
+            error!(
+                "Failed to save input to file {} for block {}, error: {}",
+                filepath.display(),
+                block_number,
+                e
+            );
             return;
         }
 
@@ -235,7 +244,7 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
         Err(_) => 0,
     };
 
-    if app_state.cliargs.enable_metrics {
+    if app_state.cliargs.metrics {
         let mut metrics_map = app_state.shared_metrics.lock().unwrap_or_else(|e| e.into_inner());
         metrics_map.insert(
             block_number,
@@ -274,7 +283,7 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
         *next_proving_block = Some(block_info);
 
         let proving_block_number = proving_block.clone().unwrap().clone().block_number;
-        if block_number - proving_block_number > app_state.cliargs.skipped_threshold as u64 {
+        if block_number - proving_block_number > app_state.cliargs.skipped.threshold as u64 {
             let msg_alert = format!(
                 "Skipped {} consecutive blocks. Currently proving block {}, next queued block is {}.",
                 block_number - proving_block_number - 1,
@@ -295,7 +304,7 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
                     }
                 }));
             }
-            if app_state.cliargs.panic_on_skipped {
+            if app_state.cliargs.skipped.panic {
                 if let Some(handle) = alert_handle {
                     handle.await.ok();
                 }
@@ -323,7 +332,7 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
         match app_state.zisk_stdin_ready.as_ref() {
             Some(sem) => {
                 sem.add_permits(1);
-            },
+            }
             None => {
                 error!("zisk_stdin_ready semaphore is not initialized for block {}", block_number);
                 return;
@@ -332,7 +341,7 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
 
         // If we are using file-based hints, we need to wait for the hint generation to finish before generating the proof, otherwise the proof generation will fail due to missing hints.
         // If we are using socket-based hints, we can generate the proof in parallel with hint generation, so we don't wait.
-        if app_state.cliargs.hints == crate::cliargs::Hints::File {
+        if app_state.cliargs.hints.mode == crate::cliargs::HintsMode::File {
             handle.await.ok();
         }
     }

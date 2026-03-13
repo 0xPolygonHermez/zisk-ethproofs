@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 
 #[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
 pub enum TelegramEvent {
@@ -15,7 +15,7 @@ pub enum InputGen {
 }
 
 #[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
-pub enum Hints {
+pub enum HintsMode {
     File,
     Socket,
 }
@@ -24,6 +24,63 @@ pub enum Hints {
 pub enum Commands {
     #[command(hide = true)]
     InputServer,
+}
+
+#[derive(Clone, Debug, Args)]
+#[command(next_help_heading = "Folder")]
+pub struct FolderArgs {
+    /// Directory to read input files from in folder input generation mode
+    #[arg(long = "folder.path", default_value = "inputs_queue")]
+    pub path: String,
+
+    /// Interval in seconds between sending input files in folder input generation mode
+    #[arg(long = "folder.interval", default_value = "12")]
+    pub interval: u64,
+
+    /// Initial timestamp to use for the first input file in folder input generation mode
+    #[arg(long = "folder.initial-timestamp", default_value = "0")]
+    pub initial_timestamp: u64,
+
+    /// Simulated input processed time in milliseconds in folder input generation mode
+    #[arg(long = "folder.input-time", default_value = "0")]
+    pub input_time: u64,
+}
+
+#[derive(Clone, Debug, Args)]
+#[command(next_help_heading = "Skipped blocks")]
+pub struct SkippedArgs {
+    /// Number of skipped blocks before triggering an alert
+    #[arg(long = "skipped.threshold", default_value = "5")]
+    pub threshold: u32,
+
+    /// Panic when skipped blocks exceed the threshold
+    #[arg(long = "skipped.panic", default_value = "false")]
+    pub panic: bool,
+}
+
+#[cfg(zisk_hints)]
+#[derive(Clone, Debug, Args)]
+#[command(next_help_heading = "Hints")]
+pub struct HintsArgs {
+    /// Hints generation mode: 'file' or 'socket'
+    #[arg(long = "hints.mode", value_enum, default_value_t = HintsMode::Socket)]
+    pub mode: HintsMode,
+
+    /// Hints socket path (only when using 'socket' hints mode)
+    #[arg(
+        long = "hints.socket",
+        default_value = "/tmp/hints.sock",
+        required_if_eq("hints.mode", "Socket")
+    )]
+    pub socket: String,
+
+    /// Enable debug hint file generation (only when using 'socket' hints mode)
+    #[arg(long = "hints.debug", default_value_t = false, required_if_eq("hints.mode", "Socket"))]
+    pub debug: bool,
+
+    /// Hints debug file path (only used if hints.debug is true)
+    #[arg(long = "hints.debug-path", default_value = "./hints_debug", requires = "hints.debug")]
+    pub debug_path: String,
 }
 
 // Command line arguments
@@ -54,59 +111,25 @@ pub struct CliArgs {
 
     /// Enable Prometheus metrics server
     #[arg(short = 'm', long)]
-    pub enable_metrics: bool,
+    pub metrics: bool,
 
     /// Keep the input file after processing
     #[arg(short = 'i', long)]
     pub keep_input: bool,
 
-    /// Number of skipped blocks before triggering an alert
-    #[arg(short = 'b', long, default_value_t = 5)]
-    pub skipped_threshold: u32,
-
-    /// Panic when skipped blocks exceed the threshold
-    #[arg(short = 'p', long)]
-    pub panic_on_skipped: bool,
-
     /// Environment config file
     #[arg(short = 'e', long, default_value = ".env")]
     pub env_file: String,
 
-    /// Enable hints generation
+    #[command(flatten)]
+    pub skipped: SkippedArgs,
+
+    #[command(flatten)]
+    pub folder: FolderArgs,
+
     #[cfg(zisk_hints)]
-    #[clap(long, value_enum, default_value_t = Hints::Socket)]
-    pub hints: Hints,
-
-    /// Hints socket path (only when using 'socket' hints mode)
-    #[cfg(zisk_hints)]
-    #[clap(long, default_value = "/tmp/hints.sock", required_if_eq("hints", "Socket"))]
-    pub hints_socket: String,
-
-    /// Enable debug hint file generation (only when using 'socket' hints mode)
-    #[cfg(zisk_hints)]
-    #[clap(long, default_value_t = false, required_if_eq("hints", "Socket"))]
-    pub hints_debug: bool,
-
-    /// Hints debug file path (only used if hints_debug is true)
-    #[cfg(zisk_hints)]
-    #[clap(long, default_value = "./hints_debug", requires = "hints_debug")]
-    pub hints_debug_path: String,
-
-    /// Directory to read input files from in local mode (only affects 'folder' mode)
-    #[clap(long, default_value = "inputs_queue")]
-    pub inputs_queue: String,
-
-    /// Interval in seconds between sending files in local mode (only affects 'folder' mode)
-    #[clap(long, default_value = "12")]
-    pub interval_secs: u64,
-
-    /// Initial timestamp to use for the first file in local mode (only affects 'folder' mode)
-    #[clap(long, default_value = "0")]
-    pub initial_timestamp: u64,
-
-    /// Simulated processed time in milliseconds (only affects 'folder' mode)
-    #[clap(long, default_value = "0")]
-    pub simulated_input_time: u64,
+    #[command(flatten)]
+    pub hints: HintsArgs,
 }
 
 impl CliArgs {

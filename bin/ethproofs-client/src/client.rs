@@ -12,8 +12,10 @@ use tokio::sync::Mutex;
 use tokio::task;
 
 use crate::cliargs::InputGen;
-use crate::input::{process_inputs_from_folder, process_inputs_from_server, process_inputs_locally};
-use crate::metrics::{BlockMetrics, start_metrics_server};
+use crate::input::{
+    process_inputs_from_folder, process_inputs_from_server, process_inputs_locally,
+};
+use crate::metrics::{start_metrics_server, BlockMetrics};
 use crate::state::AppState;
 use crate::webhook::start_webhook_server;
 
@@ -67,7 +69,7 @@ pub async fn run_client() -> Result<()> {
     });
 
     // Launch the metrics server if enabled
-    if app_state.cliargs.enable_metrics {
+    if app_state.cliargs.metrics {
         let state_clone = app_state.clone();
         task::spawn(async move {
             if let Err(e) = start_metrics_server(state_clone).await {

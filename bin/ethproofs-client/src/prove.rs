@@ -31,8 +31,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
     #[cfg(zisk_hints)]
     // Build request
-    let (hints_mode, hints_uri) = if state.cliargs.hints == crate::cliargs::Hints::Socket {
-        (2, Some(format!("unix://{}", state.cliargs.hints_socket.clone())))
+    let (hints_mode, hints_uri) = if state.cliargs.hints.mode == crate::cliargs::HintsMode::Socket {
+        (2, Some(format!("unix://{}", state.cliargs.hints.socket.clone())))
     } else {
         (0, None)
     };

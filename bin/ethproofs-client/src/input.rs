@@ -222,12 +222,12 @@ pub(crate) async fn process_inputs_locally(app_state: &mut AppState) -> Result<(
 
 /// Run process to get input files from a folder
 pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Result<()> {
-    let mut current_timestamp = if app_state.cliargs.initial_timestamp == 0 {
+    let mut current_timestamp = if app_state.cliargs.folder.initial_timestamp == 0 {
         Utc::now().timestamp() as u64
     } else {
-        app_state.cliargs.initial_timestamp
+        app_state.cliargs.folder.initial_timestamp
     };
-    let inputs_queue = app_state.cliargs.inputs_queue.clone();
+    let inputs_queue = app_state.cliargs.folder.path.clone();
     let mut max_input_time: u128 = 0;
     let mut min_input_time: u128 = u128::MAX;
     let mut total_input_time: u128 = 0;
@@ -266,7 +266,7 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
         info!("Reading block {}, processing...", block_number);
 
         info!("Generating input file for block {}", block_number);
-        sleep(Duration::from_millis(app_state.cliargs.simulated_input_time)).await;
+        sleep(Duration::from_millis(app_state.cliargs.folder.input_time)).await;
 
         let dest_path =
             PathBuf::from(&app_state.inputs_folder).join(file_path.file_name().unwrap());
@@ -287,16 +287,16 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
             tx_count: 0,
             mgas: 0,
         };
-        current_timestamp += app_state.cliargs.interval_secs;
-        total_input_time += app_state.cliargs.simulated_input_time as u128;
+        current_timestamp += app_state.cliargs.folder.interval;
+        total_input_time += app_state.cliargs.folder.input_time as u128;
         input_count += 1;
-        max_input_time = max_input_time.max(app_state.cliargs.simulated_input_time as u128);
-        min_input_time = min_input_time.min(app_state.cliargs.simulated_input_time as u128);
+        max_input_time = max_input_time.max(app_state.cliargs.folder.input_time as u128);
+        min_input_time = min_input_time.min(app_state.cliargs.folder.input_time as u128);
 
         info!(
             "Input file generated for block {}, time: {} ms, avg: {} ms, max: {} ms, min: {} ms",
             block_number,
-            app_state.cliargs.simulated_input_time,
+            app_state.cliargs.folder.input_time,
             total_input_time / input_count as u128,
             max_input_time,
             min_input_time
@@ -320,7 +320,7 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
         };
         process_input(block_info, &input_pk, &input_witness, app_state).await;
 
-        sleep(Duration::from_secs(app_state.cliargs.interval_secs)).await;
+        sleep(Duration::from_secs(app_state.cliargs.folder.interval)).await;
     }
 
     Ok(())

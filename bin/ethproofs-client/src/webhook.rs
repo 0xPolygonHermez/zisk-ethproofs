@@ -79,10 +79,10 @@ async fn process_webhook(
 
         #[cfg(zisk_hints)]
         {
-            use std::path::PathBuf;
-            use std::sync::Arc;
             use crate::state::ZiskStdinWrapper;
             use guest_reth::{RethInputPublic, RethInputWitness};
+            use std::path::PathBuf;
+            use std::sync::Arc;
             use zisk_sdk::{ZiskFileStdin, ZiskIO};
 
             use crate::process::launch_hints_generation;
@@ -119,7 +119,8 @@ async fn process_webhook(
                 zisk_stdin.write(&input_witness);
 
                 let zisk_stdin_shared = Arc::clone(&state.zisk_stdin);
-                let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap_or_else(|e| e.into_inner());
+                let mut zisk_stdin_lock =
+                    zisk_stdin_shared.lock().unwrap_or_else(|e| e.into_inner());
                 *zisk_stdin_lock = Some(zisk_stdin);
             }
 
@@ -190,7 +191,7 @@ async fn process_webhook(
             });
         }
 
-        if state.cliargs.enable_metrics {
+        if state.cliargs.metrics {
             crate::metrics::PROOF_FAILURE_TOTAL.inc();
             // Publish all available metrics for this block
             let mut shared_metrics = state.shared_metrics.lock().unwrap_or_else(|e| e.into_inner());
@@ -350,7 +351,7 @@ async fn process_webhook(
     }
 
     // Update Prometheus metrics for proof generation if metrics enabled
-    if state.cliargs.enable_metrics {
+    if state.cliargs.metrics {
         let start = std::time::Instant::now();
         // Update the shared HashMap and publish/remove metrics only when the block is complete
         let mut shared_metrics = state.shared_metrics.lock().unwrap_or_else(|e| e.into_inner());
