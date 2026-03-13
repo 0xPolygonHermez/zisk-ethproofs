@@ -1,8 +1,8 @@
-use std::env;
-
 use anyhow::Result;
 use log::{debug, error};
 use reqwest::Client;
+
+use crate::state::AppState;
 
 // Define the types of Telegran alerts that can be sent
 #[allow(dead_code)]
@@ -14,21 +14,7 @@ pub enum AlertType {
 }
 
 // Send an alert to a Telegram chat using the Telegram Bot API
-pub async fn send_telegram_alert(message: &str, alert_type: AlertType) -> Result<()> {
-    // Check if the TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID environment variables are set, if not return
-    let bot_token = match env::var("TELEGRAM_BOT_TOKEN").ok() {
-        Some(token) => token,
-        None => return Err(anyhow::anyhow!("TELEGRAM_BOT_TOKEN not set")),
-    };
-    let chat_id = match env::var("TELEGRAM_CHAT_ID").ok() {
-        Some(id) => id,
-        None => return Err(anyhow::anyhow!("TELEGRAM_CHAT_ID not set")),
-    };
-    let pre_msg = match env::var("TELEGRAM_PREFIX_MSG") {
-        Ok(msg) => format!("{}:", msg),
-        Err(_) => String::from(""),
-    };
-
+pub async fn send_telegram_alert(message: &str, alert_type: AlertType, app_state: &AppState) -> Result<()> {
     // Set the icon based on the alert type
     let icon = match alert_type {
         AlertType::Success => "✅",
@@ -37,8 +23,11 @@ pub async fn send_telegram_alert(message: &str, alert_type: AlertType) -> Result
         AlertType::Info => "ℹ️",
     };
 
+    let bot_token = app_state.cliargs.telegram.bot_token.clone().unwrap();
+    let chat_id = app_state.cliargs.telegram.chat_id.clone().unwrap();
+
     // Format the message with the icon
-    let full_message = format!("{} {} {}", icon, pre_msg, message);
+    let full_message = format!("{} {} {}", icon, app_state.cliargs.telegram.message_prefix, message);
 
     // Send the message to the Telegram chat
     let url = format!("https://api.telegram.org/bot{}/sendMessage", bot_token);

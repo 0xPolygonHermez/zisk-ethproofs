@@ -11,33 +11,23 @@ use log::{debug, error, info, warn};
 use zisk_distributed_common::WebhookPayloadDto;
 
 use crate::cliargs::TelegramEvent;
+use crate::state::BlockInfo;
 use crate::{db::BlockProof, prove::generate_proof};
 use crate::{
     state::AppState,
     telegram::{send_telegram_alert, AlertType},
 };
-use ethproofs_common::protocol::BlockInfo;
 
 pub fn get_proof_b64(proof_data: &[u64]) -> Result<String> {
     // Convert &[u64] to &[u8] without copying
     let proof_bytes = bytemuck::cast_slice::<u64, u8>(proof_data);
-
-    let mut compressed = Vec::new();
-    {
-        // Compression level 1 (as in your original code)
-        let mut encoder = zstd::stream::Encoder::new(&mut compressed, 1)?;
-        use std::io::Write;
-        encoder.write_all(proof_bytes)?;
-        encoder.finish()?;
-    }
-
-    Ok(general_purpose::STANDARD.encode(&compressed))
+    Ok(general_purpose::STANDARD.encode(&proof_bytes))
 }
 
 async fn process_webhook(
     proved_block_info: BlockInfo,
     payload: WebhookPayloadDto,
-    state: AppState,
+    app_state: &AppState,
 ) {
     // Extract proving time and cycles
     let proving_time_ms: u32 = payload.duration_ms as u32;
@@ -56,7 +46,7 @@ async fn process_webhook(
     // Get next_block_number in atomic scope
     let next_block = {
         let mut next_proving_block =
-            state.next_proving_block.lock().unwrap_or_else(|e| e.into_inner());
+            app_state.next_proving_block.lock().unwrap_or_else(|e| e.into_inner());
 
         if next_proving_block.is_some() {
             let next = next_proving_block.clone().unwrap();
@@ -71,7 +61,7 @@ async fn process_webhook(
     if next_block.is_some() {
         // Set proving_block to next_block_number in atomic scope
         {
-            let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+            let mut proving_block = app_state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
             *proving_block = next_block.clone();
         }
 
@@ -88,7 +78,7 @@ async fn process_webhook(
             use crate::process::launch_hints_generation;
 
             let input_filename =
-                format!("{}/{}", state.inputs_folder.clone(), next_block.filename());
+                format!("{}/{}", app_state.cliargs.inputs.folder.clone(), next_block.filename());
 
             let path = PathBuf::from(&input_filename);
             let zisk_stdin_file = match ZiskFileStdin::new(&path) {
@@ -118,29 +108,29 @@ async fn process_webhook(
                 zisk_stdin.write(&input_pk);
                 zisk_stdin.write(&input_witness);
 
-                let zisk_stdin_shared = Arc::clone(&state.zisk_stdin);
+                let zisk_stdin_shared = Arc::clone(&app_state.zisk_stdin);
                 let mut zisk_stdin_lock =
                     zisk_stdin_shared.lock().unwrap_or_else(|e| e.into_inner());
                 *zisk_stdin_lock = Some(zisk_stdin);
             }
 
-            launch_hints_generation(&next_block, &state).await;
+            launch_hints_generation(&next_block, &app_state).await;
         }
 
-        let result = generate_proof(next_block.clone(), state.clone()).await;
+        let result = generate_proof(next_block.clone(), app_state).await;
 
         match result {
             Ok(job_id) => {
                 // Store current job ID
                 let mut current_job_id =
-                    state.current_job_id.lock().unwrap_or_else(|e| e.into_inner());
+                    app_state.current_job_id.lock().unwrap_or_else(|e| e.into_inner());
                 *current_job_id = job_id;
             }
             Err(e) => {
                 // If generation failed, reset proving_block in atomic scope
                 {
                     let mut proving_block =
-                        state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+                        app_state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
                     *proving_block = None;
                 }
 
@@ -152,21 +142,22 @@ async fn process_webhook(
                 );
                 error!("❌ {}", msg);
 
-                if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+                if app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+                    let app_state_clone = app_state.clone();
                     tokio::spawn(async move {
-                        if let Err(e) = send_telegram_alert(&msg, AlertType::Error).await {
+                        if let Err(e) = send_telegram_alert(&msg, AlertType::Error, &app_state_clone).await {
                             warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
                         }
                     });
                 }
 
                 // Clean up input file if not needed
-                state.delete_input_file(&next_block.filename());
+                app_state.delete_input_file(&next_block.filename());
             }
         }
     } else {
         // Reset proving_block
-        let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+        let mut proving_block = app_state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
         *proving_block = None;
     }
 
@@ -183,18 +174,19 @@ async fn process_webhook(
         );
         error!("❌ {}", &msg);
 
-        if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+        if app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+            let app_state_clone = app_state.clone();
             tokio::spawn(async move {
-                if let Err(e) = send_telegram_alert(&msg, AlertType::Error).await {
+                if let Err(e) = send_telegram_alert(&msg, AlertType::Error, &app_state_clone).await {
                     warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
                 }
             });
         }
 
-        if state.cliargs.metrics {
+        if app_state.cliargs.metrics.enabled {
             crate::metrics::PROOF_FAILURE_TOTAL.inc();
             // Publish all available metrics for this block
-            let mut shared_metrics = state.shared_metrics.lock().unwrap_or_else(|e| e.into_inner());
+            let mut shared_metrics = app_state.shared_metrics.lock().unwrap_or_else(|e| e.into_inner());
             let entry = shared_metrics.get(&proved_block_number);
             if let Some(metrics) = entry {
                 let previous_block = crate::metrics::LATEST_BLOCK_NUMBER.get() as u64;
@@ -269,10 +261,10 @@ async fn process_webhook(
     };
 
     // Submit to EthProofs if enabled
-    let (submitted, submit_time) = if state.cliargs.submit_ethproofs {
-        let state = state.clone();
+    let (submitted, submit_time) = if app_state.cliargs.ethproofs.submit {
+        let state = app_state.clone();
         let client = &state.ethproofs_client.unwrap();
-        let cluster_id = state.ethproofs_cluster_id.unwrap();
+        let cluster_id = state.cliargs.ethproofs.cluster_id.unwrap();
         let start = std::time::Instant::now();
         match client
             .proof_proved(
@@ -306,8 +298,8 @@ async fn process_webhook(
     };
 
     // Insert into DB if enabled
-    if state.cliargs.insert_db {
-        if let Some(db) = &state.db_block_proofs {
+    if app_state.cliargs.db.dsn.is_some() {
+        if let Some(db) = &app_state.db_block_proofs {
             let start = std::time::Instant::now();
             let block_proof = BlockProof {
                 block_number: proved_block_number,
@@ -337,7 +329,7 @@ async fn process_webhook(
     }
 
     // Send Telegram alert if enabled
-    if state.cliargs.telegram_enabled(TelegramEvent::BlockProved) {
+    if app_state.cliargs.telegram_enabled(TelegramEvent::BlockProved) {
         let msg = format!(
             "Proof generated for block {}, proving_time: {}s, cycles: {}",
             proved_block_number,
@@ -345,16 +337,16 @@ async fn process_webhook(
             proving_cycles,
         );
 
-        if let Err(e) = send_telegram_alert(&msg, AlertType::Success).await {
+        if let Err(e) = send_telegram_alert(&msg, AlertType::Success, &app_state).await {
             warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
         }
     }
 
     // Update Prometheus metrics for proof generation if metrics enabled
-    if state.cliargs.metrics {
+    if app_state.cliargs.metrics.enabled {
         let start = std::time::Instant::now();
         // Update the shared HashMap and publish/remove metrics only when the block is complete
-        let mut shared_metrics = state.shared_metrics.lock().unwrap_or_else(|e| e.into_inner());
+        let mut shared_metrics = app_state.shared_metrics.lock().unwrap_or_else(|e| e.into_inner());
         let entry = shared_metrics.get_mut(&proved_block_number);
         if let Some(metrics) = entry {
             metrics.proving_time_ms = Some(proving_time_ms as i64);
@@ -426,18 +418,18 @@ async fn process_webhook(
     }
 
     // Delete input file if not needed
-    state.delete_input_file(&proved_block_info.filename());
+    app_state.delete_input_file(&proved_block_info.filename());
 }
 
 #[axum::debug_handler]
 async fn webhook_handler(
     Path(job_id): Path<String>,
-    State(state): State<AppState>,
+    State(app_state): State<AppState>,
     Json(payload): Json<WebhookPayloadDto>,
 ) -> impl IntoResponse {
     // Read and capture the current proving block in atomic scope
     let proved_block = {
-        let proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+        let proving_block = app_state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
         proving_block.clone()
     };
 
@@ -452,7 +444,7 @@ async fn webhook_handler(
 
     // Check if the job ID matches the current job ID
     let current_job_id = {
-        let job_id = state.current_job_id.lock().unwrap_or_else(|e| e.into_inner());
+        let job_id = app_state.current_job_id.lock().unwrap_or_else(|e| e.into_inner());
         job_id.clone()
     };
     if current_job_id != job_id {
@@ -464,14 +456,14 @@ async fn webhook_handler(
     }
 
     tokio::spawn(async move {
-        process_webhook(proved_block.unwrap(), payload, state.clone()).await;
+        process_webhook(proved_block.unwrap(), payload, &app_state.clone()).await;
     });
 
     (StatusCode::OK, "OK").into_response()
 }
 
 pub async fn start_webhook_server(state: AppState) -> Result<()> {
-    let webhook_addr: SocketAddr = format!("127.0.0.1:{}", state.webhook_port)
+    let webhook_addr: SocketAddr = format!("127.0.0.1:{}", state.cliargs.webhook_port)
         .parse()
         .map_err(|e| anyhow!("Invalid webhook bind address, error: {e}"))?;
 

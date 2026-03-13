@@ -144,7 +144,7 @@ async fn metrics_handler() -> impl IntoResponse {
 }
 
 pub async fn start_metrics_server(state: AppState) -> Result<()> {
-    let metrics_addr: SocketAddr = format!("0.0.0.0:{}", state.metrics_port)
+    let metrics_addr: SocketAddr = format!("0.0.0.0:{}", state.cliargs.metrics.port)
         .parse()
         .map_err(|e| anyhow!("Invalid metrics bind address, error: {e}"))?;
 

@@ -1,28 +1,27 @@
 use std::path::PathBuf;
 use std::sync::Arc;
-#[cfg(zisk_hints)]
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-use guest_reth::{get_chain_spec, verify_signatures, RethInputPublic};
-#[cfg(zisk_hints)]
-use guest_reth::{validate_block_stateless, RethInputWitness};
+use guest_reth::RethInputPublic;
+use guest_reth::RethInputWitness;
 use log::{error, info, warn};
-use zisk_sdk::ZiskStdin;
-
-#[cfg(zisk_hints)]
-use ziskos::hints::{close_hints, init_hints_file, init_hints_socket};
 
 use crate::cliargs::TelegramEvent;
 use crate::metrics::BlockMetrics;
 use crate::prove::generate_proof;
 use crate::state::AppState;
-#[cfg(zisk_hints)]
+use crate::state::BlockInfo;
 use crate::state::ZiskStdinWrapper;
 use crate::telegram::{send_telegram_alert, AlertType};
-use ethproofs_common::protocol::BlockInfo;
 
 #[cfg(zisk_hints)]
+use guest_reth::validate_block_stateless;
+#[cfg(zisk_hints)]
+use guest_reth::{get_chain_spec, verify_signatures};
+#[cfg(zisk_hints)]
 use tokio::sync::oneshot;
+#[cfg(zisk_hints)]
+use ziskos::hints::{close_hints, init_hints_file, init_hints_socket};
 
 #[cfg(zisk_hints)]
 #[inline(always)]
@@ -178,7 +177,7 @@ pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
     info!("Received queued command for block {}", block_number);
 
     if let Some(client) = app_state.ethproofs_client.clone() {
-        let cluster_id = app_state.ethproofs_cluster_id.unwrap();
+        let cluster_id = app_state.cliargs.ethproofs.cluster_id.unwrap();
         tokio::spawn(async move {
             let start = std::time::Instant::now();
             match client.proof_queued(cluster_id, block_number).await {
@@ -214,7 +213,7 @@ pub(crate) async fn process_input(
         zisk_stdin.write(input_pk);
         zisk_stdin.write(input_witness);
 
-        let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
+        let filepath = PathBuf::from(&app_state.cliargs.inputs.folder).join(&filename);
         if let Err(e) = zisk_stdin.save(&filepath) {
             error!(
                 "Failed to save input to file {} for block {}, error: {}",
@@ -244,7 +243,7 @@ pub(crate) async fn process_input(
         Err(_) => 0,
     };
 
-    if app_state.cliargs.metrics {
+    if app_state.cliargs.metrics.enabled {
         let mut metrics_map = app_state.shared_metrics.lock().unwrap_or_else(|e| e.into_inner());
         metrics_map.insert(
             block_number,
@@ -297,8 +296,9 @@ pub(crate) async fn process_input(
             {
                 app_state.set_skipped_alert(true);
                 let msg_alert_clone = msg_alert.clone();
+                let app_state_clone = app_state.clone();
                 alert_handle = Some(tokio::spawn(async move {
-                    if let Err(e) = send_telegram_alert(&msg_alert_clone, AlertType::Warning).await
+                    if let Err(e) = send_telegram_alert(&msg_alert_clone, AlertType::Warning, &app_state_clone).await
                     {
                         warn!("Failed to send Telegram alert: {}, error: {}", msg_alert_clone, e);
                     }
@@ -314,10 +314,11 @@ pub(crate) async fn process_input(
             && app_state.skipped_alert()
         {
             app_state.set_skipped_alert(false);
+            let app_state_clone = app_state.clone();
             tokio::spawn(async move {
                 let msg_alert =
                     format!("Resumed proving. Now proving block {}.", proving_block_number);
-                if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
+                if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info, &app_state_clone).await {
                     warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
                 }
             });
@@ -346,7 +347,7 @@ pub(crate) async fn process_input(
         }
     }
 
-    let result = generate_proof(block_info.clone(), app_state.clone()).await;
+    let result = generate_proof(block_info.clone(),app_state).await;
     match result {
         Ok(job_id) => {
             *proving_block = Some(block_info.clone());
@@ -359,8 +360,9 @@ pub(crate) async fn process_input(
                     app_state.set_failed_alert(false);
                     let msg_alert =
                         format!("Resumed proving. Now proving block {}.", block_info.block_number);
+                    let app_state_clone = app_state.clone();
                     tokio::spawn(async move {
-                        if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
+                        if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info, &app_state_clone).await {
                             warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
                         }
                     });
@@ -374,8 +376,9 @@ pub(crate) async fn process_input(
             if app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
                 if !app_state.failed_alert() {
                     app_state.set_failed_alert(true);
+                    let app_state_clone = app_state.clone();
                     tokio::spawn(async move {
-                        if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Error).await {
+                        if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Error, &app_state_clone).await {
                             warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
                         }
                     });

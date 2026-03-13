@@ -1,14 +1,14 @@
+use std::path::PathBuf;
+
 use anyhow::{anyhow, Result};
 use log::{debug, error, info};
 use zisk_distributed_grpc_api::{
     zisk_distributed_api_client::ZiskDistributedApiClient, LaunchProofRequest,
 };
 
-use crate::state::AppState;
-use ethproofs_common::protocol::BlockInfo;
-use std::path::PathBuf;
+use crate::state::{AppState, BlockInfo};
 
-pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<String> {
+pub async fn generate_proof(block_info: BlockInfo, app_state: &AppState) -> Result<String> {
     let block_number = block_info.block_number;
 
     info!("🔄 Generating proof for block {}", block_number);
@@ -17,22 +17,22 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     let input_file = block_info.filename();
 
     let filepath =
-        PathBuf::from(&state.inputs_folder).join(&input_file).to_string_lossy().to_string();
+        PathBuf::from(&app_state.cliargs.inputs.folder).join(&input_file).to_string_lossy().to_string();
 
     debug!(
         "Sending coordinator request for block {} with {} compute units",
-        block_number, state.compute_capacity
+        block_number, app_state.cliargs.coordinator.compute_capacity
     );
 
     let start = std::time::Instant::now();
 
     // Get gRPC client
-    let mut client = ZiskDistributedApiClient::new(state.coordinator_channel.clone().unwrap());
+    let mut client = ZiskDistributedApiClient::new(app_state.coordinator_channel.clone().unwrap());
 
     #[cfg(zisk_hints)]
     // Build request
-    let (hints_mode, hints_uri) = if state.cliargs.hints.mode == crate::cliargs::HintsMode::Socket {
-        (2, Some(format!("unix://{}", state.cliargs.hints.socket.clone())))
+    let (hints_mode, hints_uri) = if app_state.cliargs.hints.mode == crate::cliargs::HintsMode::Socket {
+        (2, Some(format!("unix://{}", app_state.cliargs.hints.socket.clone())))
     } else {
         (0, None)
     };
@@ -42,8 +42,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
     let launch_proof_request = LaunchProofRequest {
         data_id: block_number.to_string(),
-        compute_capacity: state.compute_capacity,
-        minimal_compute_capacity: state.compute_capacity,
+        compute_capacity: app_state.cliargs.coordinator.compute_capacity,
+        minimal_compute_capacity: app_state.cliargs.coordinator.compute_capacity,
         inputs_uri: Some(filepath),
         inputs_mode: 2,
         hints_mode,
@@ -80,10 +80,15 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     };
 
     // Report to EthProofs that we are proving this block
-    if let Some(client) = state.ethproofs_client {
+    if let Some(client) = &app_state.ethproofs_client {
+        let client_clone = client.clone();
+        let cluster_id = app_state.cliargs.ethproofs.cluster_id.unwrap();
         tokio::spawn(async move {
             let start = std::time::Instant::now();
-            match client.proof_proving(state.ethproofs_cluster_id.unwrap(), block_number).await {
+            match client_clone
+                .proof_proving(cluster_id, block_number)
+                .await
+            {
                 Ok(_) => {
                     info!(
                         "Reported proving state to EthProofs for block {}, request_time: {} ms",

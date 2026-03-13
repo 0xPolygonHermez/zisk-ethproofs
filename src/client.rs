@@ -1,6 +1,4 @@
-use std::collections::HashMap;
 use std::io::Write;
-use std::sync::Arc;
 
 use anyhow::Result;
 use chrono::Utc;
@@ -8,17 +6,16 @@ use env_logger::{Builder, Env};
 // TODO: Replace log for tracing crate
 use log::error;
 use tokio::fs::create_dir_all;
-use tokio::sync::Mutex;
 use tokio::task;
 
 use crate::cliargs::InputGen;
-use crate::input::{
-    process_inputs_from_folder, process_inputs_from_server, process_inputs_locally,
-};
-use crate::metrics::{start_metrics_server, BlockMetrics};
+use crate::input::{process_inputs_from_folder, process_inputs_locally};
+use crate::metrics::start_metrics_server;
 use crate::state::AppState;
 use crate::webhook::start_webhook_server;
 
+#[cfg(zisk_hints)]
+use std::sync::Arc;
 #[cfg(zisk_hints)]
 use alloy_consensus::crypto::install_default_provider;
 #[cfg(zisk_hints)]
@@ -58,7 +55,7 @@ pub async fn run_client() -> Result<()> {
     crate::metrics::PROVING_OVER_12S_TOTAL.inc_by(0);
 
     // Ensure input, output, and log directories exist
-    create_dir_all(&app_state.inputs_folder).await?;
+    create_dir_all(&app_state.cliargs.inputs.folder).await?;
 
     // Launch the webhook server
     let state_clone = app_state.clone();
@@ -69,7 +66,7 @@ pub async fn run_client() -> Result<()> {
     });
 
     // Launch the metrics server if enabled
-    if app_state.cliargs.metrics {
+    if app_state.cliargs.metrics.enabled {
         let state_clone = app_state.clone();
         task::spawn(async move {
             if let Err(e) = start_metrics_server(state_clone).await {
@@ -86,11 +83,8 @@ pub async fn run_client() -> Result<()> {
     }
 
     // Select input generation method
-    match app_state.cliargs.input_gen {
-        InputGen::Server => {
-            process_inputs_from_server(&mut app_state).await;
-        }
-        InputGen::Local => {
+    match app_state.cliargs.inputs.mode {
+        InputGen::Rpc => {
             process_inputs_locally(&mut app_state).await?;
         }
         InputGen::Folder => {
