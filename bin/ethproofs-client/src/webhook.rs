@@ -119,7 +119,7 @@ async fn process_webhook(
                 zisk_stdin.write(&input_witness);
 
                 let zisk_stdin_shared = Arc::clone(&state.zisk_stdin);
-                let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
+                let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap_or_else(|e| e.into_inner());
                 *zisk_stdin_lock = Some(zisk_stdin);
             }
 
@@ -193,7 +193,7 @@ async fn process_webhook(
         if state.cliargs.enable_metrics {
             crate::metrics::PROOF_FAILURE_TOTAL.inc();
             // Publish all available metrics for this block
-            let mut shared_metrics = state.shared_metrics.lock().await;
+            let mut shared_metrics = state.shared_metrics.lock().unwrap_or_else(|e| e.into_inner());
             let entry = shared_metrics.get(&proved_block_number);
             if let Some(metrics) = entry {
                 let previous_block = crate::metrics::LATEST_BLOCK_NUMBER.get() as u64;
@@ -353,7 +353,7 @@ async fn process_webhook(
     if state.cliargs.enable_metrics {
         let start = std::time::Instant::now();
         // Update the shared HashMap and publish/remove metrics only when the block is complete
-        let mut shared_metrics = state.shared_metrics.lock().await;
+        let mut shared_metrics = state.shared_metrics.lock().unwrap_or_else(|e| e.into_inner());
         let entry = shared_metrics.get_mut(&proved_block_number);
         if let Some(metrics) = entry {
             metrics.proving_time_ms = Some(proving_time_ms as i64);

@@ -1,4 +1,4 @@
-use clap::{Parser, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum};
 
 #[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
 pub enum TelegramEvent {
@@ -20,9 +20,18 @@ pub enum Hints {
     Socket,
 }
 
+#[derive(Clone, Subcommand, Debug)]
+pub enum Commands {
+    #[command(hide = true)]
+    InputServer,
+}
+
 // Command line arguments
 #[derive(Clone, Parser)]
 pub struct CliArgs {
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+
     /// Input generation method: 'server', 'local' or 'folder'
     #[arg(short = 'n', long, value_enum, default_value_t = InputGen::Server)]
     pub input_gen: InputGen,

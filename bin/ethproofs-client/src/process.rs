@@ -236,7 +236,7 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
     };
 
     if app_state.cliargs.enable_metrics {
-        let mut metrics_map = app_state.shared_metrics.lock().await;
+        let mut metrics_map = app_state.shared_metrics.lock().unwrap_or_else(|e| e.into_inner());
         metrics_map.insert(
             block_number,
             BlockMetrics {

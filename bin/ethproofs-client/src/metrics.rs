@@ -1,4 +1,6 @@
+use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::sync::{Arc, Mutex};
 
 use anyhow::{anyhow, Result};
 use axum::routing::get;
@@ -12,6 +14,8 @@ use prometheus::IntCounter;
 use prometheus::{register_int_gauge, Encoder, TextEncoder};
 
 use crate::state::AppState;
+
+pub(crate) type SharedMetrics = Arc<Mutex<HashMap<u64, BlockMetrics>>>;
 
 #[derive(Clone, Debug)]
 pub struct BlockMetrics {

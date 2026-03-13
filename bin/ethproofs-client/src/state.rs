@@ -18,6 +18,7 @@ use crate::{
     api::EthProofsApi,
     cliargs::CliArgs,
     db::{self, DbBlockProofs},
+    metrics::SharedMetrics,
 };
 
 #[derive(Debug, Default)]
@@ -104,7 +105,7 @@ impl ZiskStdinWrapper {
 }
 #[derive(Clone)]
 pub struct AppState {
-    pub shared_metrics: crate::SharedMetrics,
+    pub shared_metrics: SharedMetrics,
     pub cliargs: CliArgs,
     pub calling_reth: Arc<tokio::sync::Semaphore>,
     pub proving_block: Arc<Mutex<Option<BlockInfo>>>,
@@ -269,7 +270,7 @@ impl AppState {
             db_block_proofs,
             fired_alerts,
             queued_start,
-            shared_metrics: crate::SharedMetrics::default(),
+            shared_metrics: SharedMetrics::default(),
         })
     }
 
