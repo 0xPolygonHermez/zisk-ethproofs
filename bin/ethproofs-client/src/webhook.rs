@@ -22,16 +22,7 @@ pub fn get_proof_b64(proof_data: &[u64]) -> Result<String> {
     // Convert &[u64] to &[u8] without copying
     let proof_bytes = bytemuck::cast_slice::<u64, u8>(proof_data);
 
-    let mut compressed = Vec::new();
-    {
-        // Compression level 1 (as in your original code)
-        let mut encoder = zstd::stream::Encoder::new(&mut compressed, 1)?;
-        use std::io::Write;
-        encoder.write_all(proof_bytes)?;
-        encoder.finish()?;
-    }
-
-    Ok(general_purpose::STANDARD.encode(&compressed))
+    Ok(general_purpose::STANDARD.encode(&proof_bytes))
 }
 
 async fn process_webhook(
