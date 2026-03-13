@@ -31,9 +31,9 @@ tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "feat/stream" }
+input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", tag = "v0.7.0" }
 # input = { path = "../zisk-eth-client/crates/input" }
-guest-reth = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "feat/stream" }
+guest-reth = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", tag = "v0.7.0" }
 # guest-reth = { path = "../zisk-eth-client/crates/guest-reth" }
 
 [patch.crates-io]
