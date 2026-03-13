@@ -1,7 +1,6 @@
 use std::env;
 use std::{fs, path::PathBuf, sync::Arc};
 
-use alloy_provider::network::any;
 use anyhow::Result;
 use chrono::Utc;
 use ethers::providers::{Middleware, Provider, Ws};
@@ -21,7 +20,6 @@ use ethproofs_common::protocol::{BlockCommand, BlockInfo, BlockMessage};
 use zisk_sdk::{ZiskFileStdin, ZiskIO};
 
 use crate::{
-    metrics,
     process::{process_input, process_queued},
     state::AppState,
 };

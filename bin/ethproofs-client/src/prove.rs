@@ -6,18 +6,11 @@ use zisk_distributed_grpc_api::{
 
 use crate::state::AppState;
 use ethproofs_common::protocol::BlockInfo;
-use std::path::PathBuf;
 
 pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<String> {
     let block_number = block_info.block_number;
 
     info!("🔄 Generating proof for block {}", block_number);
-
-    // Get input file name
-    let input_file = block_info.filename();
-
-    let filepath =
-        PathBuf::from(&state.inputs_folder).join(&input_file).to_string_lossy().to_string();
 
     debug!(
         "Sending coordinator request for block {} with {} compute units",
@@ -30,22 +23,31 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     let mut client = ZiskDistributedApiClient::new(state.coordinator_channel.clone().unwrap());
 
     #[cfg(zisk_hints)]
-    // Build request
-    let (hints_mode, hints_uri) = if state.cliargs.hints == crate::cliargs::Hints::Socket {
-        (2, Some(format!("unix://{}", state.cliargs.hints_socket.clone())))
-    } else {
-        (0, None)
-    };
+    let (input_mode, inputs_uri, hints_mode, hints_uri) =
+        if state.cliargs.hints == crate::cliargs::Hints::Socket {
+            (0, None, 2, Some(format!("unix://{}", state.cliargs.hints_socket)))
+        } else {
+            // TODO: Add arg to specify hints directory
+            (0, None, 1, Some(format!("./hints/{}_hints.bin", block_number)))
+        };
 
     #[cfg(not(zisk_hints))]
-    let (hints_mode, hints_uri) = (0, None);
+    let (input_mode, inputs_uri, hints_mode, hints_uri) = {
+        let filepath = std::path::PathBuf::from(&state.inputs_folder)
+            .join(&block_info.filename())
+            .to_string_lossy()
+            .to_string();
+        
+        (2, Some(filepath), 0, None)
+    };
 
+    // Build request
     let launch_proof_request = LaunchProofRequest {
         data_id: block_number.to_string(),
         compute_capacity: state.compute_capacity,
         minimal_compute_capacity: state.compute_capacity,
-        inputs_uri: Some(filepath),
-        inputs_mode: 2,
+        inputs_uri,
+        inputs_mode: input_mode,
         hints_mode,
         hints_uri,
         simulated_node: None,

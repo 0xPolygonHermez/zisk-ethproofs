@@ -59,16 +59,22 @@ pub fn hint_log<S: AsRef<str>>(msg: S) {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Clone)]
 pub struct ZiskStdinWrapper {
     pub stdin: ZiskStdin,
 }
 
+#[allow(dead_code)]
 impl ZiskStdinWrapper {
     pub fn new() -> Self {
         Self {
             stdin: ZiskStdin::new(),
          }
+    }
+
+    pub fn from_zisk_stdin(zisk_stdin: ZiskStdin) -> Self {
+        Self { stdin: zisk_stdin }
     }
 
     pub fn read<T: DeserializeOwned>(&self) -> Result<T> {
@@ -96,10 +102,6 @@ impl ZiskStdinWrapper {
 
     pub fn write<T: serde::Serialize>(&self, data: &T) {
         self.stdin.write(data);
-    }
-
-    pub fn save(&self, path: &std::path::Path) -> Result<()> {
-        self.stdin.save(path).context("Failed to save input data to file")
     }
 }
 #[derive(Clone)]
@@ -276,8 +278,10 @@ impl AppState {
     pub fn delete_input_file(&self, filename: &String) {
         if !self.cliargs.keep_input {
             let input_file_path = format!("{}/{}", &self.inputs_folder, filename);
-            if let Err(e) = std::fs::remove_file(&input_file_path) {
-                warn!("Failed to remove input file {}, error: {}", input_file_path, e);
+            if std::fs::exists(&input_file_path).unwrap_or(false) {
+                if let Err(e) = std::fs::remove_file(&input_file_path) {
+                    warn!("Failed to remove input file {}, error: {}", input_file_path, e);
+                }
             }
         }
     }

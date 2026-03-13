@@ -13,6 +13,7 @@ use guest_reth::{get_chain_spec, validate_block_stateless, verify_signatures};
 #[cfg(zisk_hints)]
 use tokio::sync::oneshot;
 
+use zisk_sdk::ZiskStdin;
 #[cfg(zisk_hints)]
 use ziskos::hints::{close_hints, init_hints_file, init_hints_socket};
 
@@ -199,24 +200,12 @@ pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
 }
 
 pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPublic, input_witness: &RethInputWitness, app_state: &mut AppState) {
-    let filename = block_info.filename();
+    let input_file_path = PathBuf::from(&app_state.inputs_folder).join(block_info.filename());
     let block_number = block_info.block_number;
 
-    {
-        let zisk_stdin = ZiskStdinWrapper::new();
-        zisk_stdin.write(input_pk);
-        zisk_stdin.write(input_witness);
-
-        let filepath = PathBuf::from(&app_state.inputs_folder).join(&filename);
-        if let Err(e) = zisk_stdin.save(&filepath) {
-            error!("Failed to save input to file {} for block {}, error: {}", filepath.display(), block_number, e);
-            return;
-        }
-
-        let zisk_stdin_shared = Arc::clone(&app_state.zisk_stdin);
-        let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
-        *zisk_stdin_lock = Some(zisk_stdin);
-    }
+    let zisk_stdin = ZiskStdin::new();
+    zisk_stdin.write(input_pk);
+    zisk_stdin.write(input_witness);
 
     // let zisk_input_ready = Arc::new(tokio::sync::Semaphore::new(0));
     // app_state.zisk_stdin_ready = Some(zisk_input_ready.clone());
@@ -231,6 +220,11 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
         Ok(now) => now.as_millis() as u128 - block_timestamp_ms,
         Err(_) => 0,
     };
+
+    info!(
+        "Input generated for block {}, time: {} ms, time-to-input: {} ms",
+        block_number, input_time, time_to_input
+    );
 
     if app_state.cliargs.enable_metrics {
         let mut metrics_map = app_state.shared_metrics.lock().await;
@@ -251,14 +245,8 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
         );
     }
 
-    info!(
-        "Input file saved for block {}, file: {}, time: {} ms, time-to-input: {} ms",
-        block_number, filename, input_time, time_to_input
-    );
-
     if app_state.cliargs.skip_proving {
         info!("Skipping proving for block {} as per configuration", block_number);
-        app_state.delete_input_file(&filename);
         return;
     }
 
@@ -266,10 +254,19 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
     let mut proving_block = proving_block_shared_clone.lock().unwrap();
     if proving_block.is_some() {
         warn!("⚠️ Already proving block, saving next block {}", block_number);
+
+        // Save input file
+        if let Err(e) = zisk_stdin.save(&input_file_path) {
+            error!("Failed to save input to file {} for block {}, error: {}", input_file_path.display(), block_number, e);
+            return;
+        }
+
+        // Set next proving block to this block
         let next_proving_block_shared_clone = Arc::clone(&app_state.next_proving_block);
         let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
         *next_proving_block = Some(block_info);
 
+        // Check if skipped blocks exceed threshold and send Telegram alert if enabled
         let proving_block_number = proving_block.clone().unwrap().clone().block_number;
         if block_number - proving_block_number > app_state.cliargs.skipped_threshold as u64 {
             let msg_alert = format!(
@@ -311,6 +308,23 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
             });
         }
         return;
+    }
+
+
+    // Save input file if -i flag is set
+    if app_state.cliargs.keep_input {
+        if let Err(e) = zisk_stdin.save(&input_file_path) {
+            error!("Failed to save input to file {} for block {}, error: {}", input_file_path.display(), block_number, e);
+        }
+    }
+
+    // Write input to zisk_stdin wrapper for hint generation and proof generation
+    {
+        let zisk_stdin_wrapper = ZiskStdinWrapper::from_zisk_stdin(zisk_stdin);
+
+        let zisk_stdin_shared = Arc::clone(&app_state.zisk_stdin);
+        let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
+        *zisk_stdin_lock = Some(zisk_stdin_wrapper);
     }
 
     #[cfg(zisk_hints)]
@@ -369,8 +383,6 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
                     });
                 }
             }
-
-            app_state.delete_input_file(&filename);
         }
     }
 }
