@@ -43,7 +43,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     };
 
     let metadata = HashMap::from([
-        ("block_number".to_string(), block_number.to_string()),
+        ("Block Number".to_string(), block_number.to_string()),
     ]);
 
     let launch_proof_request = LaunchProofRequest {
