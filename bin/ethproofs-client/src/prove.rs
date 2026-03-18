@@ -3,6 +3,7 @@ use log::{debug, error, info};
 use zisk_distributed_grpc_api::{
     zisk_distributed_api_client::ZiskDistributedApiClient, LaunchProofRequest,
 };
+use std::collections::HashMap;
 
 use crate::state::AppState;
 use ethproofs_common::protocol::BlockInfo;
@@ -41,7 +42,10 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
         (2, Some(filepath), 0, None)
     };
 
-    // Build request
+    let metadata = HashMap::from([
+        ("Block Number".to_string(), block_number.to_string()),
+    ]);
+
     let launch_proof_request = LaunchProofRequest {
         data_id: block_number.to_string(),
         compute_capacity: state.compute_capacity,
@@ -51,6 +55,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
         hints_mode,
         hints_uri,
         simulated_node: None,
+        execution_only: false,
+        metadata,
     };
 
     info!("launch_proof_request: {:?}", launch_proof_request);
