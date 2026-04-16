@@ -247,67 +247,66 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
 
     if app_state.cliargs.skip_proving {
         info!("Skipping proving for block {} as per configuration", block_number);
-        return;
-    }
+    } else {
+        let proving_block_shared_clone = Arc::clone(&app_state.proving_block);
+        let proving_block = proving_block_shared_clone.lock().unwrap();
+        if proving_block.is_some() {
+            warn!("⚠️ Already proving block, saving next block {}", block_number);
 
-    let proving_block_shared_clone = Arc::clone(&app_state.proving_block);
-    let mut proving_block = proving_block_shared_clone.lock().unwrap();
-    if proving_block.is_some() {
-        warn!("⚠️ Already proving block, saving next block {}", block_number);
+            // Save input file
+            if let Err(e) = zisk_stdin.save(&input_file_path) {
+                error!("Failed to save input to file {} for block {}, error: {}", input_file_path.display(), block_number, e);
+                return;
+            }
 
-        // Save input file
-        if let Err(e) = zisk_stdin.save(&input_file_path) {
-            error!("Failed to save input to file {} for block {}, error: {}", input_file_path.display(), block_number, e);
+            // Set next proving block to this block
+            let next_proving_block_shared_clone = Arc::clone(&app_state.next_proving_block);
+            let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
+            *next_proving_block = Some(block_info);
+
+            // Check if skipped blocks exceed threshold and send Telegram alert if enabled
+            let proving_block_number = proving_block.clone().unwrap().clone().block_number;
+            if block_number - proving_block_number > app_state.cliargs.skipped_threshold as u64 {
+                let msg_alert = format!(
+                    "Skipped {} consecutive blocks. Currently proving block {}, next queued block is {}.",
+                    block_number - proving_block_number - 1,
+                    proving_block_number,
+                    block_number
+                );
+                warn!("{}", msg_alert);
+                let mut alert_handle = None;
+                if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold)
+                    && !app_state.skipped_alert()
+                {
+                    app_state.set_skipped_alert(true);
+                    let msg_alert_clone = msg_alert.clone();
+                    alert_handle = Some(tokio::spawn(async move {
+                        if let Err(e) = send_telegram_alert(&msg_alert_clone, AlertType::Warning).await
+                        {
+                            warn!("Failed to send Telegram alert: {}, error: {}", msg_alert_clone, e);
+                        }
+                    }));
+                }
+                if app_state.cliargs.panic_on_skipped {
+                    if let Some(handle) = alert_handle {
+                        handle.await.ok();
+                    }
+                    panic!("Skipped blocks exceeded threshold, panicking as per configuration");
+                }
+            } else if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold)
+                && app_state.skipped_alert()
+            {
+                app_state.set_skipped_alert(false);
+                tokio::spawn(async move {
+                    let msg_alert =
+                        format!("Resumed proving. Now proving block {}.", proving_block_number);
+                    if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
+                        warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
+                    }
+                });
+            }
             return;
         }
-
-        // Set next proving block to this block
-        let next_proving_block_shared_clone = Arc::clone(&app_state.next_proving_block);
-        let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
-        *next_proving_block = Some(block_info);
-
-        // Check if skipped blocks exceed threshold and send Telegram alert if enabled
-        let proving_block_number = proving_block.clone().unwrap().clone().block_number;
-        if block_number - proving_block_number > app_state.cliargs.skipped_threshold as u64 {
-            let msg_alert = format!(
-                "Skipped {} consecutive blocks. Currently proving block {}, next queued block is {}.",
-                block_number - proving_block_number - 1,
-                proving_block_number,
-                block_number
-            );
-            warn!("{}", msg_alert);
-            let mut alert_handle = None;
-            if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold)
-                && !app_state.skipped_alert()
-            {
-                app_state.set_skipped_alert(true);
-                let msg_alert_clone = msg_alert.clone();
-                alert_handle = Some(tokio::spawn(async move {
-                    if let Err(e) = send_telegram_alert(&msg_alert_clone, AlertType::Warning).await
-                    {
-                        warn!("Failed to send Telegram alert: {}, error: {}", msg_alert_clone, e);
-                    }
-                }));
-            }
-            if app_state.cliargs.panic_on_skipped {
-                if let Some(handle) = alert_handle {
-                    handle.await.ok();
-                }
-                panic!("Skipped blocks exceeded threshold, panicking as per configuration");
-            }
-        } else if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold)
-            && app_state.skipped_alert()
-        {
-            app_state.set_skipped_alert(false);
-            tokio::spawn(async move {
-                let msg_alert =
-                    format!("Resumed proving. Now proving block {}.", proving_block_number);
-                if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
-                    warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
-                }
-            });
-        }
-        return;
     }
 
 
@@ -348,7 +347,15 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
         }
     }
 
+    if app_state.cliargs.skip_proving {
+        return;
+    }
+
     let result = generate_proof(block_info.clone(), app_state.clone()).await;
+    
+    let proving_block_shared_clone = Arc::clone(&app_state.proving_block);
+    let mut proving_block = proving_block_shared_clone.lock().unwrap();
+    
     match result {
         Ok(job_id) => {
             *proving_block = Some(block_info.clone());
