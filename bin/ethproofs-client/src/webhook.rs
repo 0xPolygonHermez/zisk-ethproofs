@@ -74,7 +74,7 @@ async fn process_webhook(
             use std::sync::Arc;
             use crate::state::ZiskStdinWrapper;
             use guest_reth::{RethInputPublic, RethInputWitness};
-            use zisk_sdk::{ZiskFileStdin, ZiskIO};
+            use zisk_common::io::{ZiskFileStdin, ZiskIO};
 
             use crate::process::launch_hints_generation;
 

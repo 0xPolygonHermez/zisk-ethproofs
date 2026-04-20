@@ -12,7 +12,7 @@ use ethproofs_common::protocol::BlockInfo;
 use serde::de::DeserializeOwned;
 //use tokio::sync::Semaphore;
 use tonic::transport::Channel;
-use zisk_sdk::ZiskStdin;
+use zisk_sdk::{GuestProgram, ProverClient, RemoteClient, ZiskStdin, load_program};
 
 use crate::{
     api::EthProofsApi,
@@ -112,6 +112,7 @@ pub struct AppState {
     pub proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub next_proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub zisk_stdin: Arc<Mutex<Option<ZiskStdinWrapper>>>,
+    pub prover_client: Arc<Mutex<RemoteClient>>,
     // pub zisk_stdin_ready: Option<Arc<Semaphore>>,
     pub current_job_id: Arc<Mutex<String>>,
     pub queued_start: Arc<Mutex<Instant>>,
@@ -186,6 +187,12 @@ impl AppState {
         let proving_block = Arc::new(Mutex::new(None));
         let next_proving_block = Arc::new(Mutex::new(None));
         let zisk_stdin = Arc::new(Mutex::new(None));
+
+        let guest =GuestProgram::from_uri("file://./elf/zec-reth.elf")?;
+        let client = ProverClient::remote("http://gateway_50051").build()?;
+        client.setup(&guest).run()?.await?;
+
+        let prover_client = Arc::new(Mutex::new(client));
         //let zisk_stdin_ready = None;
         let current_job_id = Arc::new(Mutex::new(String::new()));
         let queued_start = Arc::new(Mutex::new(Instant::now()));
@@ -256,6 +263,7 @@ impl AppState {
             proving_block,
             next_proving_block,
             zisk_stdin,
+            prover_client,
             //zisk_stdin_ready,
             current_job_id,
             ethproofs_client,

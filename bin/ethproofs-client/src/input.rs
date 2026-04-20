@@ -17,7 +17,7 @@ use tokio_tungstenite::{
 };
 
 use ethproofs_common::protocol::{BlockCommand, BlockInfo, BlockMessage};
-use zisk_sdk::{ZiskFileStdin, ZiskIO};
+use zisk_common::io::{ZiskFileStdin, ZiskIO};
 
 use crate::{
     process::{process_input, process_queued},
