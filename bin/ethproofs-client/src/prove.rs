@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use anyhow::{anyhow, Result};
 use log::{debug, error, info};
@@ -20,7 +20,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
         anyhow!("ZiskStdin not available for block {}", block_number)
     })?;
 
-    let result = prover_client.prove(&guest_program, stdin.stdin).executor(ExecutorKind::Assembly).run()?.await?;
+    let result = prover_client.prove(&guest_program, stdin.stdin).timeout(Duration::from_secs(1800)).executor(ExecutorKind::Assembly).run()?.await?;
     println!("Proof generated successfully in {:?}", result.get_proving_time());
     println!("Execution steps: {}", result.get_execution_steps());
 

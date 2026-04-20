@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use log::warn;
+use log::{info, warn};
 use url::Url;
 // serde derive imports no longer needed after moving protocol types
 use ethproofs_common::protocol::BlockInfo;
@@ -118,7 +118,6 @@ pub struct AppState {
     pub queued_start: Arc<Mutex<Instant>>,
     pub ethproofs_client: Option<EthProofsApi>,
     pub ethproofs_cluster_id: Option<u32>,
-    pub coordinator_channel: Option<Channel>,
     pub block_modulus: u64,
     pub rpc_ws_url: String,
     pub webhook_port: u16,
@@ -138,6 +137,7 @@ impl AppState {
         // Load environment variables from env file
         dotenv::from_filename(&cliargs.env_file).ok();
 
+        info!("Starting EthProofs client with config");
         let (ethproofs_client, ethproofs_cluster_id) = if cliargs.submit_ethproofs {
             let ethproofs_url = match env::var("ETHPROOFS_API_URL") {
                 Ok(url) => url,
@@ -160,20 +160,9 @@ impl AppState {
             (None, None)
         };
 
+        info!("EthProofs client configuration: submit_ethproofs={}, ethproofs_cluster_id={:?}", cliargs.submit_ethproofs, ethproofs_cluster_id);
         let coordinator_url =
             env::var("COORDINATOR_URL").unwrap_or(DEFAULT_COORDINATOR_URL.to_string());
-        let coordinator_channel = if !cliargs.skip_proving {
-            let coordinator_channel = Channel::from_shared(coordinator_url.clone())
-                .context("Failed to create coordinator channel")?
-                .connect()
-                .await
-                .with_context(|| {
-                    format!("Failed to connect to coordinator at {}", coordinator_url)
-                })?;
-            Some(coordinator_channel)
-        } else {
-            None
-        };
 
         let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
 
@@ -190,10 +179,9 @@ impl AppState {
 
         let guest_path = std::fs::canonicalize(&cliargs.guest)
             .with_context(|| format!("Failed to resolve guest ELF path: {}", cliargs.guest))?;
-        let guest_uri = Url::from_file_path(&guest_path)
-            .map_err(|_| anyhow::anyhow!("Failed to convert guest ELF path to file URI"))?;
-        let guest = GuestProgram::from_uri(guest_uri.as_ref())?;
+        let guest = GuestProgram::from_uri(&format!("file://{}", guest_path.display()))?;
         let client = ProverClient::remote(coordinator_url).build()?;
+        client.upload(&guest).run()?;
         client.setup(&guest).run()?.await?;
         let prover_client = Arc::new(Mutex::new(client));
         let guest_program = Arc::new(Mutex::new(guest));
@@ -274,7 +262,6 @@ impl AppState {
             current_job_id,
             ethproofs_client,
             ethproofs_cluster_id,
-            coordinator_channel,
             block_modulus,
             rpc_ws_url,
             webhook_port,

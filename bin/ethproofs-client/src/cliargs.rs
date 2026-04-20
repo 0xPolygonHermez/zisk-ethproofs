@@ -74,7 +74,7 @@ pub struct CliArgs {
 
     /// Hints socket path (only when using 'socket' hints mode)
     #[cfg(zisk_hints)]
-    #[clap(long, default_value = "/tmp/hints.sock", required_if_eq("hints", "Socket"))]
+    #[clap(long, default_value = "/tmp/stdin.sock", required_if_eq("hints", "Socket"))]
     pub hints_socket: String,
 
     /// Enable debug hint file generation (only when using 'socket' hints mode)
