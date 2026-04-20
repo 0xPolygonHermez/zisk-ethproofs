@@ -193,7 +193,7 @@ impl AppState {
         let guest_uri = Url::from_file_path(&guest_path)
             .map_err(|_| anyhow::anyhow!("Failed to convert guest ELF path to file URI"))?;
         let guest = GuestProgram::from_uri(guest_uri.as_ref())?;
-        let client = ProverClient::remote("http://gateway_50051").build()?;
+        let client = ProverClient::remote(coordinator_url).build()?;
         client.setup(&guest).run()?.await?;
         let prover_client = Arc::new(Mutex::new(client));
         let guest_program = Arc::new(Mutex::new(guest));
