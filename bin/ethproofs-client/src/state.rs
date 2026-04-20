@@ -7,12 +7,13 @@ use std::{
 use anyhow::{Context, Result};
 use clap::Parser;
 use log::warn;
+use url::Url;
 // serde derive imports no longer needed after moving protocol types
 use ethproofs_common::protocol::BlockInfo;
 use serde::de::DeserializeOwned;
 //use tokio::sync::Semaphore;
 use tonic::transport::Channel;
-use zisk_sdk::{GuestProgram, ProverClient, RemoteClient, ZiskStdin, load_program};
+use zisk_sdk::{GuestProgram, ProverClient, RemoteClient, ZiskStdin};
 
 use crate::{
     api::EthProofsApi,
@@ -68,9 +69,7 @@ pub struct ZiskStdinWrapper {
 #[allow(dead_code)]
 impl ZiskStdinWrapper {
     pub fn new() -> Self {
-        Self {
-            stdin: ZiskStdin::new(),
-         }
+        Self { stdin: ZiskStdin::new() }
     }
 
     pub fn from_zisk_stdin(zisk_stdin: ZiskStdin) -> Self {
@@ -189,7 +188,11 @@ impl AppState {
         let next_proving_block = Arc::new(Mutex::new(None));
         let zisk_stdin = Arc::new(Mutex::new(None));
 
-        let guest =GuestProgram::from_uri("file://./elf/zec-reth.elf")?;
+        let guest_path = std::fs::canonicalize(&cliargs.guest)
+            .with_context(|| format!("Failed to resolve guest ELF path: {}", cliargs.guest))?;
+        let guest_uri = Url::from_file_path(&guest_path)
+            .map_err(|_| anyhow::anyhow!("Failed to convert guest ELF path to file URI"))?;
+        let guest = GuestProgram::from_uri(guest_uri.as_ref())?;
         let client = ProverClient::remote("http://gateway_50051").build()?;
         client.setup(&guest).run()?.await?;
         let prover_client = Arc::new(Mutex::new(client));

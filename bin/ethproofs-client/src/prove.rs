@@ -2,9 +2,6 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
 use log::{debug, error, info};
-use zisk_distributed_grpc_api::{
-    zisk_distributed_api_client::ZiskDistributedApiClient, LaunchProofRequest,
-};
 use zisk_sdk::ExecutorKind;
 
 use crate::{prove, state::AppState};
@@ -24,7 +21,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     })?;
 
     let result = prover_client.prove(&guest_program, stdin.stdin).executor(ExecutorKind::Assembly).run()?.await?;
-    println!("Proof generated successfully in {:?}", result.get_duration());
+    println!("Proof generated successfully in {:?}", result.get_proving_time());
     println!("Execution steps: {}", result.get_execution_steps());
 
     // Report to EthProofs that we are proving this block

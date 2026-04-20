@@ -63,6 +63,10 @@ pub struct CliArgs {
     #[arg(short = 'e', long, default_value = ".env")]
     pub env_file: String,
 
+    /// Path to the guest ELF file
+    #[arg(short = 'g', long, default_value = "./elf/zec-reth.elf")]
+    pub guest: String,
+
     /// Enable hints generation
     #[cfg(zisk_hints)]
     #[clap(long, value_enum, default_value_t = Hints::Socket)]
