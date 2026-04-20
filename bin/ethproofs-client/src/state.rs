@@ -113,6 +113,7 @@ pub struct AppState {
     pub next_proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub zisk_stdin: Arc<Mutex<Option<ZiskStdinWrapper>>>,
     pub prover_client: Arc<Mutex<RemoteClient>>,
+    pub guest_program: Arc<Mutex<GuestProgram>>,
     // pub zisk_stdin_ready: Option<Arc<Semaphore>>,
     pub current_job_id: Arc<Mutex<String>>,
     pub queued_start: Arc<Mutex<Instant>>,
@@ -191,8 +192,9 @@ impl AppState {
         let guest =GuestProgram::from_uri("file://./elf/zec-reth.elf")?;
         let client = ProverClient::remote("http://gateway_50051").build()?;
         client.setup(&guest).run()?.await?;
-
         let prover_client = Arc::new(Mutex::new(client));
+        let guest_program = Arc::new(Mutex::new(guest));
+
         //let zisk_stdin_ready = None;
         let current_job_id = Arc::new(Mutex::new(String::new()));
         let queued_start = Arc::new(Mutex::new(Instant::now()));
@@ -264,6 +266,7 @@ impl AppState {
             next_proving_block,
             zisk_stdin,
             prover_client,
+            guest_program,
             //zisk_stdin_ready,
             current_job_id,
             ethproofs_client,

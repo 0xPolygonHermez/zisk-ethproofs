@@ -453,9 +453,9 @@ async fn webhook_handler(
         return (StatusCode::OK, "OK").into_response();
     }
 
-    tokio::spawn(async move {
-        process_webhook(proved_block.unwrap(), payload, state.clone()).await;
-    });
+    // tokio::spawn(async move {
+    //     process_webhook(proved_block.unwrap(), payload, state.clone()).await;
+    // });
 
     (StatusCode::OK, "OK").into_response()
 }

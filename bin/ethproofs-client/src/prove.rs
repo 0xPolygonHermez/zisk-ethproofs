@@ -5,6 +5,7 @@ use log::{debug, error, info};
 use zisk_distributed_grpc_api::{
     zisk_distributed_api_client::ZiskDistributedApiClient, LaunchProofRequest,
 };
+use zisk_sdk::ExecutorKind;
 
 use crate::{prove, state::AppState};
 use ethproofs_common::protocol::BlockInfo;
@@ -15,12 +16,16 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     info!("🔄 Generating proof for block {}", block_number);
 
     let prover_client_clone = Arc::clone(&state.prover_client);
-    let mut prover_client = prover_client_clone.lock().unwrap();
+    let prover_client = prover_client_clone.lock().unwrap();
+    let guest_program_clone = Arc::clone(&state.guest_program);
+    let guest_program = guest_program_clone.lock().unwrap();
+    let stdin = state.zisk_stdin.lock().unwrap().take().ok_or_else(|| {
+        anyhow!("ZiskStdin not available for block {}", block_number)
+    })?;
 
-    prover_client
-        .generate_proof(block_info.clone())
-        .await
-        .map_err(|e| anyhow!("Failed to generate proof for block {}: {}", block_number, e))?;
+    let result = prover_client.prove(&guest_program, stdin.stdin).executor(ExecutorKind::Assembly).run()?.await?;
+    println!("Proof generated successfully in {:?}", result.get_duration());
+    println!("Execution steps: {}", result.get_execution_steps());
 
     // Report to EthProofs that we are proving this block
     if let Some(client) = state.ethproofs_client {
