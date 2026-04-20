@@ -31,9 +31,9 @@ tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", tag = "v0.7.0" }
+input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "develop-0.8.0" }
 # input = { path = "../zisk-eth-client/crates/input" }
-guest-reth = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", tag = "v0.7.0" }
+guest-reth = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "develop-0.8.0" }
 # guest-reth = { path = "../zisk-eth-client/crates/guest-reth" }
 
 [patch.crates-io]
@@ -41,18 +41,14 @@ guest-reth = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", t
 alloy-evm = { git = "https://github.com/0xPolygonHermez/zisk-patch-alloy-evm.git", branch = "zisk-hints/v0.27.3" }
 # alloy-evm = { path = "../../../zisk-patch-alloy-evm/crates/evm" }
 
-# TODO: This can be removed when a new version of reth is released
 [patch."https://github.com/paradigmxyz/reth.git"]
 # Needed for deterministic Hashmap sort
 reth-trie-common = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v1.11.0" }
 # reth-trie-common = { path = "../../../zisk-patch-reth/crates/trie/common" }
 
-[patch."https://github.com/eth-act/zkvm-ethereum-mpt.git"]
-# Needed for deterministic Hashmap sort
-zeth-mpt-state = { git = "https://github.com/0xPolygonHermez/zisk-patch-zkvm-ethereum-mpt.git", branch = "zisk-hints/v0.5.0" }
-# zeth-mpt-state = { path = "../../../zisk-patch-zkvm-ethereum-mpt/crates/zeth-mpt-state" }
-
 [patch."https://github.com/paradigmxyz/stateless.git"]
-# Needed for function visibility
-stateless = { git = "https://github.com/0xPolygonHermez/zisk-patch-stateless.git", branch = "zisk/68cd8e73" }
+# Needed for function visibility and deterministic Hashmap sort
+stateless = { git = "https://github.com/0xPolygonHermez/zisk-patch-stateless.git", branch = "zisk/ed189a5" }
+tries = { git = "https://github.com/0xPolygonHermez/zisk-patch-stateless.git", branch = "zisk/ed189a5" }
 # stateless = { path = "../zisk-patch-stateless/crates/stateless" }
+# tries = { path = "../zisk-patch-stateless/crates/tries" }
