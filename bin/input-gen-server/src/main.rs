@@ -4,7 +4,7 @@ use std::io::Write;
 use std::time::Instant;
 use std::{fs, path::PathBuf};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Result, Context};
 use dotenv::dotenv;
 use ethers::providers::{Middleware, Provider, Ws};
 use ethproofs_common::protocol::{BlockCommand, BlockMessage};
@@ -19,6 +19,9 @@ use tokio::{
 use tokio_tungstenite::accept_async_with_config;
 use tokio_tungstenite::tungstenite::protocol::WebSocketConfig;
 use tokio_tungstenite::tungstenite::Message;
+
+use input::FromRpc;
+use guest_reth::RethInput;
 
 const WS_LISTEN_IP: &str = "0.0.0.0";
 const WS_DEFAULT_PORT: &str = "8765";
@@ -122,7 +125,13 @@ async fn block_listener(tx: Sender<String>) -> Result<()> {
             let start_input_time = Instant::now();
             let rpc_url = &env::var("RPC_URL").expect("RPC_URL must be set");
             let input_result =
-                input::reth_input_from_rpc(rpc_url, block_number).await;
+                RethInput::from_rpc(rpc_url, block_number).await;
+            let input_result = match input_result {
+                Ok(input) => {
+                    bincode::serialize(&input).context("Failed to serialize RethInput to bytes")
+                },
+                Err(e) => Err(anyhow!("Failed to generate input from RPC for block {}, error: {}", block_number, e)),
+            };
 
             match input_result {
                 Ok(input) => {

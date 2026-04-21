@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
 use log::{debug, error, info};
+use std::collections::HashMap;
 use zisk_distributed_grpc_api::{
     zisk_distributed_api_client::ZiskDistributedApiClient, LaunchProofRequest,
 };
@@ -51,6 +52,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
         hints_mode,
         hints_uri,
         simulated_node: None,
+        execution_only: false, // TBD
+        metadata: HashMap::new(), // TBD
     };
 
     info!("launch_proof_request: {:?}", launch_proof_request);
