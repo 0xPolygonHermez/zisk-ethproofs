@@ -3636,15 +3636,15 @@ dependencies = [
 [[package]]
 name = "guest-common"
 version = "0.7.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.8.0#0eb6740783ca006085aab759b95ae4a45327c2c0"
+source = "git+https://github.com/eth-act/zisk-eth-client.git?branch=feature%2Fhide-hints-behind-zkvm-accelerator-interface#fc83ecec6eb3f695f70bc875b59ffd4bfe1d814c"
 dependencies = [
- "zkvm-interface 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0)",
+ "zkvm-interface",
 ]
 
 [[package]]
 name = "guest-reth"
 version = "0.7.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.8.0#0eb6740783ca006085aab759b95ae4a45327c2c0"
+source = "git+https://github.com/eth-act/zisk-eth-client.git?branch=feature%2Fhide-hints-behind-zkvm-accelerator-interface#fc83ecec6eb3f695f70bc875b59ffd4bfe1d814c"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -4229,7 +4229,7 @@ dependencies = [
 [[package]]
 name = "input"
 version = "0.7.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.8.0#0eb6740783ca006085aab759b95ae4a45327c2c0"
+source = "git+https://github.com/eth-act/zisk-eth-client.git?branch=feature%2Fhide-hints-behind-zkvm-accelerator-interface#fc83ecec6eb3f695f70bc875b59ffd4bfe1d814c"
 dependencies = [
  "alloy-genesis",
  "alloy-provider",
@@ -10923,7 +10923,7 @@ dependencies = [
  "zisk-common",
  "zisk-definitions",
  "zisk-verifier",
- "zkvm-interface 0.17.0 (git+https://github.com/eth-act/zisk.git?branch=feature%2Fhide-hints-behind-zkvm-accelerator-interface)",
+ "zkvm-interface",
 ]
 
 [[package]]
@@ -10949,21 +10949,13 @@ dependencies = [
  "sha2",
  "tiny-keccak",
  "zisk-verifier",
- "zkvm-interface 0.17.0 (git+https://github.com/eth-act/zisk.git?branch=feature%2Fhide-hints-behind-zkvm-accelerator-interface)",
+ "zkvm-interface",
 ]
 
 [[package]]
 name = "zkvm-interface"
 version = "0.17.0"
 source = "git+https://github.com/eth-act/zisk.git?branch=feature%2Fhide-hints-behind-zkvm-accelerator-interface#6402ac0ab5837108ba61c20f9aeab6ab3718e493"
-dependencies = [
- "bindgen 0.72.1",
-]
-
-[[package]]
-name = "zkvm-interface"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#3b107c65ed53cd1d02944b46c677b03872107c8b"
 dependencies = [
  "bindgen 0.72.1",
 ]
