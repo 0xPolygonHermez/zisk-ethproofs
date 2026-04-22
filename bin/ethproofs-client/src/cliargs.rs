@@ -67,6 +67,10 @@ pub struct CliArgs {
     #[arg(short = 'g', long, default_value = "./elf/zec-reth.elf")]
     pub guest: String,
 
+    /// Prove timeout in seconds
+    #[arg(long, default_value_t = 1800)]
+    pub prove_timeout: u64,
+
     /// Enable hints generation
     #[cfg(zisk_hints)]
     #[clap(long, value_enum, default_value_t = Hints::Socket)]

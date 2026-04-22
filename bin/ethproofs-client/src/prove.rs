@@ -1,14 +1,19 @@
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::{anyhow, Result};
-use base64::{Engine, engine::general_purpose};
+use base64::{engine::general_purpose, Engine};
 use guest_reth::{RethInputPublic, RethInputWitness};
 use log::{debug, error, info, warn};
 use zisk_common::io::ZiskStdin;
 use zisk_sdk::{ExecutorKind, ProofKind};
 
 use crate::state::ZiskStdinWrapper;
-use crate::{cliargs::TelegramEvent, db::BlockProof, state::AppState, telegram::{AlertType, send_telegram_alert}};
+use crate::{
+    cliargs::TelegramEvent,
+    db::BlockProof,
+    state::AppState,
+    telegram::{send_telegram_alert, AlertType},
+};
 use ethproofs_common::protocol::BlockInfo;
 
 pub fn get_proof_b64(proof_data: &[u8]) -> Result<String> {
@@ -44,7 +49,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
             let handle = prover_client
                 .prove(&guest_program, stdin.stdin)
-                .timeout(Duration::from_secs(1800))
+                .timeout(Duration::from_secs(state.cliargs.prove_timeout))
                 .executor(ExecutorKind::Assembly)
                 .wrap(ProofKind::VadcopFinalMinimal)
                 .run();
