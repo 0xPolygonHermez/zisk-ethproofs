@@ -49,7 +49,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 .wrap(ProofKind::VadcopFinalMinimal)
                 .run();
 
-            let result = match handle {
+            let prove_result = match handle {
                 Ok(future) => future.await,
                 Err(e) => {
                     error!("❌ Failed to start proof generation for block {}, error: {}", proved_block_number, e);
@@ -57,127 +57,134 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 }
             };
 
-            match result {
+            if let Ok(result) = &prove_result {
+                let proving_time_ms = result.get_proving_time();
+                let proving_cycles = result.get_execution_steps();
+                let job_id_str = result.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
+
+                info!(
+                    "✅ Proof generated for block {}, proving_time: {} ms, cycles: {}, job: {}",
+                    proved_block_number, proving_time_ms, proving_cycles, job_id_str
+                );
+            }
+
+            // Get next_block_number in atomic scope
+            let next_block = {
+                let mut next_proving_block =
+                    state.next_proving_block.lock().unwrap_or_else(|e| e.into_inner());
+
+                if next_proving_block.is_some() {
+                    let next = next_proving_block.clone().unwrap();
+                    *next_proving_block = None;
+                    Some(next)
+                } else {
+                    None
+                }
+            };
+
+            // Check and start proof generation for next block if set
+            if next_block.is_some() {
+                // Set proving_block to next_block_number in atomic scope
+                {
+                    let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+                    *proving_block = next_block.clone();
+                }
+
+                let next_block = next_block.unwrap();
+
+                let input_filename =
+                    format!("{}/{}", state.inputs_folder.clone(), next_block.filename());
+
+                let path = PathBuf::from(&input_filename);
+                let zisk_stdin_file = match ZiskStdin::from_file(&path) {
+                    Ok(stdin) => stdin,
+                    Err(e) => {
+                        error!("Error opening input file {}: {}", path.display(), e);
+                        return;
+                    }
+                };
+                let input_pk: RethInputPublic = match zisk_stdin_file.read() {
+                    Ok(pk) => pk,
+                    Err(e) => {
+                        error!("Error reading public input from file {}: {}", path.display(), e);
+                        return;
+                    }
+                };
+                let input_witness: RethInputWitness = match zisk_stdin_file.read() {
+                    Ok(witness) => witness,
+                    Err(e) => {
+                        error!("Error reading witness input from file {}: {}", path.display(), e);
+                        return;
+                    }
+                };
+
+                {
+                    let zisk_stdin = ZiskStdinWrapper::new();
+                    zisk_stdin.write(&input_pk);
+                    zisk_stdin.write(&input_witness);
+
+                    let zisk_stdin_shared = Arc::clone(&state.zisk_stdin);
+                    let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
+                    *zisk_stdin_lock = Some(zisk_stdin);
+                }
+
+                #[cfg(zisk_hints)]
+                {
+                    use crate::process::launch_hints_generation;
+
+                    launch_hints_generation(&next_block, &state).await;
+                }
+
+                let result = generate_proof(next_block.clone(), state.clone()).await;
+
+                match result {
+                    Ok(job_id) => {
+                        // Store current job ID
+                        let mut current_job_id =
+                            state.current_job_id.lock().unwrap_or_else(|e| e.into_inner());
+                        *current_job_id = job_id;
+                    }
+                    Err(e) => {
+                        // If generation failed, reset proving_block in atomic scope
+                        {
+                            let mut proving_block =
+                                state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+                            *proving_block = None;
+                        }
+
+                        let next_block_number = next_block.block_number;
+
+                        let msg = format!(
+                            "Proof generation failed for next block {}, error: {}",
+                            next_block_number, e
+                        );
+                        error!("❌ {}", msg);
+
+                        if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+                            tokio::spawn(async move {
+                                if let Err(e) = send_telegram_alert(&msg, AlertType::Error).await {
+                                    warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                                }
+                            });
+                        }
+
+                        // Clean up input file if not needed
+                        state.delete_input_file(&next_block.filename());
+                    }
+                }
+            } else {
+                // Reset proving_block
+                let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
+                *proving_block = None;
+            }
+
+            match prove_result {
                 Ok(result) => {
+                    // If proof generation was successful, proceed to process the block proof
+
                     let proving_time_ms = result.get_proving_time();
                     let proving_cycles = result.get_execution_steps();
                     let job_id_str = result.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
-                    info!(
-                        "✅ Proof generated for block {}, proving_time: {} ms, cycles: {}, job: {}",
-                        proved_block_number, proving_time_ms, proving_cycles, job_id_str
-                    );
-
-                    // Get next_block_number in atomic scope
-                    let next_block = {
-                        let mut next_proving_block =
-                            state.next_proving_block.lock().unwrap_or_else(|e| e.into_inner());
-
-                        if next_proving_block.is_some() {
-                            let next = next_proving_block.clone().unwrap();
-                            *next_proving_block = None;
-                            Some(next)
-                        } else {
-                            None
-                        }
-                    };
-
-                    // Check and start proof generation for next block if set
-                    if next_block.is_some() {
-                        // Set proving_block to next_block_number in atomic scope
-                        {
-                            let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
-                            *proving_block = next_block.clone();
-                        }
-
-                        let next_block = next_block.unwrap();
-
-                        let input_filename =
-                            format!("{}/{}", state.inputs_folder.clone(), next_block.filename());
-
-                        let path = PathBuf::from(&input_filename);
-                        let zisk_stdin_file = match ZiskStdin::from_file(&path) {
-                            Ok(stdin) => stdin,
-                            Err(e) => {
-                                error!("Error opening input file {}: {}", path.display(), e);
-                                return;
-                            }
-                        };
-                        let input_pk: RethInputPublic = match zisk_stdin_file.read() {
-                            Ok(pk) => pk,
-                            Err(e) => {
-                                error!("Error reading public input from file {}: {}", path.display(), e);
-                                return;
-                            }
-                        };
-                        let input_witness: RethInputWitness = match zisk_stdin_file.read() {
-                            Ok(witness) => witness,
-                            Err(e) => {
-                                error!("Error reading witness input from file {}: {}", path.display(), e);
-                                return;
-                            }
-                        };
-
-                        {
-                            let zisk_stdin = ZiskStdinWrapper::new();
-                            zisk_stdin.write(&input_pk);
-                            zisk_stdin.write(&input_witness);
-
-                            let zisk_stdin_shared = Arc::clone(&state.zisk_stdin);
-                            let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
-                            *zisk_stdin_lock = Some(zisk_stdin);
-                        }
-
-                        #[cfg(zisk_hints)]
-                        {
-                            use crate::process::launch_hints_generation;
-
-                            launch_hints_generation(&next_block, &state).await;
-                        }
-
-                        let result = generate_proof(next_block.clone(), state.clone()).await;
-
-                        match result {
-                            Ok(job_id) => {
-                                // Store current job ID
-                                let mut current_job_id =
-                                    state.current_job_id.lock().unwrap_or_else(|e| e.into_inner());
-                                *current_job_id = job_id;
-                            }
-                            Err(e) => {
-                                // If generation failed, reset proving_block in atomic scope
-                                {
-                                    let mut proving_block =
-                                        state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
-                                    *proving_block = None;
-                                }
-
-                                let next_block_number = next_block.block_number;
-
-                                let msg = format!(
-                                    "Proof generation failed for next block {}, error: {}",
-                                    next_block_number, e
-                                );
-                                error!("❌ {}", msg);
-
-                                if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
-                                    tokio::spawn(async move {
-                                        if let Err(e) = send_telegram_alert(&msg, AlertType::Error).await {
-                                            warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
-                                        }
-                                    });
-                                }
-
-                                // Clean up input file if not needed
-                                state.delete_input_file(&next_block.filename());
-                            }
-                        }
-                    } else {
-                        // Reset proving_block
-                        let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
-                        *proving_block = None;
-                    }
-
-                    // If proof generation was successful, proceed to process the block proof
 
                     // Encode compressed proof to base64
                     let proof_bytes = result.get_proof_bytes();
