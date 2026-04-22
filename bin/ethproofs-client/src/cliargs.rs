@@ -68,7 +68,7 @@ pub struct CliArgs {
     pub guest: String,
 
     /// Prove timeout in seconds
-    #[arg(long, default_value_t = 1800)]
+    #[arg(long, default_value_t = 600)]
     pub prove_timeout: u64,
 
     /// Enable hints generation
