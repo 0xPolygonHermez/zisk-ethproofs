@@ -7,12 +7,10 @@ use std::{
 use anyhow::{Context, Result};
 use clap::Parser;
 use log::{info, warn};
-use url::Url;
 // serde derive imports no longer needed after moving protocol types
 use ethproofs_common::protocol::BlockInfo;
 use serde::de::DeserializeOwned;
 //use tokio::sync::Semaphore;
-use tonic::transport::Channel;
 use zisk_sdk::{GuestProgram, ProverClient, RemoteClient, ZiskStdin};
 
 use crate::{
@@ -29,7 +27,6 @@ pub(crate) struct FiredAlerts {
 
 pub const DEFAULT_INPUTS_FOLDER: &str = "inputs";
 pub const DEFAULT_COORDINATOR_URL: &str = "http://localhost:50051";
-pub const DEFAULT_WEBHOOK_PORT: u16 = 8051;
 pub const DEFAULT_METRICS_PORT: u16 = 8384;
 
 #[cfg(zisk_hints)]
@@ -120,7 +117,6 @@ pub struct AppState {
     pub ethproofs_cluster_id: Option<u32>,
     pub block_modulus: u64,
     pub rpc_ws_url: String,
-    pub webhook_port: u16,
     pub metrics_port: u16,
     pub inputs_folder: String,
     pub input_gen_server_url: String,
@@ -192,10 +188,7 @@ impl AppState {
         //let zisk_stdin_ready = None;
         let current_job_id = Arc::new(Mutex::new(String::new()));
         let queued_start = Arc::new(Mutex::new(Instant::now()));
-        let webhook_port = env::var("WEBHOOK_PORT")
-            .unwrap_or(DEFAULT_WEBHOOK_PORT.to_string())
-            .parse()
-            .unwrap_or(DEFAULT_WEBHOOK_PORT);
+
         let metrics_port = env::var("METRICS_PORT")
             .unwrap_or(DEFAULT_METRICS_PORT.to_string())
             .parse()
@@ -267,7 +260,6 @@ impl AppState {
             ethproofs_cluster_id,
             block_modulus,
             rpc_ws_url,
-            webhook_port,
             metrics_port,
             inputs_folder,
             input_gen_server_url,

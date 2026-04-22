@@ -1,5 +1,6 @@
 [workspace]
-members = ["bin/ethproofs-client", "bin/input-gen-server", "ethproofs-common"]
+members = ["bin/ethproofs-client", "ethproofs-common"]
+default-members = ["bin/ethproofs-client"]
 exclude = []
 resolver = "2"
 
@@ -53,4 +54,3 @@ stateless = { git = "https://github.com/0xPolygonHermez/zisk-patch-stateless.git
 tries = { git = "https://github.com/0xPolygonHermez/zisk-patch-stateless.git", branch = "zisk/ed189a5" }
 # stateless = { path = "../zisk-patch-stateless/crates/stateless" }
 # tries = { path = "../zisk-patch-stateless/crates/tries" }
-

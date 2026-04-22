@@ -4436,31 +4436,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "input-gen-server"
-version = "0.1.0"
-dependencies = [
- "alloy-provider",
- "anyhow",
- "bincode",
- "clap",
- "dotenv",
- "env_logger",
- "ethers",
- "ethproofs-common",
- "futures-util",
- "input",
- "log",
- "serde",
- "serde_json",
- "tokio",
- "tokio-native-tls",
- "tokio-stream",
- "tokio-tungstenite 0.21.0",
- "tokio-util",
- "url",
-]
-
-[[package]]
 name = "instant"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"

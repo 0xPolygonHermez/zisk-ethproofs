@@ -29,9 +29,6 @@ mod process;
 mod prove;
 mod state;
 mod telegram;
-mod webhook;
-
-use webhook::start_webhook_server;
 
 use crate::state::AppState;
 use input::{process_inputs_from_folder, process_inputs_from_server, process_inputs_locally};
@@ -70,14 +67,6 @@ async fn main() -> Result<()> {
 
     // Ensure input, output, and log directories exist
     create_dir_all(&app_state.inputs_folder).await?;
-
-    // Launch the webhook server
-    let state_clone = app_state.clone();
-    task::spawn(async move {
-        if let Err(e) = start_webhook_server(state_clone).await {
-            panic!("Webhook server exited, error: {}", e);
-        }
-    });
 
     // Launch the metrics server if enabled
     if app_state.cliargs.enable_metrics {

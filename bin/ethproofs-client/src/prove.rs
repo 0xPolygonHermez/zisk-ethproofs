@@ -57,8 +57,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
             let prove_result = match handle {
                 Ok(future) => future.await,
                 Err(e) => {
-                    error!("❌ Failed to start proof generation for block {}, error: {}", proved_block_number, e);
-                    return
+                    Err(anyhow!("Failed to start proof generation for block {}: {}", proved_block_number, e))
                 }
             };
 
