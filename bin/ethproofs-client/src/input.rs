@@ -17,7 +17,7 @@ use tokio_tungstenite::{
 };
 
 use ethproofs_common::protocol::{BlockCommand, BlockInfo, BlockMessage};
-use zisk_common::io::{ZiskFileStdin, ZiskIO};
+use zisk_sdk::ZiskStdin;
 
 use crate::{
     process::{process_input, process_queued},
@@ -301,7 +301,7 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
         );
 
         let path = PathBuf::from(&app_state.inputs_folder).join(block_info.filename());
-        let zisk_stdin_file = ZiskFileStdin::new(&path)?;
+        let zisk_stdin_file = ZiskStdin::from_file(&path)?;
         let input_pk: RethInputPublic = match zisk_stdin_file.read() {
             Ok(pk) => pk,
             Err(e) => {

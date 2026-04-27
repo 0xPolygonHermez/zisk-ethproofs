@@ -56,5 +56,5 @@ revm = { version = "34.0.0", default-features = false }
 default = []
 hints-debug = []
 
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_vendor, values("zisk"))', 'cfg(zisk_hints)', 'cfg(zisk_hints_debug)'] }
+[lints]
+workspace = true
