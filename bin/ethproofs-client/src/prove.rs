@@ -45,6 +45,13 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
             #[cfg(zisk_hints)]
             {
+                use crate::process::launch_hints_generation;
+
+                let handle = launch_hints_generation(&block_info, &state).await;
+
+                if state.cliargs.hints == crate::cliargs::Hints::File {
+                    handle.await.ok();
+                }
             }
 
             let handle = prover_client
@@ -130,13 +137,6 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     let zisk_stdin_shared = Arc::clone(&state.zisk_stdin);
                     let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
                     *zisk_stdin_lock = Some(zisk_stdin);
-                }
-
-                #[cfg(zisk_hints)]
-                {
-                    use crate::process::launch_hints_generation;
-
-                    launch_hints_generation(&next_block, &state).await;
                 }
 
                 let result = generate_proof(next_block.clone(), state.clone()).await;

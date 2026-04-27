@@ -120,7 +120,7 @@ pub struct AppState {
     pub metrics_port: u16,
     pub inputs_folder: String,
     pub input_gen_server_url: String,
-    pub compute_capacity: u32,
+    pub _compute_capacity: u32,
     pub db_block_proofs: Option<DbBlockProofs>,
     pub fired_alerts: Arc<Mutex<FiredAlerts>>,
 }
@@ -263,7 +263,7 @@ impl AppState {
             metrics_port,
             inputs_folder,
             input_gen_server_url,
-            compute_capacity,
+            _compute_capacity: compute_capacity,
             db_block_proofs,
             fired_alerts,
             queued_start,
