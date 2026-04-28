@@ -2,9 +2,8 @@ use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
-use guest_reth::{RethInputPublic, RethInputWitness};
 use log::{debug, error, info, warn};
-use zisk_common::io::ZiskStdin;
+use zisk_sdk::ZiskStdin;
 use zisk_sdk::{ExecutorKind, ProofKind};
 
 use crate::state::ZiskStdinWrapper;
@@ -32,15 +31,13 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     tokio::task::spawn_blocking(move || {
         let rt = tokio::runtime::Handle::current();
         rt.block_on(async {
-            info!("🔄 Generating proof for block {}", proved_block_number);
-
             let prover_client = prover_client_clone.lock().unwrap();
             let guest_program = guest_program_clone.lock().unwrap();
             let stdin = zisk_stdin_clone
                 .lock()
                 .unwrap()
                 .take()
-                .ok_or_else(|| anyhow!("ZiskStdin not available for block {}", proved_block_number))
+                .ok_or_else(|| anyhow!("ZiskStdin not available for block {}, when attempting to generate proof", proved_block_number))
                 .unwrap();
 
             #[cfg(zisk_hints)]
@@ -62,7 +59,12 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 .run();
 
             let prove_result = match handle {
-                Ok(future) => future.await,
+                Ok(handle) => {
+                    let job_id = handle.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
+                    info!("🔄 Generating proof for block {}, job_id: {}", proved_block_number, job_id);
+
+                    handle.await
+                }
                 Err(e) => {
                     Err(anyhow!("Failed to start proof generation for block {}: {}", proved_block_number, e))
                 }
@@ -103,42 +105,31 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
                 let next_block = next_block.unwrap();
 
+                // Get input file and for next block to prove
                 let input_filename =
                     format!("{}/{}", state.inputs_folder.clone(), next_block.filename());
 
+                // Read input file into ZiskStdin
                 let path = PathBuf::from(&input_filename);
-                let zisk_stdin_file = match ZiskStdin::from_file(&path) {
+                let zisk_stdin = match ZiskStdin::from_file(&path) {
                     Ok(stdin) => stdin,
                     Err(e) => {
                         error!("Error opening input file {}: {}", path.display(), e);
                         return;
                     }
                 };
-                let input_pk: RethInputPublic = match zisk_stdin_file.read() {
-                    Ok(pk) => pk,
-                    Err(e) => {
-                        error!("Error reading public input from file {}: {}", path.display(), e);
-                        return;
-                    }
-                };
-                let input_witness: RethInputWitness = match zisk_stdin_file.read() {
-                    Ok(witness) => witness,
-                    Err(e) => {
-                        error!("Error reading witness input from file {}: {}", path.display(), e);
-                        return;
-                    }
-                };
 
+                // Wrap ZiskStdin in ZiskStdinWrapper
+                let zisk_stdin_wrapper = ZiskStdinWrapper::from_zisk_stdin(zisk_stdin);
+
+                // Store ZiskStdinWrapper in shared state for next proof generation
                 {
-                    let zisk_stdin = ZiskStdinWrapper::new();
-                    zisk_stdin.write(&input_pk);
-                    zisk_stdin.write(&input_witness);
-
                     let zisk_stdin_shared = Arc::clone(&state.zisk_stdin);
                     let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
-                    *zisk_stdin_lock = Some(zisk_stdin);
+                    *zisk_stdin_lock = Some(zisk_stdin_wrapper);
                 }
 
+                // Start proof generation for next block without waiting for current block proof to complete
                 let result = generate_proof(next_block.clone(), state.clone()).await;
 
                 match result {

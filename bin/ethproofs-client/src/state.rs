@@ -59,6 +59,7 @@ pub fn hint_log<S: AsRef<str>>(msg: S) {
 
 #[allow(dead_code)]
 #[derive(Clone)]
+// Wrapper around ZiskStdin to provide hint generation support when reading
 pub struct ZiskStdinWrapper {
     pub stdin: ZiskStdin,
 }
