@@ -173,16 +173,29 @@ impl AppState {
         let next_proving_block = Arc::new(Mutex::new(None));
         let zisk_stdin = Arc::new(Mutex::new(None));
 
-        // Initialize the Zisk prover client and upload/setup the guest program
+        // Initialize the Zisk prover client
         let guest_path = std::fs::canonicalize(&cliargs.guest)
             .with_context(|| format!("Failed to resolve guest ELF path: {}", cliargs.guest))?;
         let guest = GuestProgram::from_uri(&format!("file://{}", guest_path.display()))?;
         let client = ProverClient::remote(coordinator_url).build()?;
+
+        // Upload the guest program
         info!("Uploading guest program {} to coordinator...", guest_path.display());
         client.upload(&guest).run()?;
-        info!("Performing guest program setup...");
-        client.setup(&guest).run()?.await?;
+
+        // Perform guest program setup
+        #[cfg(zisk_hints)]
+        {
+            info!("Performing guest program setup with hints...");
+            client.setup(&guest).with_hints().run()?.await?;
+        }
+        #[cfg(not(zisk_hints))]
+        {
+            info!("Performing guest program setup...");
+            client.setup(&guest).run()?.await?;
+        }
         info!("Guest program setup complete");
+
         let prover_client = Arc::new(Mutex::new(client));
         let guest_program = Arc::new(Mutex::new(guest));
 

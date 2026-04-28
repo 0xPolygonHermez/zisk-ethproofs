@@ -24,7 +24,6 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
     let prover_client_clone = Arc::clone(&state.prover_client);
     let guest_program_clone = Arc::clone(&state.guest_program);
-    let zisk_stdin_clone = Arc::clone(&state.zisk_stdin);
     let ethproofs_client = state.ethproofs_client.clone();
     let ethproofs_cluster_id = state.ethproofs_cluster_id;
 
@@ -33,30 +32,56 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
         rt.block_on(async {
             let prover_client = prover_client_clone.lock().unwrap();
             let guest_program = guest_program_clone.lock().unwrap();
-            let stdin = zisk_stdin_clone
-                .lock()
-                .unwrap()
-                .take()
-                .ok_or_else(|| anyhow!("ZiskStdin not available for block {}, when attempting to generate proof", proved_block_number))
-                .unwrap();
 
             #[cfg(zisk_hints)]
-            {
+            let handle = {
+                use zisk_sdk::ZiskStream;
+
                 use crate::process::launch_hints_generation;
 
-                let handle = launch_hints_generation(&block_info, &state).await;
+                let hints_handle = launch_hints_generation(&block_info, &state).await;
 
+                //TODO: Implement hints file handling
                 if state.cliargs.hints == crate::cliargs::Hints::File {
-                    handle.await.ok();
+                    hints_handle.await.ok();
                 }
-            }
 
-            let handle = prover_client
-                .prove(&guest_program, stdin.stdin)
-                .timeout(Duration::from_secs(state.cliargs.prove_timeout))
-                .executor(ExecutorKind::Assembly)
-                .wrap(ProofKind::VadcopFinalMinimal)
-                .run();
+                let hints_stream = match ZiskStream::unix_at(&state.cliargs.hints_socket) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        error!("Failed to open hints socket: {}", e);
+                        return;
+                    }
+                };
+
+                prover_client
+                    .prove(&guest_program, ZiskStdin::new())
+                    .hints(hints_stream)
+                    .timeout(Duration::from_secs(state.cliargs.prove_timeout))
+                    .executor(ExecutorKind::Assembly)
+                    .wrap(ProofKind::VadcopFinalMinimal)
+                    .run()
+            };
+
+            #[cfg(not(zisk_hints))]
+            let handle = {
+                let zisk_stdin_clone = Arc::clone(&state.zisk_stdin);
+
+                let stdin = zisk_stdin_clone
+                    .lock()
+                    .unwrap()
+                    .take()
+                    .ok_or_else(|| anyhow!("ZiskStdin not available for block {}, when attempting to generate proof", proved_block_number))
+                    .unwrap();
+
+                prover_client
+                    .prove(&guest_program, stdin.stdin)
+                    .timeout(Duration::from_secs(state.cliargs.prove_timeout))
+                    .executor(ExecutorKind::Assembly)
+                    .wrap(ProofKind::VadcopFinalMinimal)
+                    .run()
+
+            };
 
             let prove_result = match handle {
                 Ok(handle) => {
