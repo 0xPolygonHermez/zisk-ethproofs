@@ -46,13 +46,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     hints_handle.await.ok();
                 }
 
-                let hints_stream = match ZiskStream::unix_at(&state.cliargs.hints_socket) {
-                    Ok(s) => s,
-                    Err(e) => {
-                        error!("Failed to open hints socket: {}", e);
-                        return;
-                    }
-                };
+                let hints_stream = ZiskStream::unix_external(&state.cliargs.hints_socket);
 
                 prover_client
                     .prove(&guest_program, ZiskStdin::new())

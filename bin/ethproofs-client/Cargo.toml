@@ -36,13 +36,13 @@ sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio", "macros", "tls
 tonic = "0.14"
 zstd = "0.13.3"
 
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "refactor-sdk-0.17.0" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "refactor-sdk-0.17.0" }
-zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "refactor-sdk-0.17.0" }
+# zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.17.0" }
+# ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.17.0" }
+# zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.17.0" }
 # Local development
-# zisk-common = { path = "../../../zisk/common" }
-# ziskos = { path = "../../../zisk/ziskos/entrypoint" }
-# zisk-sdk = { path = "../../../zisk/sdk" }
+zisk-common = { path = "../../../zisk/common" }
+ziskos = { path = "../../../zisk/ziskos/entrypoint" }
+zisk-sdk = { path = "../../../zisk/sdk" }
 
 ethproofs-common = { path = "../../ethproofs-common" }
 regex = "1.12.2"
