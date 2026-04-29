@@ -1077,6 +1077,7 @@ dependencies = [
 [[package]]
 name = "asm-runner"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "libc",
@@ -1685,6 +1686,7 @@ dependencies = [
 [[package]]
 name = "cargo-zisk"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "asm-runner",
@@ -1810,6 +1812,7 @@ dependencies = [
 [[package]]
 name = "circuit"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 
 [[package]]
 name = "clang-sys"
@@ -2399,6 +2402,7 @@ dependencies = [
 [[package]]
 name = "data-bus"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "zisk-common",
  "zisk-core",
@@ -3313,6 +3317,7 @@ dependencies = [
 [[package]]
 name = "executor"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "asm-runner",
@@ -3815,15 +3820,15 @@ dependencies = [
 [[package]]
 name = "guest-common"
 version = "0.7.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=feature%2Fsdk-0.17.0#ba441c3b1dcd1bba9bc2450ca73bc93167aa466a"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.8.0#d34f23cea86adafe7e917748df2b2e3877136c53"
 dependencies = [
- "zkvm-interface 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?branch=refactor-sdk-0.17.0)",
+ "zkvm-interface",
 ]
 
 [[package]]
 name = "guest-reth"
 version = "0.7.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=feature%2Fsdk-0.17.0#ba441c3b1dcd1bba9bc2450ca73bc93167aa466a"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.8.0#d34f23cea86adafe7e917748df2b2e3877136c53"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -4439,7 +4444,7 @@ dependencies = [
 [[package]]
 name = "input"
 version = "0.7.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=feature%2Fsdk-0.17.0#ba441c3b1dcd1bba9bc2450ca73bc93167aa466a"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.8.0#d34f23cea86adafe7e917748df2b2e3877136c53"
 dependencies = [
  "alloy-genesis",
  "alloy-provider",
@@ -4798,10 +4803,12 @@ dependencies = [
 [[package]]
 name = "lib-c"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 
 [[package]]
 name = "lib-float"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 
 [[package]]
 name = "libc"
@@ -4990,6 +4997,7 @@ dependencies = [
 [[package]]
 name = "mem-common"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "clap",
  "fields",
@@ -5009,6 +5017,7 @@ dependencies = [
 [[package]]
 name = "mem-planner-cpp"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "mem-common",
  "proofman-common",
@@ -6119,6 +6128,7 @@ dependencies = [
 [[package]]
 name = "precomp-arith-eq"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "ark-bn254",
  "ark-ff 0.5.0",
@@ -6155,6 +6165,7 @@ dependencies = [
 [[package]]
 name = "precomp-arith-eq-384"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -6191,6 +6202,7 @@ dependencies = [
 [[package]]
 name = "precomp-big-int"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "fields",
  "generic-array",
@@ -6212,6 +6224,7 @@ dependencies = [
 [[package]]
 name = "precomp-blake2"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "fields",
  "mem-common",
@@ -6231,6 +6244,7 @@ dependencies = [
 [[package]]
 name = "precomp-dma"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "fields",
  "generic-array",
@@ -6254,6 +6268,7 @@ dependencies = [
 [[package]]
 name = "precomp-keccakf"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "circuit",
  "fields",
@@ -6275,6 +6290,7 @@ dependencies = [
 [[package]]
 name = "precomp-poseidon2"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "fields",
  "mem-common",
@@ -6295,6 +6311,7 @@ dependencies = [
 [[package]]
 name = "precomp-sha256f"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "fields",
  "mem-common",
@@ -6314,6 +6331,7 @@ dependencies = [
 [[package]]
 name = "precompiles-common"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "fields",
  "mem-common",
@@ -6325,6 +6343,7 @@ dependencies = [
 [[package]]
 name = "precompiles-helpers"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -6343,6 +6362,7 @@ dependencies = [
 [[package]]
 name = "precompiles-hints"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "borsh",
@@ -7775,6 +7795,7 @@ dependencies = [
 [[package]]
 name = "riscv"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 
 [[package]]
 name = "rlp"
@@ -7801,6 +7822,7 @@ dependencies = [
 [[package]]
 name = "rom-setup"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "blake3",
@@ -8694,6 +8716,7 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 [[package]]
 name = "sm-arith"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "fields",
  "num-bigint",
@@ -8714,6 +8737,7 @@ dependencies = [
 [[package]]
 name = "sm-binary"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "fields",
  "num-bigint",
@@ -8733,6 +8757,7 @@ dependencies = [
 [[package]]
 name = "sm-frequent-ops"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "clap",
  "fields",
@@ -8748,6 +8773,7 @@ dependencies = [
 [[package]]
 name = "sm-main"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "fields",
  "mem-common",
@@ -8767,6 +8793,7 @@ dependencies = [
 [[package]]
 name = "sm-mem"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "fields",
  "mem-common",
@@ -8787,6 +8814,7 @@ dependencies = [
 [[package]]
 name = "sm-rom"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "asm-runner",
@@ -11414,6 +11442,7 @@ dependencies = [
 [[package]]
 name = "zisk-build"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "blake3",
@@ -11427,6 +11456,7 @@ dependencies = [
 [[package]]
 name = "zisk-cluster-api"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "chrono",
@@ -11445,6 +11475,7 @@ dependencies = [
 [[package]]
 name = "zisk-cluster-common"
 version = "0.1.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "borsh",
@@ -11465,6 +11496,7 @@ dependencies = [
 [[package]]
 name = "zisk-common"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
@@ -11491,6 +11523,7 @@ dependencies = [
 [[package]]
 name = "zisk-coordinator"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -11527,6 +11560,7 @@ dependencies = [
 [[package]]
 name = "zisk-coordinator-api"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "chrono",
@@ -11543,6 +11577,7 @@ dependencies = [
 [[package]]
 name = "zisk-coordinator-client"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "bytes",
@@ -11558,6 +11593,7 @@ dependencies = [
 [[package]]
 name = "zisk-coordinator-server"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -11597,6 +11633,7 @@ dependencies = [
 [[package]]
 name = "zisk-core"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "elf",
  "fields",
@@ -11616,10 +11653,12 @@ dependencies = [
 [[package]]
 name = "zisk-definitions"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 
 [[package]]
 name = "zisk-pil"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "fields",
  "proofman-common",
@@ -11632,6 +11671,7 @@ dependencies = [
 [[package]]
 name = "zisk-prover-backend"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
@@ -11660,6 +11700,7 @@ dependencies = [
 [[package]]
 name = "zisk-sdk"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
@@ -11687,6 +11728,7 @@ dependencies = [
 [[package]]
 name = "zisk-verifier"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "proofman-verifier",
 ]
@@ -11694,6 +11736,7 @@ dependencies = [
 [[package]]
 name = "ziskemu"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "clap",
  "data-bus",
@@ -11723,6 +11766,7 @@ dependencies = [
 [[package]]
 name = "ziskos"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "ark-bn254",
@@ -11755,12 +11799,13 @@ dependencies = [
  "zisk-common",
  "zisk-definitions",
  "zisk-verifier",
- "zkvm-interface 0.17.0",
+ "zkvm-interface",
 ]
 
 [[package]]
 name = "ziskos-hints"
 version = "0.17.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "anyhow",
  "bincode",
@@ -11780,20 +11825,13 @@ dependencies = [
  "sha2",
  "tiny-keccak",
  "zisk-verifier",
- "zkvm-interface 0.17.0",
+ "zkvm-interface",
 ]
 
 [[package]]
 name = "zkvm-interface"
 version = "0.17.0"
-dependencies = [
- "bindgen 0.72.1",
-]
-
-[[package]]
-name = "zkvm-interface"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=refactor-sdk-0.17.0#18607f78f7461a4b97f3ae70c1239822b1218317"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.0#1994f3392198e9c90ed8926f13af5f4240d7a99b"
 dependencies = [
  "bindgen 0.72.1",
 ]
