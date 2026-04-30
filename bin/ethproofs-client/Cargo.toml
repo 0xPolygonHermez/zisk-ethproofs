@@ -49,8 +49,8 @@ regex = "1.12.2"
 
 [target.'cfg(zisk_hints)'.dependencies]
 alloy-primitives = { version = "1.5.6", default-features = false, features = ["native-keccak"] }
-alloy-consensus = { version = "1.7.3", default-features = false, features = ["crypto-backend"] }
-revm = { version = "34.0.0", default-features = false }
+alloy-consensus = { version = "2.0.0", default-features = false, features = ["crypto-backend"] }
+revm = { version = "38.0.0", default-features = false }
 
 [lints]
 workspace = true
