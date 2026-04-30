@@ -51,6 +51,14 @@ pub struct CliArgs {
     #[arg(short = 'i', long)]
     pub keep_input: bool,
 
+    /// Save the generated proof to disk
+    #[arg(long)]
+    pub save_proof: bool,
+
+    /// Directory where proofs are saved (only used if save_proof is true)
+    #[arg(long, default_value = "proofs", requires = "save_proof")]
+    pub save_proof_path: String,
+
     /// Number of skipped blocks before triggering an alert
     #[arg(short = 'b', long, default_value_t = 5)]
     pub skipped_threshold: u32,

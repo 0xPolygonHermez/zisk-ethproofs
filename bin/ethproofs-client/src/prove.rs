@@ -203,6 +203,29 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     // Encode compressed proof to base64
                     let proof_bytes = result.get_proof_bytes();
 
+                    // Save proof to disk if enabled
+                    if state.cliargs.save_proof {
+                        let proof_dir = PathBuf::from(&state.cliargs.save_proof_path);
+                        if let Err(e) = std::fs::create_dir_all(&proof_dir) {
+                            error!(
+                                "❌ Failed to create proof directory {} for block {}, error: {}",
+                                proof_dir.display(), proved_block_number, e
+                            );
+                        } else {
+                            let proof_path = proof_dir.join(format!("{}.bin", proved_block_number));
+                            match std::fs::write(&proof_path, proof_bytes.as_slice()) {
+                                Ok(_) => info!(
+                                    "Proof saved to {} for block {}",
+                                    proof_path.display(), proved_block_number
+                                ),
+                                Err(e) => error!(
+                                    "❌ Failed to save proof to {} for block {}, error: {}",
+                                    proof_path.display(), proved_block_number, e
+                                ),
+                            }
+                        }
+                    }
+
                     let proof_base64 = match get_proof_b64(proof_bytes.as_slice()) {
                         Ok(b64) => b64,
                         Err(e) => {
