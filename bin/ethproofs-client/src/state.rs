@@ -6,13 +6,12 @@ use std::{
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use log::warn;
+use log::{info, warn};
 // serde derive imports no longer needed after moving protocol types
 use ethproofs_common::protocol::BlockInfo;
 use serde::de::DeserializeOwned;
 //use tokio::sync::Semaphore;
-use tonic::transport::Channel;
-use zisk_sdk::ZiskStdin;
+use zisk_sdk::{GuestProgram, ProverClient, RemoteClient, ZiskStdin};
 
 use crate::{
     api::EthProofsApi,
@@ -28,7 +27,6 @@ pub(crate) struct FiredAlerts {
 
 pub const DEFAULT_INPUTS_FOLDER: &str = "inputs";
 pub const DEFAULT_COORDINATOR_URL: &str = "http://localhost:50051";
-pub const DEFAULT_WEBHOOK_PORT: u16 = 8051;
 pub const DEFAULT_METRICS_PORT: u16 = 8384;
 
 #[cfg(zisk_hints)]
@@ -61,6 +59,7 @@ pub fn hint_log<S: AsRef<str>>(msg: S) {
 
 #[allow(dead_code)]
 #[derive(Clone)]
+// Wrapper around ZiskStdin to provide hint generation support when reading
 pub struct ZiskStdinWrapper {
     pub stdin: ZiskStdin,
 }
@@ -68,9 +67,7 @@ pub struct ZiskStdinWrapper {
 #[allow(dead_code)]
 impl ZiskStdinWrapper {
     pub fn new() -> Self {
-        Self {
-            stdin: ZiskStdin::new(),
-         }
+        Self { stdin: ZiskStdin::new() }
     }
 
     pub fn from_zisk_stdin(zisk_stdin: ZiskStdin) -> Self {
@@ -112,19 +109,19 @@ pub struct AppState {
     pub proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub next_proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub zisk_stdin: Arc<Mutex<Option<ZiskStdinWrapper>>>,
+    pub prover_client: Arc<Mutex<RemoteClient>>,
+    pub guest_program: Arc<Mutex<GuestProgram>>,
     // pub zisk_stdin_ready: Option<Arc<Semaphore>>,
     pub current_job_id: Arc<Mutex<String>>,
     pub queued_start: Arc<Mutex<Instant>>,
     pub ethproofs_client: Option<EthProofsApi>,
     pub ethproofs_cluster_id: Option<u32>,
-    pub coordinator_channel: Option<Channel>,
     pub block_modulus: u64,
     pub rpc_ws_url: String,
-    pub webhook_port: u16,
     pub metrics_port: u16,
     pub inputs_folder: String,
     pub input_gen_server_url: String,
-    pub compute_capacity: u32,
+    pub _compute_capacity: u32,
     pub db_block_proofs: Option<DbBlockProofs>,
     pub fired_alerts: Arc<Mutex<FiredAlerts>>,
 }
@@ -137,6 +134,7 @@ impl AppState {
         // Load environment variables from env file
         dotenv::from_filename(&cliargs.env_file).ok();
 
+        info!("Starting EthProofs client with config");
         let (ethproofs_client, ethproofs_cluster_id) = if cliargs.submit_ethproofs {
             let ethproofs_url = match env::var("ETHPROOFS_API_URL") {
                 Ok(url) => url,
@@ -161,18 +159,6 @@ impl AppState {
 
         let coordinator_url =
             env::var("COORDINATOR_URL").unwrap_or(DEFAULT_COORDINATOR_URL.to_string());
-        let coordinator_channel = if !cliargs.skip_proving {
-            let coordinator_channel = Channel::from_shared(coordinator_url.clone())
-                .context("Failed to create coordinator channel")?
-                .connect()
-                .await
-                .with_context(|| {
-                    format!("Failed to connect to coordinator at {}", coordinator_url)
-                })?;
-            Some(coordinator_channel)
-        } else {
-            None
-        };
 
         let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
 
@@ -186,13 +172,37 @@ impl AppState {
         let proving_block = Arc::new(Mutex::new(None));
         let next_proving_block = Arc::new(Mutex::new(None));
         let zisk_stdin = Arc::new(Mutex::new(None));
+
+        // Initialize the Zisk prover client
+        let guest_path = std::fs::canonicalize(&cliargs.guest)
+            .with_context(|| format!("Failed to resolve guest ELF path: {}", cliargs.guest))?;
+        let guest = GuestProgram::from_uri(&format!("file://{}", guest_path.display()))?;
+        let client = ProverClient::remote(coordinator_url).build()?;
+
+        // Upload the guest program
+        info!("Uploading guest program {} to coordinator...", guest_path.display());
+        client.upload(&guest).run()?;
+
+        // Perform guest program setup
+        #[cfg(zisk_hints)]
+        {
+            info!("Performing guest program setup with hints...");
+            client.setup(&guest).with_hints().run()?.await?;
+        }
+        #[cfg(not(zisk_hints))]
+        {
+            info!("Performing guest program setup...");
+            client.setup(&guest).run()?.await?;
+        }
+        info!("Guest program setup complete");
+
+        let prover_client = Arc::new(Mutex::new(client));
+        let guest_program = Arc::new(Mutex::new(guest));
+
         //let zisk_stdin_ready = None;
         let current_job_id = Arc::new(Mutex::new(String::new()));
         let queued_start = Arc::new(Mutex::new(Instant::now()));
-        let webhook_port = env::var("WEBHOOK_PORT")
-            .unwrap_or(DEFAULT_WEBHOOK_PORT.to_string())
-            .parse()
-            .unwrap_or(DEFAULT_WEBHOOK_PORT);
+
         let metrics_port = env::var("METRICS_PORT")
             .unwrap_or(DEFAULT_METRICS_PORT.to_string())
             .parse()
@@ -256,18 +266,18 @@ impl AppState {
             proving_block,
             next_proving_block,
             zisk_stdin,
+            prover_client,
+            guest_program,
             //zisk_stdin_ready,
             current_job_id,
             ethproofs_client,
             ethproofs_cluster_id,
-            coordinator_channel,
             block_modulus,
             rpc_ws_url,
-            webhook_port,
             metrics_port,
             inputs_folder,
             input_gen_server_url,
-            compute_capacity,
+            _compute_capacity: compute_capacity,
             db_block_proofs,
             fired_alerts,
             queued_start,

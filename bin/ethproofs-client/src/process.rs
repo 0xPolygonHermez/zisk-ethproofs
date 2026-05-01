@@ -73,6 +73,7 @@ pub fn generate_hints(
             #[cfg(not(zisk_hints))]
             let hint_debug_file: Option<PathBuf> = None;
 
+            info!("Initializing hints socket for block {}, socket: {}", block_number, app_state.cliargs.hints_socket);
             init_hints_socket(
                 PathBuf::from(&app_state.cliargs.hints_socket),
                 hint_debug_file,
@@ -98,6 +99,8 @@ pub fn generate_hints(
         return;
     }
 
+    info!("Hints socket initialized for block {}", block_number);
+
     let start_execution = Instant::now();
 
     let input_pk: RethInputPublic = {
@@ -116,6 +119,7 @@ pub fn generate_hints(
     // Get chain config
     let chain_config = input_pk.chain_config().clone();
 
+    info!("Verifying signatures for block {}...", block_number);
     // Verify signatures
     let chain_spec = get_chain_spec(&chain_config);
     let block = input_pk.block().clone();
@@ -153,6 +157,7 @@ pub fn generate_hints(
         }
     };
 
+    info!("Validating block {} statelessly...", block_number);
     let execution_witness = input_witness.witness().clone();
     if let Err(e) = validate_block_stateless(recoverd_block, execution_witness, chain_spec) {
         error!("Stateless validation failed for block {}, error: {}", block_number, e);
@@ -327,26 +332,26 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
         *zisk_stdin_lock = Some(zisk_stdin_wrapper);
     }
 
-    #[cfg(zisk_hints)]
-    {
-        let handle = launch_hints_generation(&block_info, app_state).await;
+    // #[cfg(zisk_hints)]
+    // {
+    //     let handle = launch_hints_generation(&block_info, app_state).await;
 
-        // match app_state.zisk_stdin_ready.as_ref() {
-        //     Some(sem) => {
-        //         sem.add_permits(1);
-        //     },
-        //     None => {
-        //         error!("zisk_stdin_ready semaphore is not initialized for block {} when calling add_permits", block_number);
-        //         return;
-        //     }
-        // }
+    //     // match app_state.zisk_stdin_ready.as_ref() {
+    //     //     Some(sem) => {
+    //     //         sem.add_permits(1);
+    //     //     },
+    //     //     None => {
+    //     //         error!("zisk_stdin_ready semaphore is not initialized for block {} when calling add_permits", block_number);
+    //     //         return;
+    //     //     }
+    //     // }
 
-        // If we are using file-based hints, we need to wait for the hint generation to finish before generating the proof, otherwise the proof generation will fail due to missing hints.
-        // If we are using socket-based hints, we can generate the proof in parallel with hint generation, so we don't wait.
-        if app_state.cliargs.hints == crate::cliargs::Hints::File {
-            handle.await.ok();
-        }
-    }
+    //     // If we are using file-based hints, we need to wait for the hint generation to finish before generating the proof, otherwise the proof generation will fail due to missing hints.
+    //     // If we are using socket-based hints, we can generate the proof in parallel with hint generation, so we don't wait.
+    //     if app_state.cliargs.hints == crate::cliargs::Hints::File {
+    //         handle.await.ok();
+    //     }
+    // }
 
     let result = generate_proof(block_info.clone(), app_state.clone()).await;
     match result {
