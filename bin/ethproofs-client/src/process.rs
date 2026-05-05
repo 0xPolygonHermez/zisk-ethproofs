@@ -3,9 +3,9 @@ use std::sync::Arc;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use ethproofs_common::protocol::BlockInfo;
+use guest_reth::RethInputPublic;
 use guest_reth::RethInputWitness;
 use log::{error, info, warn};
-use guest_reth::RethInputPublic;
 
 #[cfg(zisk_hints)]
 use guest_reth::{get_chain_spec, validate_block_stateless, verify_signatures};
@@ -29,7 +29,7 @@ use crate::telegram::{send_telegram_alert, AlertType};
 pub async fn launch_hints_generation(
     block_info: &BlockInfo,
     app_state: &AppState,
-) ->  tokio::task::JoinHandle<()> {
+) -> tokio::task::JoinHandle<()> {
     let block_number = block_info.block_number;
     let app_state_clone = app_state.clone();
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel::<()>();
@@ -50,11 +50,7 @@ pub async fn launch_hints_generation(
 }
 
 #[cfg(zisk_hints)]
-pub fn generate_hints(
-    block_number: u64,
-    app_state: AppState,
-    ready: Option<oneshot::Sender<()>>,
-) {
+pub fn generate_hints(block_number: u64, app_state: AppState, ready: Option<oneshot::Sender<()>>) {
     // Execute the block to get precompile hints populated
     info!("Generating hints for block {}", block_number);
 
@@ -66,14 +62,17 @@ pub fn generate_hints(
             let hint_debug_file = app_state.cliargs.hints_debug.then(|| {
                 PathBuf::from(format!(
                     "{}/{}_hints_debug.bin",
-                    app_state.cliargs.hints_debug_path, block_number
+                    app_state.cliargs.hints_debug_folder, block_number
                 ))
             });
 
             #[cfg(not(zisk_hints))]
             let hint_debug_file: Option<PathBuf> = None;
 
-            info!("Initializing hints socket for block {}, socket: {}", block_number, app_state.cliargs.hints_socket);
+            info!(
+                "Initializing hints socket for block {}, socket: {}",
+                block_number, app_state.cliargs.hints_socket
+            );
             init_hints_socket(
                 PathBuf::from(&app_state.cliargs.hints_socket),
                 hint_debug_file,
@@ -110,7 +109,10 @@ pub fn generate_hints(
         match zisk_stdin.read() {
             Ok(input) => input,
             Err(e) => {
-                error!("Failed to read public keys input for block {} from zisk_stdin, error: {}", block_number, e);
+                error!(
+                    "Failed to read public keys input for block {} from zisk_stdin, error: {}",
+                    block_number, e
+                );
                 return;
             }
         }
@@ -151,7 +153,10 @@ pub fn generate_hints(
         match zisk_stdin.read() {
             Ok(input) => input,
             Err(e) => {
-                error!("Failed to read witness input for block {} from zisk_stdin, error: {}", block_number, e);
+                error!(
+                    "Failed to read witness input for block {} from zisk_stdin, error: {}",
+                    block_number, e
+                );
                 return;
             }
         }
@@ -204,7 +209,12 @@ pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
     }
 }
 
-pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPublic, input_witness: &RethInputWitness, app_state: &mut AppState) {
+pub(crate) async fn process_input(
+    block_info: BlockInfo,
+    input_pk: &RethInputPublic,
+    input_witness: &RethInputWitness,
+    app_state: &mut AppState,
+) {
     let input_file_path = PathBuf::from(&app_state.inputs_folder).join(block_info.filename());
     let block_number = block_info.block_number;
 
@@ -262,7 +272,12 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
 
         // Save input file
         if let Err(e) = zisk_stdin.save(&input_file_path) {
-            error!("Failed to save input to file {} for block {}, error: {}", input_file_path.display(), block_number, e);
+            error!(
+                "Failed to save input to file {} for block {}, error: {}",
+                input_file_path.display(),
+                block_number,
+                e
+            );
             return;
         }
 
@@ -315,11 +330,15 @@ pub(crate) async fn process_input(block_info: BlockInfo, input_pk: &RethInputPub
         return;
     }
 
-
     // Save input file if -i flag is set
     if app_state.cliargs.keep_input {
         if let Err(e) = zisk_stdin.save(&input_file_path) {
-            error!("Failed to save input to file {} for block {}, error: {}", input_file_path.display(), block_number, e);
+            error!(
+                "Failed to save input to file {} for block {}, error: {}",
+                input_file_path.display(),
+                block_number,
+                e
+            );
         }
     }
 

@@ -205,14 +205,14 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
                     // Save proof to disk if enabled
                     if state.cliargs.save_proof {
-                        let proof_dir = PathBuf::from(&state.cliargs.save_proof_path);
+                        let proof_dir = PathBuf::from(&state.cliargs.save_proof_folder);
                         if let Err(e) = std::fs::create_dir_all(&proof_dir) {
                             error!(
                                 "❌ Failed to create proof directory {} for block {}, error: {}",
                                 proof_dir.display(), proved_block_number, e
                             );
                         } else {
-                            let proof_path = proof_dir.join(format!("{}.bin", proved_block_number));
+                            let proof_path = proof_dir.join(format!("{}_proof.bin", proved_block_number));
                             match std::fs::write(&proof_path, proof_bytes.as_slice()) {
                                 Ok(_) => info!(
                                     "Proof saved to {} for block {}",

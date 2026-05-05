@@ -57,7 +57,7 @@ pub struct CliArgs {
 
     /// Directory where proofs are saved (only used if save_proof is true)
     #[arg(long, default_value = "proofs", requires = "save_proof")]
-    pub save_proof_path: String,
+    pub save_proof_folder: String,
 
     /// Number of skipped blocks before triggering an alert
     #[arg(short = 'b', long, default_value_t = 5)]
@@ -94,10 +94,10 @@ pub struct CliArgs {
     #[clap(long, default_value_t = false, required_if_eq("hints", "Socket"))]
     pub hints_debug: bool,
 
-    /// Hints debug file path (only used if hints_debug is true)
+    /// Hints debug folder path (only used if hints_debug is true)
     #[cfg(zisk_hints)]
     #[clap(long, default_value = "./hints_debug", requires = "hints_debug")]
-    pub hints_debug_path: String,
+    pub hints_debug_folder: String,
 
     /// Directory to read input files from in local mode (only affects 'folder' mode)
     #[clap(long, default_value = "inputs_queue")]
