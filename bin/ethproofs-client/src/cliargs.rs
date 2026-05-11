@@ -79,6 +79,10 @@ pub struct CliArgs {
     #[arg(long, default_value_t = 600)]
     pub prove_timeout: u64,
 
+    /// Exit process with code 1 when proof generation fails
+    #[arg(long)]
+    pub exit_on_error: bool,
+
     /// Enable hints generation
     #[cfg(zisk_hints)]
     #[clap(long, value_enum, default_value_t = Hints::Socket)]

@@ -407,13 +407,16 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     );
                     error!("❌ {}", &msg);
 
-                    if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
-                        tokio::spawn(async move {
-                            if let Err(e) = send_telegram_alert(&msg, AlertType::Error).await {
-                                warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+                    let telegram_task = if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+                        let msg_clone = msg.clone();
+                        Some(tokio::spawn(async move {
+                            if let Err(e) = send_telegram_alert(&msg_clone, AlertType::Error).await {
+                                warn!("Failed to send Telegram alert: {}, error: {}", msg_clone, e);
                             }
-                        });
-                    }
+                        }))
+                    } else {
+                        None
+                    };
 
                     if state.cliargs.enable_metrics {
                         crate::metrics::PROOF_FAILURE_TOTAL.inc();
@@ -468,6 +471,13 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                                 proved_block_number
                             );
                         }
+                    }
+
+                    if state.cliargs.exit_on_error {
+                        if let Some(handle) = telegram_task {
+                            handle.await.ok();
+                        }
+                        std::process::exit(1);
                     }
                     return;
                 }
