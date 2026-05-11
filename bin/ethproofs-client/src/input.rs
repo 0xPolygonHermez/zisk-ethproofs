@@ -239,20 +239,46 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
         }
     };
 
-    let hash_re = Regex::new(r"^(\d+)_([a-fA-F0-9]+)\.bin$").unwrap();
+    let hash_re = Regex::new(r"^.+\.bin$").unwrap();
     let mut files: Vec<(u64, String, PathBuf)> = vec![];
     for entry in entries {
         if let Ok(entry) = entry {
-            let fname = entry.file_name();
-            let fname_str = fname.to_string_lossy();
-            if let Some(caps) = hash_re.captures(&fname_str) {
-                if let (Some(block_str), Some(hash_str)) = (caps.get(1), caps.get(2)) {
-                    if let Ok(block_number) = block_str.as_str().parse::<u64>() {
-                        let hash = hash_str.as_str().to_string();
-                        files.push((block_number, hash, entry.path()));
+            let file_name = entry.file_name();
+            let file_name = file_name.to_string_lossy();
+            if !hash_re.is_match(&file_name) {
+                continue;
+            }
+
+            // Read input file into ZiskStdin
+            let path = entry.path();
+            let zisk_stdin = match ZiskStdin::from_file(&path) {
+                Ok(stdin) => stdin,
+                Err(e) => {
+                    return Err(anyhow::anyhow!(
+                        "Error opening input file {}: {}",
+                        path.display(),
+                        e
+                    ));
+                }
+            };
+
+            let input_pk: RethInputPublic = {
+                match zisk_stdin.read() {
+                    Ok(input) => input,
+                    Err(e) => {
+                        return Err(anyhow::anyhow!(
+                            "Failed to read public keys input for file {}, error: {}",
+                            path.display(),
+                            e
+                        ));
                     }
                 }
-            }
+            };
+
+            let hash_str: String =
+                input_pk.block.header.hash_slow().to_string().trim_start_matches("0x").chars().take(6).collect();
+
+            files.push((input_pk.block.number, hash_str, entry.path()));
         }
     }
 
@@ -260,14 +286,23 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
 
     info!("Found {} input files to send", files.len());
 
-    for (block_number, hash, file_path) in &files {
+    for (idx, (block_number, hash, file_path)) in files.iter().enumerate() {
+        let block_number = if *block_number == u64::MAX { idx as u64 } else { *block_number };
         info!("Reading block {}, processing...", block_number);
 
         info!("Generating input file for block {}", block_number);
         sleep(Duration::from_millis(app_state.cliargs.simulated_input_time)).await;
 
+        let block_info = BlockInfo {
+            block_number,
+            timestamp: current_timestamp.into(),
+            block_hash: hash.clone(),
+            tx_count: 0,
+            mgas: 0,
+        };
+
         let dest_path =
-            PathBuf::from(&app_state.inputs_folder).join(file_path.file_name().unwrap());
+            PathBuf::from(&app_state.inputs_folder).join(block_info.filename());
         match fs::copy(file_path, &dest_path) {
             Ok(_) => {
                 info!("Copied file {:?} to {:?}", file_path, dest_path);
@@ -277,14 +312,8 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
             }
         }
 
-        process_queued(*block_number, &app_state);
-        let block_info = BlockInfo {
-            block_number: *block_number,
-            timestamp: current_timestamp.into(),
-            block_hash: hash.clone(),
-            tx_count: 0,
-            mgas: 0,
-        };
+        process_queued(block_number, &app_state);
+
         current_timestamp += app_state.cliargs.interval_secs;
         total_input_time += app_state.cliargs.simulated_input_time as u128;
         input_count += 1;
