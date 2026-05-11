@@ -124,6 +124,7 @@ pub struct AppState {
     pub _compute_capacity: u32,
     pub db_block_proofs: Option<DbBlockProofs>,
     pub fired_alerts: Arc<Mutex<FiredAlerts>>,
+    pub proof_done_signal: Arc<tokio::sync::Notify>,
 }
 
 impl AppState {
@@ -253,6 +254,7 @@ impl AppState {
         };
 
         let fired_alerts = Arc::new(Mutex::new(FiredAlerts::default()));
+        let proof_done_signal = Arc::new(tokio::sync::Notify::new());
 
         #[cfg(zisk_hints)]
         if cliargs.hints_debug {
@@ -280,6 +282,7 @@ impl AppState {
             _compute_capacity: compute_capacity,
             db_block_proofs,
             fired_alerts,
+            proof_done_signal,
             queued_start,
             shared_metrics: crate::SharedMetrics::default(),
         })

@@ -220,11 +220,6 @@ pub(crate) async fn process_inputs_locally(app_state: &mut AppState) -> Result<(
 
 /// Run process to get input files from a folder
 pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Result<()> {
-    let mut current_timestamp = if app_state.cliargs.initial_timestamp == 0 {
-        Utc::now().timestamp() as u64
-    } else {
-        app_state.cliargs.initial_timestamp
-    };
     let inputs_queue = app_state.cliargs.inputs_queue.clone();
     let mut max_input_time: u128 = 0;
     let mut min_input_time: u128 = u128::MAX;
@@ -275,8 +270,15 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
                 }
             };
 
-            let hash_str: String =
-                input_pk.block.header.hash_slow().to_string().trim_start_matches("0x").chars().take(6).collect();
+            let hash_str: String = input_pk
+                .block
+                .header
+                .hash_slow()
+                .to_string()
+                .trim_start_matches("0x")
+                .chars()
+                .take(6)
+                .collect();
 
             files.push((input_pk.block.number, hash_str, entry.path()));
         }
@@ -286,12 +288,23 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
 
     info!("Found {} input files to send", files.len());
 
+    let mut current_timestamp = if app_state.cliargs.initial_timestamp == 0 {
+        Utc::now().timestamp() as u64
+    } else {
+        app_state.cliargs.initial_timestamp
+    };
+    let mut last_block_processed_time = None;
+
     for (idx, (block_number, hash, file_path)) in files.iter().enumerate() {
         let block_number = if *block_number == u64::MAX { idx as u64 } else { *block_number };
         info!("Reading block {}, processing...", block_number);
 
-        info!("Generating input file for block {}", block_number);
-        sleep(Duration::from_millis(app_state.cliargs.simulated_input_time)).await;
+        // Calculate elapsed time since timestamp of last block processed
+        let elapsed_since_previous = last_block_processed_time.map_or(0, |t: Instant| t.elapsed().as_secs());
+        // Calculate timestamp for current block by adding elapsed time to timestamp of last block
+        current_timestamp = current_timestamp.saturating_add(elapsed_since_previous);
+        // Reset last_block_processed_time to now for next iteration
+        last_block_processed_time = Some(Instant::now());
 
         let block_info = BlockInfo {
             block_number,
@@ -301,8 +314,10 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
             mgas: 0,
         };
 
-        let dest_path =
-            PathBuf::from(&app_state.inputs_folder).join(block_info.filename());
+        info!("Generating input file for block {}", block_number);
+        sleep(Duration::from_millis(app_state.cliargs.simulated_input_time)).await;
+
+        let dest_path = PathBuf::from(&app_state.inputs_folder).join(block_info.filename());
         match fs::copy(file_path, &dest_path) {
             Ok(_) => {
                 info!("Copied file {:?} to {:?}", file_path, dest_path);
@@ -314,7 +329,6 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
 
         process_queued(block_number, &app_state);
 
-        current_timestamp += app_state.cliargs.interval_secs;
         total_input_time += app_state.cliargs.simulated_input_time as u128;
         input_count += 1;
         max_input_time = max_input_time.max(app_state.cliargs.simulated_input_time as u128);
@@ -347,7 +361,8 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
         };
         process_input(block_info, &input_pk, &input_witness, app_state).await;
 
-        sleep(Duration::from_secs(app_state.cliargs.interval_secs)).await;
+        info!("Waiting for block {} proof completion before processing next file...", block_number);
+        app_state.proof_done_signal.notified().await;
     }
 
     Ok(())

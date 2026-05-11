@@ -190,6 +190,9 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 // Reset proving_block
                 let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
                 *proving_block = None;
+
+                // Notify folder input generation that the current proof cycle has completed.
+                state.proof_done_signal.notify_waiters();
             }
 
             match prove_result {

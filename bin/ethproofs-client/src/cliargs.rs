@@ -103,11 +103,7 @@ pub struct CliArgs {
     #[clap(long, default_value = "inputs_queue")]
     pub inputs_queue: String,
 
-    /// Interval in seconds between sending files in local mode (only affects 'folder' mode)
-    #[clap(long, default_value = "12")]
-    pub interval_secs: u64,
-
-    /// Initial timestamp to use for the first file in local mode (only affects 'folder' mode)
+    /// Initial timestamp to use for generated block info in local mode (only affects 'folder' mode)
     #[clap(long, default_value = "0")]
     pub initial_timestamp: u64,
 
