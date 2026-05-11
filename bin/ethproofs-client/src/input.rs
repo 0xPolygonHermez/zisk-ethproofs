@@ -235,12 +235,18 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
     };
 
     let hash_re = Regex::new(r"^.+\.bin$").unwrap();
+    let input_files_filter = &app_state.cliargs.input_files;
     let mut files: Vec<(u64, String, PathBuf)> = vec![];
     for entry in entries {
         if let Ok(entry) = entry {
             let file_name = entry.file_name();
             let file_name = file_name.to_string_lossy();
             if !hash_re.is_match(&file_name) {
+                continue;
+            }
+            if !input_files_filter.is_empty()
+                && !input_files_filter.iter().any(|f| f == file_name.as_ref())
+            {
                 continue;
             }
 

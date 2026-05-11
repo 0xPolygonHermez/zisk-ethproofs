@@ -114,6 +114,10 @@ pub struct CliArgs {
     /// Simulated processed time in milliseconds (only affects 'folder' mode)
     #[clap(long, default_value = "0")]
     pub simulated_input_time: u64,
+
+    /// Comma-separated list of input file names to process (only affects 'folder' mode)
+    #[clap(long, use_value_delimiter = true, num_args = 1..)]
+    pub input_files: Vec<String>,
 }
 
 impl CliArgs {
