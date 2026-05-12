@@ -2,7 +2,6 @@ use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
-use bytemuck;
 use log::{debug, error, info, warn};
 use zisk_sdk::ZiskStdin;
 use zisk_sdk::{ExecutorKind, ProofKind};
@@ -207,8 +206,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     // Encode compressed proof to base64
                     let proof_bytes = match result.get_proof_u64() {
                         Ok(bytes) => {
-                            // Convert Vec<u64> to Vec<u8> (zero-copy reinterpret, little-endian)
-                            bytemuck::cast_vec(bytes)
+                            // Convert Vec<u64> to Vec<u8> (little-endian)
+                            bytes.iter().flat_map(|x| x.to_le_bytes()).collect::<Vec<u8>>()
                         }
                         Err(e) => {
                             error!(
