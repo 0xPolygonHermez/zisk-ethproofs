@@ -28,7 +28,7 @@ guest-reth.workspace = true
 
 lazy_static = "1.4"
 axum = { version = "0.7", features = ["macros", "json"] }
-bytemuck = "1.24.0"
+bytemuck = { version = "1.24.0", features = ["extern_crate_alloc"] }
 prometheus = "0.14"
 serde = "1.0.219"
 serde_json = "1.0.143"
@@ -36,9 +36,9 @@ sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio", "macros", "tls
 tonic = "0.14"
 zstd = "0.13.3"
 
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/hints-write-retry" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/hints-write-retry" }
-zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/hints-write-retry" }
+zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.17.1-socket" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.17.1-socket" }
+zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.17.1-socket" }
 # Local development
 # zisk-common = { path = "../../../zisk-release/common" }
 # ziskos = { path = "../../../zisk-release/ziskos/entrypoint" }

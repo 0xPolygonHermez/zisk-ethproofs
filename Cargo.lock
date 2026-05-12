@@ -737,6 +737,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
+name = "arc-swap"
+version = "1.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a3a1fd6f75306b68087b831f025c712524bcb19aad54e557b1129cfa0a2b207"
+dependencies = [
+ "rustversion",
+]
+
+[[package]]
 name = "ark-bls12-381"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1078,7 +1087,7 @@ dependencies = [
 [[package]]
 name = "asm-runner"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "libc",
@@ -1787,7 +1796,7 @@ dependencies = [
 [[package]]
 name = "circuit"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 
 [[package]]
 name = "clang-sys"
@@ -2263,7 +2272,7 @@ dependencies = [
 [[package]]
 name = "curves"
 version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#f266ec0af0603707ab98428b3fda4330a713cae3"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#0decc651c08c98c94005e3d0d1bc06cdc23b0581"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "num-bigint",
@@ -2364,7 +2373,7 @@ dependencies = [
 [[package]]
 name = "data-bus"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "zisk-common",
  "zisk-core",
@@ -3273,9 +3282,10 @@ dependencies = [
 [[package]]
 name = "executor"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
+ "arc-swap",
  "asm-runner",
  "crossbeam",
  "data-bus",
@@ -3387,7 +3397,7 @@ dependencies = [
 [[package]]
 name = "fields"
 version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#f266ec0af0603707ab98428b3fda4330a713cae3"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#0decc651c08c98c94005e3d0d1bc06cdc23b0581"
 dependencies = [
  "cfg-if",
  "num-bigint",
@@ -4746,12 +4756,12 @@ dependencies = [
 [[package]]
 name = "lib-c"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 
 [[package]]
 name = "lib-float"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 
 [[package]]
 name = "libc"
@@ -4940,7 +4950,7 @@ dependencies = [
 [[package]]
 name = "mem-common"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "clap",
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
@@ -4960,7 +4970,7 @@ dependencies = [
 [[package]]
 name = "mem-planner-cpp"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "mem-common",
  "proofman-common",
@@ -5940,7 +5950,7 @@ dependencies = [
 [[package]]
 name = "pil-std-lib"
 version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#f266ec0af0603707ab98428b3fda4330a713cae3"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#0decc651c08c98c94005e3d0d1bc06cdc23b0581"
 dependencies = [
  "colored",
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
@@ -6064,7 +6074,7 @@ dependencies = [
 [[package]]
 name = "precomp-arith-eq"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "ark-bn254",
  "ark-ff 0.5.0",
@@ -6101,7 +6111,7 @@ dependencies = [
 [[package]]
 name = "precomp-arith-eq-384"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -6138,7 +6148,7 @@ dependencies = [
 [[package]]
 name = "precomp-big-int"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "generic-array",
@@ -6160,7 +6170,7 @@ dependencies = [
 [[package]]
 name = "precomp-blake2"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "mem-common",
@@ -6180,7 +6190,7 @@ dependencies = [
 [[package]]
 name = "precomp-dma"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "generic-array",
@@ -6204,7 +6214,7 @@ dependencies = [
 [[package]]
 name = "precomp-keccakf"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "circuit",
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
@@ -6226,7 +6236,7 @@ dependencies = [
 [[package]]
 name = "precomp-poseidon2"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "mem-common",
@@ -6247,7 +6257,7 @@ dependencies = [
 [[package]]
 name = "precomp-sha256f"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "mem-common",
@@ -6267,7 +6277,7 @@ dependencies = [
 [[package]]
 name = "precompiles-common"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "mem-common",
@@ -6279,7 +6289,7 @@ dependencies = [
 [[package]]
 name = "precompiles-helpers"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -6298,7 +6308,7 @@ dependencies = [
 [[package]]
 name = "precompiles-hints"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "borsh",
@@ -6409,12 +6419,11 @@ dependencies = [
 [[package]]
 name = "proofman"
 version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#f266ec0af0603707ab98428b3fda4330a713cae3"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#0decc651c08c98c94005e3d0d1bc06cdc23b0581"
 dependencies = [
  "bincode",
  "blake3",
  "borsh",
- "bytemuck",
  "chrono",
  "colored",
  "crossbeam-channel",
@@ -6444,11 +6453,10 @@ dependencies = [
 [[package]]
 name = "proofman-common"
 version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#f266ec0af0603707ab98428b3fda4330a713cae3"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#0decc651c08c98c94005e3d0d1bc06cdc23b0581"
 dependencies = [
  "bincode",
  "borsh",
- "bytemuck",
  "colored",
  "crossbeam-channel",
  "crossbeam-queue",
@@ -6476,7 +6484,7 @@ dependencies = [
 [[package]]
 name = "proofman-hints"
 version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#f266ec0af0603707ab98428b3fda4330a713cae3"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#0decc651c08c98c94005e3d0d1bc06cdc23b0581"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "itoa",
@@ -6489,7 +6497,7 @@ dependencies = [
 [[package]]
 name = "proofman-macros"
 version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#f266ec0af0603707ab98428b3fda4330a713cae3"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#0decc651c08c98c94005e3d0d1bc06cdc23b0581"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6499,7 +6507,7 @@ dependencies = [
 [[package]]
 name = "proofman-starks-lib-c"
 version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#f266ec0af0603707ab98428b3fda4330a713cae3"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#0decc651c08c98c94005e3d0d1bc06cdc23b0581"
 dependencies = [
  "crossbeam-channel",
  "tracing",
@@ -6508,10 +6516,9 @@ dependencies = [
 [[package]]
 name = "proofman-util"
 version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#f266ec0af0603707ab98428b3fda4330a713cae3"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#0decc651c08c98c94005e3d0d1bc06cdc23b0581"
 dependencies = [
  "bincode",
- "bytemuck",
  "colored",
  "serde",
  "sysinfo 0.35.2",
@@ -6520,9 +6527,8 @@ dependencies = [
 [[package]]
 name = "proofman-verifier"
 version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#f266ec0af0603707ab98428b3fda4330a713cae3"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#0decc651c08c98c94005e3d0d1bc06cdc23b0581"
 dependencies = [
- "bytemuck",
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "proofman-util",
  "rayon",
@@ -7731,7 +7737,7 @@ dependencies = [
 [[package]]
 name = "riscv"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 
 [[package]]
 name = "rlp"
@@ -7758,7 +7764,7 @@ dependencies = [
 [[package]]
 name = "rom-setup"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "blake3",
@@ -8653,7 +8659,7 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 [[package]]
 name = "sm-arith"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "num-bigint",
@@ -8674,7 +8680,7 @@ dependencies = [
 [[package]]
 name = "sm-binary"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "num-bigint",
@@ -8694,7 +8700,7 @@ dependencies = [
 [[package]]
 name = "sm-frequent-ops"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "clap",
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
@@ -8710,7 +8716,7 @@ dependencies = [
 [[package]]
 name = "sm-main"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "mem-common",
@@ -8730,7 +8736,7 @@ dependencies = [
 [[package]]
 name = "sm-mem"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "mem-common",
@@ -8751,7 +8757,7 @@ dependencies = [
 [[package]]
 name = "sm-rom"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "asm-runner",
@@ -11102,7 +11108,7 @@ dependencies = [
 [[package]]
 name = "witness"
 version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#f266ec0af0603707ab98428b3fda4330a713cae3"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1#0decc651c08c98c94005e3d0d1bc06cdc23b0581"
 dependencies = [
  "colored",
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
@@ -11253,9 +11259,9 @@ dependencies = [
 
 [[package]]
 name = "zerofrom"
-version = "0.1.7"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69faa1f2a1ea75661980b013019ed6687ed0e83d069bc1114e2cc74c6c04c4df"
+checksum = "0ec05a11813ea801ff6d75110ad09cd0824ddba17dfe17128ea0d5f68e6c5272"
 dependencies = [
  "zerofrom-derive",
 ]
@@ -11359,7 +11365,7 @@ dependencies = [
 [[package]]
 name = "zisk-build"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "blake3",
@@ -11373,7 +11379,7 @@ dependencies = [
 [[package]]
 name = "zisk-cluster-api"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "chrono",
@@ -11392,7 +11398,7 @@ dependencies = [
 [[package]]
 name = "zisk-cluster-common"
 version = "0.1.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "borsh",
@@ -11413,7 +11419,7 @@ dependencies = [
 [[package]]
 name = "zisk-common"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
@@ -11436,12 +11442,13 @@ dependencies = [
  "tracing",
  "tracing-subscriber 0.3.23",
  "zisk-core",
+ "zisk-verifier",
 ]
 
 [[package]]
 name = "zisk-coordinator"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -11478,7 +11485,7 @@ dependencies = [
 [[package]]
 name = "zisk-coordinator-api"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "chrono",
@@ -11495,7 +11502,7 @@ dependencies = [
 [[package]]
 name = "zisk-coordinator-client"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "bytes",
@@ -11511,7 +11518,7 @@ dependencies = [
 [[package]]
 name = "zisk-coordinator-server"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -11551,7 +11558,7 @@ dependencies = [
 [[package]]
 name = "zisk-core"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "elf",
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
@@ -11571,12 +11578,12 @@ dependencies = [
 [[package]]
 name = "zisk-definitions"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 
 [[package]]
 name = "zisk-pil"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "fields 0.17.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.17.1)",
  "proofman-common",
@@ -11589,7 +11596,7 @@ dependencies = [
 [[package]]
 name = "zisk-prover-backend"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
@@ -11618,7 +11625,7 @@ dependencies = [
 [[package]]
 name = "zisk-sdk"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
@@ -11646,7 +11653,7 @@ dependencies = [
 [[package]]
 name = "zisk-verifier"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "proofman-verifier",
 ]
@@ -11654,7 +11661,7 @@ dependencies = [
 [[package]]
 name = "ziskemu"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "clap",
  "data-bus",
@@ -11684,7 +11691,7 @@ dependencies = [
 [[package]]
 name = "ziskos"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "ark-bn254",
@@ -11717,13 +11724,13 @@ dependencies = [
  "zisk-common",
  "zisk-definitions",
  "zisk-verifier",
- "zkvm-interface 0.17.1 (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry)",
+ "zkvm-interface 0.17.1 (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket)",
 ]
 
 [[package]]
 name = "ziskos-hints"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "anyhow",
  "bincode",
@@ -11743,13 +11750,13 @@ dependencies = [
  "sha2",
  "tiny-keccak",
  "zisk-verifier",
- "zkvm-interface 0.17.1 (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry)",
+ "zkvm-interface 0.17.1 (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket)",
 ]
 
 [[package]]
 name = "zkvm-interface"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Fhints-write-retry#2684371d3a0bfa3fee7a9c8447fd5da51bbddea0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1#7d72138c38ea7ee0bf5c7b35fe29590e293613b3"
 dependencies = [
  "bindgen 0.72.1",
 ]
@@ -11757,7 +11764,7 @@ dependencies = [
 [[package]]
 name = "zkvm-interface"
 version = "0.17.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1#e92bbd1cc665700a78ffcf1d3cc155f5c7d2de39"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-0.17.1-socket#dcba9081ea804f3cbab78091a536f68dd0549fd4"
 dependencies = [
  "bindgen 0.72.1",
 ]

@@ -2,6 +2,7 @@ use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
+use bytemuck;
 use log::{debug, error, info, warn};
 use zisk_sdk::ZiskStdin;
 use zisk_sdk::{ExecutorKind, ProofKind};
@@ -204,7 +205,19 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     let job_id_str = result.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
 
                     // Encode compressed proof to base64
-                    let proof_bytes = result.get_proof_bytes();
+                    let proof_bytes = match result.get_proof_u64() {
+                        Ok(bytes) => {
+                            // Convert Vec<u64> to Vec<u8> (zero-copy reinterpret, little-endian)
+                            bytemuck::cast_vec(bytes)
+                        }
+                        Err(e) => {
+                            error!(
+                                "❌ Failed to get proof bytes for block {}, error: {}",
+                                proved_block_number, e
+                            );
+                            return;
+                        }
+                    };
 
                     // Save proof to disk if enabled
                     if state.cliargs.save_proof {
