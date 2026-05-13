@@ -16,7 +16,7 @@ alloy-provider = { version = "1.7.3", default-features = false, features = [
 allow-evm = { version = "=0.27.2", default-features = false }
 anyhow = "1.0.97"
 base64 = "0.22.1"
-bincode = "1.3.3"
+bincode = { version = "2.0", default-features = false, features = ["serde", "std"] }
 chrono = "0.4"
 clap = { version = "4.5.21", features = ["derive"] }
 dotenv = "0.15.0"

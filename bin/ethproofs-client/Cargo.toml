@@ -36,9 +36,12 @@ sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio", "macros", "tls
 tonic = "0.14"
 zstd = "0.13.3"
 
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.17.1-socket" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.17.1-socket" }
-zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.17.1-socket" }
+# zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.17.1-socket" }
+# ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.17.1-socket" }
+# zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-0.17.1-socket" }
+zisk-common = { git = "https://github.com/eth-act/zisk.git", branch = "feature/no-std-compatibility" }
+ziskos = { git = "https://github.com/eth-act/zisk.git", branch = "feature/no-std-compatibility" }
+zisk-sdk = { git = "https://github.com/eth-act/zisk.git", branch = "feature/no-std-compatibility" }
 # Local development
 # zisk-common = { path = "../../../zisk-release/common" }
 # ziskos = { path = "../../../zisk-release/ziskos/entrypoint" }
