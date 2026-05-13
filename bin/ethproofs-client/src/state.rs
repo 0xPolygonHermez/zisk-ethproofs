@@ -94,7 +94,9 @@ impl ZiskStdinWrapper {
             ));
         }
 
-        bincode::deserialize(&input_bytes).context("Failed to deserialize input data")
+        bincode::serde::decode_from_slice(&input_bytes, bincode::config::standard())
+            .map(|(v, _)| v)
+            .context("Failed to deserialize input data")
     }
 
     pub fn write<T: serde::Serialize>(&self, data: &T) {

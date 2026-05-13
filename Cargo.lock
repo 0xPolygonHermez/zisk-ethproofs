@@ -3220,7 +3220,7 @@ dependencies = [
  "anyhow",
  "axum 0.7.9",
  "base64 0.22.1",
- "bincode 1.3.3",
+ "bincode 2.0.1",
  "bytemuck",
  "chrono",
  "clap",
@@ -3805,23 +3805,23 @@ dependencies = [
 
 [[package]]
 name = "guest-common"
-version = "0.7.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=pre-develop-0.17.1#af59ab9020d13606a5c274c4f3de482606662853"
+version = "0.8.0"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.9.0#9295246cf094d257dded6db273cdc6358f712ad9"
 dependencies = [
  "zkvm-interface",
 ]
 
 [[package]]
 name = "guest-reth"
-version = "0.7.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=pre-develop-0.17.1#af59ab9020d13606a5c274c4f3de482606662853"
+version = "0.8.0"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.9.0#9295246cf094d257dded6db273cdc6358f712ad9"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
  "alloy-primitives",
  "alloy-rpc-types-debug",
  "anyhow",
- "bincode 1.3.3",
+ "bincode 2.0.1",
  "guest-common",
  "k256",
  "rayon",
@@ -4416,8 +4416,8 @@ dependencies = [
 
 [[package]]
 name = "input"
-version = "0.7.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=pre-develop-0.17.1#af59ab9020d13606a5c274c4f3de482606662853"
+version = "0.8.0"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.9.0#9295246cf094d257dded6db273cdc6358f712ad9"
 dependencies = [
  "alloy-genesis",
  "alloy-provider",
@@ -4425,7 +4425,7 @@ dependencies = [
  "alloy-rpc-types-eth",
  "anyhow",
  "async-trait",
- "bincode 1.3.3",
+ "bincode 2.0.1",
  "guest-reth",
  "rayon",
  "reth-chainspec",
