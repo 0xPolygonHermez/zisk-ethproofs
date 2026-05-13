@@ -1,7 +1,7 @@
 use std::env;
 use std::{fs, path::PathBuf, sync::Arc};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use chrono::Utc;
 use ethers::providers::{Middleware, Provider, Ws};
 use futures_util::{SinkExt, StreamExt};
@@ -351,17 +351,20 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
 
         let path = PathBuf::from(&app_state.inputs_folder).join(block_info.filename());
         let zisk_stdin_file = ZiskStdin::from_file(&path)?;
-
-        let input_bytes =zisk_stdin_file.read_bytes();
-        let input_pk: RethInputPublic = bincode::serde::decode_from_slice(&input_bytes, bincode::config::standard())
-            .map(|(v, _)| v)
-            .context("Failed to deserialize public keys from input data")?;
-
-        let input_bytes =zisk_stdin_file.read_bytes();
-        let input_witness: RethInputWitness = bincode::serde::decode_from_slice(&input_bytes, bincode::config::standard())
-            .map(|(v, _)| v)
-            .context("Failed to deserialize witness from input data")?;
-
+        let input_pk: RethInputPublic = match zisk_stdin_file.read() {
+            Ok(pk) => pk,
+            Err(e) => {
+                error!("Error reading public input from file {}: {}", path.display(), e);
+                continue;
+            }
+        };
+        let input_witness: RethInputWitness = match zisk_stdin_file.read() {
+            Ok(witness) => witness,
+            Err(e) => {
+                error!("Error reading witness input from file {}: {}", path.display(), e);
+                continue;
+            }
+        };
         process_input(block_info, &input_pk, &input_witness, app_state).await;
 
         info!("Waiting for block {} proof completion before processing next file...", block_number);
