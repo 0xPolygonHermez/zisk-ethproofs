@@ -79,6 +79,10 @@ pub struct CliArgs {
     #[arg(long, default_value_t = 600)]
     pub prove_timeout: u64,
 
+    /// Exit process with code 1 when proof generation fails
+    #[arg(long)]
+    pub exit_on_error: bool,
+
     /// Enable hints generation
     #[cfg(zisk_hints)]
     #[clap(long, value_enum, default_value_t = Hints::Socket)]
@@ -103,17 +107,17 @@ pub struct CliArgs {
     #[clap(long, default_value = "inputs_queue")]
     pub inputs_queue: String,
 
-    /// Interval in seconds between sending files in local mode (only affects 'folder' mode)
-    #[clap(long, default_value = "12")]
-    pub interval_secs: u64,
-
-    /// Initial timestamp to use for the first file in local mode (only affects 'folder' mode)
+    /// Initial timestamp to use for generated block info in local mode (only affects 'folder' mode)
     #[clap(long, default_value = "0")]
     pub initial_timestamp: u64,
 
     /// Simulated processed time in milliseconds (only affects 'folder' mode)
     #[clap(long, default_value = "0")]
     pub simulated_input_time: u64,
+
+    /// Comma-separated list of input file names to process (only affects 'folder' mode)
+    #[clap(long, use_value_delimiter = true, num_args = 1..)]
+    pub input_files: Vec<String>,
 }
 
 impl CliArgs {
