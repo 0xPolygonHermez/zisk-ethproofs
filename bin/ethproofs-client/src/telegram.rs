@@ -1,8 +1,8 @@
-use std::env;
-
 use anyhow::Result;
 use log::{debug, error};
 use reqwest::Client;
+
+use crate::cliargs::TelegramArgs;
 
 // Define the types of Telegran alerts that can be sent
 #[allow(dead_code)]
@@ -14,19 +14,23 @@ pub enum AlertType {
 }
 
 // Send an alert to a Telegram chat using the Telegram Bot API
-pub async fn send_telegram_alert(message: &str, alert_type: AlertType) -> Result<()> {
-    // Check if the TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID environment variables are set, if not return
-    let bot_token = match env::var("TELEGRAM_BOT_TOKEN").ok() {
+pub async fn send_telegram_alert(
+    args: &TelegramArgs,
+    message: &str,
+    alert_type: AlertType,
+) -> Result<()> {
+    let bot_token = match args.bot_token.as_ref() {
         Some(token) => token,
-        None => return Err(anyhow::anyhow!("TELEGRAM_BOT_TOKEN not set")),
+        None => return Err(anyhow::anyhow!("telegram.bot-token not set")),
     };
-    let chat_id = match env::var("TELEGRAM_CHAT_ID").ok() {
+    let chat_id = match args.chat_id.as_ref() {
         Some(id) => id,
-        None => return Err(anyhow::anyhow!("TELEGRAM_CHAT_ID not set")),
+        None => return Err(anyhow::anyhow!("telegram.chat-id not set")),
     };
-    let pre_msg = match env::var("TELEGRAM_PREFIX_MSG") {
-        Ok(msg) => format!("{}:", msg),
-        Err(_) => String::from(""),
+    let pre_msg = if args.message_prefix.is_empty() {
+        String::new()
+    } else {
+        format!("{}:", args.message_prefix)
     };
 
     // Set the icon based on the alert type

@@ -1,11 +1,9 @@
 use std::{
-    env,
     sync::{Arc, Mutex},
     time::Instant,
 };
 
 use anyhow::{Context, Result};
-use clap::Parser;
 use log::{info, warn};
 // serde derive imports no longer needed after moving protocol types
 use ethproofs_common::protocol::BlockInfo;
@@ -24,10 +22,6 @@ pub(crate) struct FiredAlerts {
     pub(crate) skipped: bool,
     pub(crate) failed: bool,
 }
-
-pub const DEFAULT_INPUTS_FOLDER: &str = "inputs";
-pub const DEFAULT_COORDINATOR_URL: &str = "http://localhost:50051";
-pub const DEFAULT_METRICS_PORT: u16 = 8384;
 
 #[cfg(zisk_hints)]
 extern "C" {
@@ -117,58 +111,30 @@ pub struct AppState {
     pub current_job_id: Arc<Mutex<String>>,
     pub queued_start: Arc<Mutex<Instant>>,
     pub ethproofs_client: Option<EthProofsApi>,
-    pub ethproofs_cluster_id: Option<u32>,
-    pub block_modulus: u64,
-    pub rpc_ws_url: String,
-    pub metrics_port: u16,
-    pub inputs_folder: String,
-    pub input_gen_server_url: String,
-    pub _compute_capacity: u32,
     pub db_block_proofs: Option<DbBlockProofs>,
     pub fired_alerts: Arc<Mutex<FiredAlerts>>,
     pub proof_done_signal: Arc<tokio::sync::Notify>,
 }
 
 impl AppState {
-    pub async fn new() -> anyhow::Result<Self> {
-        // Parse the command line arguments
-        let cliargs = CliArgs::parse();
-
-        // Load environment variables from env file
-        dotenv::from_filename(&cliargs.env_file).ok();
-
+    pub async fn new(cliargs: CliArgs) -> anyhow::Result<Self> {
         info!("Starting EthProofs client with config");
-        let (ethproofs_client, ethproofs_cluster_id) = if cliargs.submit_ethproofs {
-            let ethproofs_url = match env::var("ETHPROOFS_API_URL") {
-                Ok(url) => url,
-                Err(_) => panic!("ETHPROOFS_API_URL not set"),
-            };
-            let ethproofs_token = match env::var("ETHPROOFS_API_TOKEN") {
-                Ok(token) => token,
-                Err(_) => panic!("ETHPROOFS_API_TOKEN not set"),
-            };
-            let ethproofs_cluster_id = match env::var("ETHPROOFS_CLUSTER_ID") {
-                Ok(cid_str) => match cid_str.parse::<u32>() {
-                    Ok(cid) => cid,
-                    Err(_) => panic!("ETHPROOFS_CLUSTER_ID is not a valid u32"),
-                },
-                Err(_) => panic!("ETHPROOFS_CLUSTER_ID not set"),
-            };
 
-            (Some(EthProofsApi::new(ethproofs_url, ethproofs_token)), Some(ethproofs_cluster_id))
+        let ethproofs_client = if cliargs.ethproofs.submit {
+            let api_url = cliargs
+                .ethproofs
+                .api_url
+                .clone()
+                .expect("ethproofs.api-url required when ethproofs.submit is enabled");
+            let api_token = cliargs
+                .ethproofs
+                .api_token
+                .clone()
+                .expect("ethproofs.api-token required when ethproofs.submit is enabled");
+
+            Some(EthProofsApi::new(api_url, api_token))
         } else {
-            (None, None)
-        };
-
-        let coordinator_url =
-            env::var("COORDINATOR_URL").unwrap_or(DEFAULT_COORDINATOR_URL.to_string());
-
-        let inputs_folder = env::var("INPUTS_FOLDER").unwrap_or(DEFAULT_INPUTS_FOLDER.to_string());
-
-        let input_gen_server_url = if cliargs.input_gen == crate::cliargs::InputGen::Server {
-            env::var("INPUT_GEN_SERVER_URL").expect("INPUT_GEN_SERVER_URL must be set")
-        } else {
-            "".to_string()
+            None
         };
 
         let calling_reth = Arc::new(tokio::sync::Semaphore::new(1));
@@ -177,10 +143,11 @@ impl AppState {
         let zisk_stdin = Arc::new(Mutex::new(None));
 
         // Initialize the Zisk prover client
-        let guest_path = std::fs::canonicalize(&cliargs.guest)
-            .with_context(|| format!("Failed to resolve guest ELF path: {}", cliargs.guest))?;
+        let guest_path = std::fs::canonicalize(&cliargs.coordinator.elf).with_context(|| {
+            format!("Failed to resolve guest ELF path: {}", cliargs.coordinator.elf)
+        })?;
         let guest = GuestProgram::from_uri(&format!("file://{}", guest_path.display()))?;
-        let client = ProverClient::remote(coordinator_url).build()?;
+        let client = ProverClient::remote(cliargs.coordinator.url.clone()).build()?;
 
         // Upload the guest program
         info!("Uploading guest program {} to coordinator...", guest_path.display());
@@ -206,46 +173,12 @@ impl AppState {
         let current_job_id = Arc::new(Mutex::new(String::new()));
         let queued_start = Arc::new(Mutex::new(Instant::now()));
 
-        let metrics_port = env::var("METRICS_PORT")
-            .unwrap_or(DEFAULT_METRICS_PORT.to_string())
-            .parse()
-            .unwrap_or(DEFAULT_METRICS_PORT);
-
-        let block_modulus = match env::var("BLOCK_MODULUS") {
-            Ok(modulus_str) => match modulus_str.parse::<u64>() {
-                Ok(modulus) => modulus,
-                Err(_) => panic!("BLOCK_MODULUS is not a valid u64"),
-            },
-            Err(_) => 1, // Default to 1 if not set
-        };
-
-        let rpc_ws_url = if cliargs.input_gen == crate::cliargs::InputGen::Local {
-            match env::var("RPC_WS_URL") {
-                Ok(url) => url,
-                Err(_) => panic!("RPC_WS_URL must be set for local input generation"),
-            }
-        } else {
-            "".to_string()
-        };
-
-        let compute_capacity = match env::var("COMPUTE_CAPACITY") {
-            Ok(capacity_str) => match capacity_str.parse::<u32>() {
-                Ok(capacity) => capacity,
-                Err(_) => panic!("COMPUTE_CAPACITY is not a valid value"),
-            },
-            Err(_) => panic!("COMPUTE_CAPACITY not set"),
-        };
-
-        let db_dsn = if cliargs.insert_db {
-            match env::var("DB_DSN") {
-                Ok(dsn) => Some(dsn),
-                Err(_) => panic!("DB_DSN not set"),
-            }
-        } else {
-            None
-        };
-
-        let db_block_proofs = if let Some(dsn) = &db_dsn {
+        let db_block_proofs = if cliargs.db.enabled {
+            let dsn = cliargs
+                .db
+                .dsn
+                .as_ref()
+                .expect("db.dsn required when db.enabled is set");
             Some(
                 db::DbBlockProofs::new(dsn, db::DbBlockProofsConfig::default())
                     .await
@@ -259,8 +192,8 @@ impl AppState {
         let proof_done_signal = Arc::new(tokio::sync::Notify::new());
 
         #[cfg(zisk_hints)]
-        if cliargs.hints_debug {
-            std::fs::create_dir_all(&cliargs.hints_debug_folder)
+        if cliargs.hints.debug {
+            std::fs::create_dir_all(&cliargs.hints.debug_path)
                 .context("Failed to create hints debug directory")?;
         }
 
@@ -275,13 +208,6 @@ impl AppState {
             //zisk_stdin_ready,
             current_job_id,
             ethproofs_client,
-            ethproofs_cluster_id,
-            block_modulus,
-            rpc_ws_url,
-            metrics_port,
-            inputs_folder,
-            input_gen_server_url,
-            _compute_capacity: compute_capacity,
             db_block_proofs,
             fired_alerts,
             proof_done_signal,
@@ -291,8 +217,8 @@ impl AppState {
     }
 
     pub fn delete_input_file(&self, filename: &String) {
-        if !self.cliargs.keep_input {
-            let input_file_path = format!("{}/{}", &self.inputs_folder, filename);
+        if !self.cliargs.inputs.keep {
+            let input_file_path = format!("{}/{}", &self.cliargs.inputs.folder, filename);
             if std::fs::exists(&input_file_path).unwrap_or(false) {
                 if let Err(e) = std::fs::remove_file(&input_file_path) {
                     warn!("Failed to remove input file {}, error: {}", input_file_path, e);

@@ -25,7 +25,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     let prover_client_clone = Arc::clone(&state.prover_client);
     let guest_program_clone = Arc::clone(&state.guest_program);
     let ethproofs_client = state.ethproofs_client.clone();
-    let ethproofs_cluster_id = state.ethproofs_cluster_id;
+    let ethproofs_cluster_id = state.cliargs.ethproofs.cluster_id;
 
     tokio::task::spawn_blocking(move || {
         let rt = tokio::runtime::Handle::current();
@@ -42,16 +42,16 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 let hints_handle = launch_hints_generation(&block_info, &state).await;
 
                 //TODO: Implement hints file handling
-                if state.cliargs.hints == crate::cliargs::Hints::File {
+                if state.cliargs.hints.mode == crate::cliargs::HintsMode::File {
                     hints_handle.await.ok();
                 }
 
-                let hints_stream = ZiskStream::unix_external(&state.cliargs.hints_socket);
+                let hints_stream = ZiskStream::unix_external(&state.cliargs.hints.socket);
 
                 prover_client
                     .prove(&guest_program, ZiskStdin::new())
                     .hints(hints_stream)
-                    .timeout(Duration::from_secs(state.cliargs.prove_timeout))
+                    .timeout(Duration::from_secs(state.cliargs.coordinator.prove_timeout))
                     .executor(ExecutorKind::Assembly)
                     .wrap(ProofKind::VadcopFinalMinimal)
                     .run()
@@ -70,7 +70,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
                 prover_client
                     .prove(&guest_program, stdin.stdin)
-                    .timeout(Duration::from_secs(state.cliargs.prove_timeout))
+                    .timeout(Duration::from_secs(state.cliargs.coordinator.prove_timeout))
                     .executor(ExecutorKind::Assembly)
                     .wrap(ProofKind::VadcopFinalMinimal)
                     .run()
@@ -126,7 +126,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
                 // Get input file and for next block to prove
                 let input_filename =
-                    format!("{}/{}", state.inputs_folder.clone(), next_block.filename());
+                    format!("{}/{}", state.cliargs.inputs.folder, next_block.filename());
 
                 // Read input file into ZiskStdin
                 let path = PathBuf::from(&input_filename);
@@ -175,8 +175,12 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                         error!("❌ {}", msg);
 
                         if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+                            let telegram_args = state.cliargs.telegram.clone();
                             tokio::spawn(async move {
-                                if let Err(e) = send_telegram_alert(&msg, AlertType::Error).await {
+                                if let Err(e) =
+                                    send_telegram_alert(&telegram_args, &msg, AlertType::Error)
+                                        .await
+                                {
                                     warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
                                 }
                             });
@@ -219,8 +223,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     };
 
                     // Save proof to disk if enabled
-                    if state.cliargs.save_proof {
-                        let proof_dir = PathBuf::from(&state.cliargs.save_proof_folder);
+                    if state.cliargs.proof.save {
+                        let proof_dir = PathBuf::from(&state.cliargs.proof.folder);
                         if let Err(e) = std::fs::create_dir_all(&proof_dir) {
                             error!(
                                 "❌ Failed to create proof directory {} for block {}, error: {}",
@@ -253,10 +257,10 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     };
 
                     // Submit to EthProofs if enabled
-                    let (submitted, submit_time) = if state.cliargs.submit_ethproofs {
+                    let (submitted, submit_time) = if state.cliargs.ethproofs.submit {
                         let state = state.clone();
-                        let client = &state.ethproofs_client.unwrap();
-                        let cluster_id = state.ethproofs_cluster_id.unwrap();
+                        let client = &state.ethproofs_client.clone().unwrap();
+                        let cluster_id = state.cliargs.ethproofs.cluster_id.unwrap();
                         let start = std::time::Instant::now();
                         match client
                             .proof_proved(
@@ -290,13 +294,18 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     };
 
                     // Insert into DB if enabled
-                    if state.cliargs.insert_db {
+                    if state.cliargs.db.enabled {
                         if let Some(db) = &state.db_block_proofs {
                             let start = std::time::Instant::now();
                             let block_proof = BlockProof {
                                 block_number: proved_block_number,
-                                zisk_version: "0.12.0".to_string(),
-                                hardware: "128 vCPU, 512GB RAM, 1 RTX4090 GPU".to_string(),
+                                zisk_version: state
+                                    .cliargs
+                                    .db
+                                    .zisk_version
+                                    .clone()
+                                    .unwrap_or_default(),
+                                hardware: state.cliargs.db.hardware.clone().unwrap_or_default(),
                                 proving_time: proving_time_ms as u32,
                                 proof: proof_base64,
                                 steps: proving_cycles,
@@ -329,13 +338,16 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                             proving_cycles,
                         );
 
-                        if let Err(e) = send_telegram_alert(&msg, AlertType::Success).await {
+                        if let Err(e) =
+                            send_telegram_alert(&state.cliargs.telegram, &msg, AlertType::Success)
+                                .await
+                        {
                             warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
                         }
                     }
 
                     // Update Prometheus metrics for proof generation if metrics enabled
-                    if state.cliargs.enable_metrics {
+                    if state.cliargs.metrics.enabled {
                         let start = std::time::Instant::now();
                         // Update the shared HashMap and publish/remove metrics only when the block is complete
                         let mut shared_metrics = state.shared_metrics.lock().await;
@@ -421,8 +433,12 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
                     let telegram_task = if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
                         let msg_clone = msg.clone();
+                        let telegram_args = state.cliargs.telegram.clone();
                         Some(tokio::spawn(async move {
-                            if let Err(e) = send_telegram_alert(&msg_clone, AlertType::Error).await {
+                            if let Err(e) =
+                                send_telegram_alert(&telegram_args, &msg_clone, AlertType::Error)
+                                    .await
+                            {
                                 warn!("Failed to send Telegram alert: {}, error: {}", msg_clone, e);
                             }
                         }))
@@ -430,7 +446,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                         None
                     };
 
-                    if state.cliargs.enable_metrics {
+                    if state.cliargs.metrics.enabled {
                         crate::metrics::PROOF_FAILURE_TOTAL.inc();
                         // Publish all available metrics for this block
                         let mut shared_metrics = state.shared_metrics.lock().await;
