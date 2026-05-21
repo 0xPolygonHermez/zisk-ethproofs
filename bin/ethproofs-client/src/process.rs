@@ -56,13 +56,13 @@ pub fn generate_hints(block_number: u64, app_state: AppState, ready: Option<ones
 
     let start_hints = Instant::now();
 
-    let hints_init_result = match app_state.cliargs.hints {
-        crate::cliargs::Hints::Socket => {
+    let hints_init_result = match app_state.cliargs.hints.mode {
+        crate::cliargs::HintsMode::Socket => {
             #[cfg(zisk_hints)]
-            let hint_debug_file = app_state.cliargs.hints_debug.then(|| {
+            let hint_debug_file = app_state.cliargs.hints.debug.then(|| {
                 PathBuf::from(format!(
                     "{}/{}_hints_debug.bin",
-                    app_state.cliargs.hints_debug_folder, block_number
+                    app_state.cliargs.hints.debug_path, block_number
                 ))
             });
 
@@ -71,16 +71,16 @@ pub fn generate_hints(block_number: u64, app_state: AppState, ready: Option<ones
 
             info!(
                 "Initializing hints socket for block {}, socket: {}",
-                block_number, app_state.cliargs.hints_socket
+                block_number, app_state.cliargs.hints.socket
             );
             init_hints_socket(
-                PathBuf::from(&app_state.cliargs.hints_socket),
+                PathBuf::from(&app_state.cliargs.hints.socket),
                 hint_debug_file,
                 None,
                 ready,
             )
         }
-        crate::cliargs::Hints::File => {
+        crate::cliargs::HintsMode::File => {
             // Create ./hints directory if it doesn't exist
             let hints_dir = std::path::PathBuf::from("./hints");
             if !hints_dir.exists() {
@@ -187,7 +187,7 @@ pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
     info!("Received queued command for block {}", block_number);
 
     if let Some(client) = app_state.ethproofs_client.clone() {
-        let cluster_id = app_state.ethproofs_cluster_id.unwrap();
+        let cluster_id = app_state.cliargs.ethproofs.cluster_id.unwrap();
         tokio::spawn(async move {
             let start = std::time::Instant::now();
             match client.proof_queued(cluster_id, block_number).await {
@@ -215,7 +215,8 @@ pub(crate) async fn process_input(
     input_witness: &RethInputWitness,
     app_state: &mut AppState,
 ) {
-    let input_file_path = PathBuf::from(&app_state.inputs_folder).join(block_info.filename());
+    let input_file_path =
+        PathBuf::from(&app_state.cliargs.inputs.folder).join(block_info.filename());
     let block_number = block_info.block_number;
 
     let zisk_stdin = ZiskStdin::new();
@@ -241,7 +242,7 @@ pub(crate) async fn process_input(
     //     block_number, input_time, time_to_input
     // );
 
-    if app_state.cliargs.enable_metrics {
+    if app_state.cliargs.metrics.enabled {
         let mut metrics_map = app_state.shared_metrics.lock().await;
         metrics_map.insert(
             block_number,
@@ -288,7 +289,7 @@ pub(crate) async fn process_input(
 
         // Check if skipped blocks exceed threshold and send Telegram alert if enabled
         let proving_block_number = proving_block.clone().unwrap().clone().block_number;
-        if block_number - proving_block_number > app_state.cliargs.skipped_threshold as u64 {
+        if block_number - proving_block_number > app_state.cliargs.skipped.threshold as u64 {
             let msg_alert = format!(
                 "Skipped {} consecutive blocks. Currently proving block {}, next queued block is {}.",
                 block_number - proving_block_number - 1,
@@ -302,14 +303,17 @@ pub(crate) async fn process_input(
             {
                 app_state.set_skipped_alert(true);
                 let msg_alert_clone = msg_alert.clone();
+                let telegram_args = app_state.cliargs.telegram.clone();
                 alert_handle = Some(tokio::spawn(async move {
-                    if let Err(e) = send_telegram_alert(&msg_alert_clone, AlertType::Warning).await
+                    if let Err(e) =
+                        send_telegram_alert(&telegram_args, &msg_alert_clone, AlertType::Warning)
+                            .await
                     {
                         warn!("Failed to send Telegram alert: {}, error: {}", msg_alert_clone, e);
                     }
                 }));
             }
-            if app_state.cliargs.panic_on_skipped {
+            if app_state.cliargs.skipped.panic {
                 if let Some(handle) = alert_handle {
                     handle.await.ok();
                 }
@@ -319,10 +323,13 @@ pub(crate) async fn process_input(
             && app_state.skipped_alert()
         {
             app_state.set_skipped_alert(false);
+            let telegram_args = app_state.cliargs.telegram.clone();
             tokio::spawn(async move {
                 let msg_alert =
                     format!("Resumed proving. Now proving block {}.", proving_block_number);
-                if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
+                if let Err(e) =
+                    send_telegram_alert(&telegram_args, &msg_alert, AlertType::Info).await
+                {
                     warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
                 }
             });
@@ -330,8 +337,8 @@ pub(crate) async fn process_input(
         return;
     }
 
-    // Save input file if -i flag is set
-    if app_state.cliargs.keep_input {
+    // Save input file if input.keep flag is set
+    if app_state.cliargs.inputs.keep {
         if let Err(e) = zisk_stdin.save(&input_file_path) {
             error!(
                 "Failed to save input to file {} for block {}, error: {}",
@@ -367,7 +374,7 @@ pub(crate) async fn process_input(
 
     //     // If we are using file-based hints, we need to wait for the hint generation to finish before generating the proof, otherwise the proof generation will fail due to missing hints.
     //     // If we are using socket-based hints, we can generate the proof in parallel with hint generation, so we don't wait.
-    //     if app_state.cliargs.hints == crate::cliargs::Hints::File {
+    //     if app_state.cliargs.hints.mode == crate::cliargs::HintsMode::File {
     //         handle.await.ok();
     //     }
     // }
@@ -385,8 +392,11 @@ pub(crate) async fn process_input(
                     app_state.set_failed_alert(false);
                     let msg_alert =
                         format!("Resumed proving. Now proving block {}.", block_info.block_number);
+                    let telegram_args = app_state.cliargs.telegram.clone();
                     tokio::spawn(async move {
-                        if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Info).await {
+                        if let Err(e) =
+                            send_telegram_alert(&telegram_args, &msg_alert, AlertType::Info).await
+                        {
                             warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
                         }
                     });
@@ -400,8 +410,11 @@ pub(crate) async fn process_input(
             if app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
                 if !app_state.failed_alert() {
                     app_state.set_failed_alert(true);
+                    let telegram_args = app_state.cliargs.telegram.clone();
                     tokio::spawn(async move {
-                        if let Err(e) = send_telegram_alert(&msg_alert, AlertType::Error).await {
+                        if let Err(e) =
+                            send_telegram_alert(&telegram_args, &msg_alert, AlertType::Error).await
+                        {
                             warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
                         }
                     });
