@@ -127,6 +127,104 @@ lazy_static! {
 /// Prune gauge to keep only the last N block labels
 // Removed prune_gauge_last_n and all label logic
 
+/// Ensure cumulative under/over-12s counters appear in /metrics output by
+/// incrementing them by zero on startup.
+pub fn init_counters() {
+    TIME_TO_PROOF_UNDER_12S_TOTAL.inc_by(0);
+    TIME_TO_PROOF_OVER_12S_TOTAL.inc_by(0);
+    PROVING_UNDER_12S_TOTAL.inc_by(0);
+    PROVING_OVER_12S_TOTAL.inc_by(0);
+}
+
+/// Number of missing blocks since the previously reported LATEST_BLOCK_NUMBER.
+/// Must be called before updating LATEST_BLOCK_NUMBER for the current block.
+fn compute_missing_diff(current_block: u64) -> u64 {
+    let previous_block = LATEST_BLOCK_NUMBER.get() as u64;
+    if current_block > previous_block && previous_block != 0 {
+        current_block - previous_block - 1
+    } else {
+        0
+    }
+}
+
+/// Update all per-block latest gauges from the given metrics entry and
+/// increment BLOCKS_MISSING_TOTAL / BLOCKS_RECEIVED_TOTAL accordingly.
+fn publish_block_gauges(metrics: &BlockMetrics) {
+    let diff = compute_missing_diff(metrics.block_number);
+    LATEST_BLOCK_NUMBER.set(metrics.block_number as i64);
+    LATEST_RECEIVED_TIME_MS.set(metrics.received_time_ms);
+    LATEST_TIME_TO_INPUT_MS.set(metrics.time_to_input_ms);
+    LATEST_MGAS.set(metrics.mgas as i64);
+    LATEST_TX_COUNT.set(metrics.tx_count as i64);
+    LATEST_PROVING_TIME_MS.set(metrics.proving_time_ms.unwrap_or(0));
+    LATEST_PROVING_CYCLES.set(metrics.proving_cycles.unwrap_or(0));
+    LATEST_SUBMIT_TIME_MS.set(metrics.submit_time_ms.unwrap_or(0));
+    LATEST_BLOCK_TIMESTAMP.set(metrics.timestamp);
+    BLOCKS_MISSING_TOTAL.inc_by(diff);
+    BLOCKS_RECEIVED_TOTAL.inc();
+}
+
+/// Reset all per-block latest gauges to zero (except LATEST_BLOCK_NUMBER, which
+/// is set to the given block number) and increment BLOCKS_MISSING_TOTAL /
+/// BLOCKS_RECEIVED_TOTAL accordingly.
+fn publish_empty_block_gauges(block_number: u64) {
+    let diff = compute_missing_diff(block_number);
+    LATEST_BLOCK_NUMBER.set(block_number as i64);
+    LATEST_BLOCK_TIMESTAMP.set(0);
+    LATEST_SUBMIT_TIME_MS.set(0);
+    LATEST_MGAS.set(0);
+    LATEST_TX_COUNT.set(0);
+    LATEST_PROVING_TIME_MS.set(0);
+    LATEST_PROVING_CYCLES.set(0);
+    LATEST_TIME_TO_INPUT_MS.set(0);
+    LATEST_RECEIVED_TIME_MS.set(0);
+    BLOCKS_RECEIVED_TOTAL.inc();
+    BLOCKS_MISSING_TOTAL.inc_by(diff);
+}
+
+/// Publish metrics for a successfully proved block: update latest gauges, push
+/// histogram observations and increment success / under-over-12s counters.
+pub fn publish_proof_success(metrics: &BlockMetrics, proving_time_ms: u64) {
+    publish_block_gauges(metrics);
+    PROOF_SUCCESS_TOTAL.inc();
+
+    let time_to_proof = metrics.time_to_input_ms + proving_time_ms as i64;
+
+    TIME_TO_INPUT_HIST
+        .with_label_values(&[] as &[&str])
+        .observe(metrics.time_to_input_ms as f64);
+
+    TIME_TO_PROOF_HIST
+        .with_label_values(&[] as &[&str])
+        .observe(time_to_proof as f64);
+    if time_to_proof <= 12000 {
+        TIME_TO_PROOF_UNDER_12S_TOTAL.inc();
+    } else {
+        TIME_TO_PROOF_OVER_12S_TOTAL.inc();
+    }
+
+    PROVING_TIME_HIST
+        .with_label_values(&[] as &[&str])
+        .observe(proving_time_ms as f64);
+    if proving_time_ms <= 12000 {
+        PROVING_UNDER_12S_TOTAL.inc();
+    } else {
+        PROVING_OVER_12S_TOTAL.inc();
+    }
+}
+
+/// Publish failure metrics when a BlockMetrics entry is available.
+pub fn publish_proof_failure_with_metrics(metrics: &BlockMetrics) {
+    PROOF_FAILURE_TOTAL.inc();
+    publish_block_gauges(metrics);
+}
+
+/// Publish failure metrics when no BlockMetrics entry exists for the block.
+pub fn publish_proof_failure_no_metrics(block_number: u64) {
+    PROOF_FAILURE_TOTAL.inc();
+    publish_empty_block_gauges(block_number);
+}
+
 async fn metrics_handler() -> impl IntoResponse {
     let encoder = TextEncoder::new();
     let metric_families = prometheus::gather();
