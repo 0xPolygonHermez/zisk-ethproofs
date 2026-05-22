@@ -68,7 +68,7 @@ pub struct RpcArgs {
 #[command(next_help_heading = "Input folder generation")]
 pub struct FolderArgs {
     /// Directory to read input files from in folder input generation mode
-    #[arg(id = "folder_path", long = "folder.path", default_value = "inputs_queue")]
+    #[arg(id = "folder_path", long = "folder.path", default_value = "inputs_test")]
     pub path: String,
 
     /// Initial timestamp to use for the first input file in folder input generation mode
@@ -90,31 +90,12 @@ pub struct FolderArgs {
 }
 
 #[derive(Clone, Debug, Args)]
-#[command(next_help_heading = "ZisK coordinator")]
-pub struct CoordinatorArgs {
-    /// ZisK coordinator URL
-    #[arg(
-        id = "coordinator_url",
-        long = "coordinator.url",
-        default_value = "http://localhost:50051"
-    )]
-    pub url: String,
-
-    /// Prove timeout in seconds
-    #[arg(
-        id = "coordinator_prove_timeout",
-        long = "coordinator.prove-timeout",
-        default_value_t = 600
-    )]
-    pub prove_timeout: u64,
-}
-
-#[derive(Clone, Debug, Args)]
 #[command(next_help_heading = "Ethproofs submission")]
 pub struct EthproofsArgs {
     /// Enable submission of proofs to Ethproofs
     #[arg(
         id = "ethproofs_submit",
+        short = 's',
         long = "ethproofs.submit",
         requires_all = ["ethproofs_api_url", "ethproofs_api_token", "ethproofs_cluster_id"]
     )]
@@ -143,6 +124,7 @@ pub struct TelegramArgs {
     /// Telegram events to send alerts for (can specify multiple)
     #[arg(
         id = "telegram_alert",
+        short = 'a',
         long = "telegram.alert",
         value_enum,
         use_value_delimiter = true,
@@ -281,14 +263,14 @@ pub struct HintsArgs {
     )]
     pub debug: bool,
 
-    /// Hints debug file path (only used if hints.debug is true)
+    /// Hints debug folder path (only used if hints.debug is true)
     #[arg(
-        id = "hints_debug_path",
-        long = "hints.debug-path",
+        id = "hints_debug_folder",
+        long = "hints.debug-folder",
         default_value = "./hints_debug",
         requires = "hints_debug"
     )]
-    pub debug_path: String,
+    pub debug_folder: String,
 }
 
 // Command line arguments
@@ -306,6 +288,14 @@ pub struct CliArgs {
     #[arg(long, short = 'g', default_value = "./elf/zec-reth.elf")]
     pub guest: String,
 
+    /// ZisK coordinator URL
+    #[arg(long, short = 'c', default_value = "http://localhost:50051")]
+    pub coordinator_url: String,
+
+    /// Prove timeout in seconds
+    #[arg(long, short = 't', default_value_t = 600)]
+    pub prove_timeout: u64,
+
     /// Exit process with code 1 when proof generation fails
     #[arg(long)]
     pub exit_on_error: bool,
@@ -318,9 +308,6 @@ pub struct CliArgs {
 
     #[command(flatten)]
     pub folder: FolderArgs,
-
-    #[command(flatten)]
-    pub coordinator: CoordinatorArgs,
 
     #[command(flatten)]
     pub ethproofs: EthproofsArgs,
