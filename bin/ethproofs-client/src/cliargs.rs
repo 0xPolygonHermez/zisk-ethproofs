@@ -40,11 +40,7 @@ pub struct InputsArgs {
     pub mode: InputGen,
 
     /// Modulus to apply to select blocks in rpc input generation mode
-    #[arg(
-        id = "input_block_modulus",
-        long = "input.block-modulus",
-        default_value_t = 1
-    )]
+    #[arg(id = "input_block_modulus", long = "input.block-modulus", default_value_t = 1)]
     pub block_modulus: u64,
 
     /// Folder to store generated input files
@@ -52,12 +48,7 @@ pub struct InputsArgs {
     pub folder: String,
 
     /// Keep generated input files after processing them
-    #[arg(
-        id = "input_keep",
-        short = 'i',
-        long = "input.keep",
-        default_value_t = false
-    )]
+    #[arg(id = "input_keep", short = 'i', long = "input.keep", default_value_t = false)]
     pub keep: bool,
 }
 
@@ -81,19 +72,11 @@ pub struct FolderArgs {
     pub path: String,
 
     /// Initial timestamp to use for the first input file in folder input generation mode
-    #[arg(
-        id = "folder_initial_timestamp",
-        long = "folder.initial-timestamp",
-        default_value = "0"
-    )]
+    #[arg(id = "folder_initial_timestamp", long = "folder.initial-timestamp", default_value = "0")]
     pub initial_timestamp: u64,
 
     /// Simulated input processed time in milliseconds in folder input generation mode
-    #[arg(
-        id = "folder_input_time",
-        long = "folder.input-time",
-        default_value = "0"
-    )]
+    #[arg(id = "folder_input_time", long = "folder.input-time", default_value = "0")]
     pub input_time: u64,
 
     /// Comma-separated list of input file names to process in folder input generation mode
@@ -117,14 +100,6 @@ pub struct CoordinatorArgs {
     )]
     pub url: String,
 
-    /// Path to the guest ELF file
-    #[arg(
-        id = "coordinator_elf",
-        long = "coordinator.elf",
-        default_value = "./elf/zec-reth.elf"
-    )]
-    pub elf: String,
-
     /// Prove timeout in seconds
     #[arg(
         id = "coordinator_prove_timeout",
@@ -146,19 +121,11 @@ pub struct EthproofsArgs {
     pub submit: bool,
 
     /// Ethproofs API URL
-    #[arg(
-        id = "ethproofs_api_url",
-        long = "ethproofs.api-url",
-        requires = "ethproofs_submit"
-    )]
+    #[arg(id = "ethproofs_api_url", long = "ethproofs.api-url", requires = "ethproofs_submit")]
     pub api_url: Option<String>,
 
     /// Ethproofs API token
-    #[arg(
-        id = "ethproofs_api_token",
-        long = "ethproofs.api-token",
-        requires = "ethproofs_submit"
-    )]
+    #[arg(id = "ethproofs_api_token", long = "ethproofs.api-token", requires = "ethproofs_submit")]
     pub api_token: Option<String>,
 
     /// Ethproofs cluster ID
@@ -185,19 +152,11 @@ pub struct TelegramArgs {
     pub alert: Vec<TelegramEvent>,
 
     /// Telegram bot token for sending alerts
-    #[arg(
-        id = "telegram_bot_token",
-        long = "telegram.bot-token",
-        requires = "telegram_alert"
-    )]
+    #[arg(id = "telegram_bot_token", long = "telegram.bot-token", requires = "telegram_alert")]
     pub bot_token: Option<String>,
 
     /// Telegram chat ID for sending alerts
-    #[arg(
-        id = "telegram_chat_id",
-        long = "telegram.chat-id",
-        requires = "telegram_alert"
-    )]
+    #[arg(id = "telegram_chat_id", long = "telegram.chat-id", requires = "telegram_alert")]
     pub chat_id: Option<String>,
 
     /// Prefix for Telegram alert messages
@@ -213,11 +172,7 @@ pub struct TelegramArgs {
 #[command(next_help_heading = "Skipped blocks alerts")]
 pub struct SkippedArgs {
     /// Number of skipped blocks before triggering an alert
-    #[arg(
-        id = "skipped_threshold",
-        long = "skipped.threshold",
-        default_value = "5"
-    )]
+    #[arg(id = "skipped_threshold", long = "skipped.threshold", default_value = "5")]
     pub threshold: u32,
 
     /// Panic when skipped blocks exceed the threshold
@@ -262,11 +217,7 @@ pub struct DbArgs {
     pub hardware: Option<String>,
 
     /// ZisK version to include in DB entries
-    #[arg(
-        id = "db_zisk_version",
-        long = "db.zisk-version",
-        requires = "db_enabled"
-    )]
+    #[arg(id = "db_zisk_version", long = "db.zisk-version", requires = "db_enabled")]
     pub zisk_version: Option<String>,
 }
 
@@ -350,6 +301,10 @@ pub struct CliArgs {
     /// Skip the proving step (useful for testing)
     #[arg(short = 'k', long)]
     pub skip_proving: bool,
+
+    /// Path to the guest ELF file
+    #[arg(long, short = 'g', default_value = "./elf/zec-reth.elf")]
+    pub guest: String,
 
     /// Exit process with code 1 when proof generation fails
     #[arg(long)]
