@@ -340,7 +340,6 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     // Update Prometheus metrics for proof generation if metrics enabled
                     if state.cliargs.metrics.enabled {
                         let start = std::time::Instant::now();
-                        // Update the shared HashMap and publish/remove metrics only when the block is complete
                         let mut shared_metrics = state.shared_metrics.lock().await;
                         let entry = shared_metrics.get_mut(&proved_block_number);
                         if let Some(metrics) = entry {
@@ -349,53 +348,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                             metrics.submit_time_ms = if submitted { Some(submit_time as i64) } else { Some(0) };
                             metrics.success = true;
 
-                            // Publish all metrics for the current block
-                            let previous_block = crate::metrics::LATEST_BLOCK_NUMBER.get() as u64;
-                            let diff = if proved_block_number > previous_block && previous_block != 0 {
-                                proved_block_number - previous_block - 1
-                            } else {
-                                0
-                            };
-
-                            crate::metrics::LATEST_BLOCK_NUMBER.set(metrics.block_number as i64);
-                            crate::metrics::LATEST_RECEIVED_TIME_MS.set(metrics.received_time_ms);
-                            crate::metrics::LATEST_TIME_TO_INPUT_MS.set(metrics.time_to_input_ms);
-                            crate::metrics::LATEST_MGAS.set(metrics.mgas as i64);
-                            crate::metrics::LATEST_TX_COUNT.set(metrics.tx_count as i64);
-                            crate::metrics::LATEST_PROVING_TIME_MS.set(metrics.proving_time_ms.unwrap_or(0));
-                            crate::metrics::LATEST_PROVING_CYCLES.set(metrics.proving_cycles.unwrap_or(0));
-
-                            crate::metrics::LATEST_SUBMIT_TIME_MS.set(metrics.submit_time_ms.unwrap_or(0));
-                            crate::metrics::LATEST_BLOCK_TIMESTAMP.set(metrics.timestamp);
-
-                            crate::metrics::BLOCKS_MISSING_TOTAL.inc_by(diff);
-                            crate::metrics::BLOCKS_RECEIVED_TOTAL.inc();
-
-                            crate::metrics::PROOF_SUCCESS_TOTAL.inc();
-
-                            let time_to_proof = metrics.time_to_input_ms + proving_time_ms as i64;
-
-                            crate::metrics::TIME_TO_INPUT_HIST
-                                .with_label_values(&[] as &[&str])
-                                .observe(metrics.time_to_input_ms as f64);
-
-                            crate::metrics::TIME_TO_PROOF_HIST
-                                .with_label_values(&[] as &[&str])
-                                .observe(time_to_proof as f64);
-                            if time_to_proof <= 12000 {
-                                crate::metrics::TIME_TO_PROOF_UNDER_12S_TOTAL.inc();
-                            } else {
-                                crate::metrics::TIME_TO_PROOF_OVER_12S_TOTAL.inc();
-                            }
-
-                            crate::metrics::PROVING_TIME_HIST
-                                .with_label_values(&[] as &[&str])
-                                .observe(proving_time_ms as f64);
-                            if proving_time_ms <= 12000 {
-                                crate::metrics::PROVING_UNDER_12S_TOTAL.inc();
-                            } else {
-                                crate::metrics::PROVING_OVER_12S_TOTAL.inc();
-                            }
+                            crate::metrics::publish_proof_success(metrics, proving_time_ms);
 
                             debug!(
                                 "Published metrics for block {}, update time: {} ms",
@@ -433,53 +386,15 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     let telegram_task = send_proof_failed_alert(&state, msg.clone());
 
                     if state.cliargs.metrics.enabled {
-                        crate::metrics::PROOF_FAILURE_TOTAL.inc();
-                        // Publish all available metrics for this block
                         let mut shared_metrics = state.shared_metrics.lock().await;
                         let entry = shared_metrics.get(&proved_block_number);
                         if let Some(metrics) = entry {
-                            let previous_block = crate::metrics::LATEST_BLOCK_NUMBER.get() as u64;
-                            let diff = if proved_block_number > previous_block && previous_block != 0 {
-                                proved_block_number - previous_block - 1
-                            } else {
-                                0
-                            };
-                            crate::metrics::BLOCKS_MISSING_TOTAL.inc_by(diff);
-
-                            crate::metrics::LATEST_BLOCK_NUMBER.set(metrics.block_number as i64);
-                            crate::metrics::LATEST_RECEIVED_TIME_MS.set(metrics.received_time_ms);
-                            crate::metrics::LATEST_TIME_TO_INPUT_MS.set(metrics.time_to_input_ms);
-                            crate::metrics::LATEST_MGAS.set(metrics.mgas as i64);
-                            crate::metrics::LATEST_TX_COUNT.set(metrics.tx_count as i64);
-                            crate::metrics::LATEST_PROVING_TIME_MS.set(metrics.proving_time_ms.unwrap_or(0));
-                            crate::metrics::LATEST_PROVING_CYCLES.set(metrics.proving_cycles.unwrap_or(0));
-                            crate::metrics::LATEST_BLOCK_TIMESTAMP.set(metrics.timestamp);
-                            crate::metrics::LATEST_SUBMIT_TIME_MS.set(metrics.submit_time_ms.unwrap_or(0));
-                            crate::metrics::BLOCKS_RECEIVED_TOTAL.inc();
-
+                            crate::metrics::publish_proof_failure_with_metrics(metrics);
                             debug!("Published failure metrics for block {}", metrics.block_number);
                             // Remove the entry for the processed block
                             shared_metrics.remove(&proved_block_number);
                         } else {
-                            let previous_block = crate::metrics::LATEST_BLOCK_NUMBER.get() as u64;
-                            let diff = if proved_block_number > previous_block && previous_block != 0 {
-                                proved_block_number - previous_block - 1
-                            } else {
-                                0
-                            };
-                            crate::metrics::LATEST_BLOCK_NUMBER.set(proved_block_number as i64);
-                            crate::metrics::BLOCKS_RECEIVED_TOTAL.inc();
-                            crate::metrics::LATEST_BLOCK_TIMESTAMP.set(0);
-                            crate::metrics::LATEST_SUBMIT_TIME_MS.set(0);
-                            crate::metrics::LATEST_MGAS.set(0);
-                            crate::metrics::LATEST_TX_COUNT.set(0);
-                            crate::metrics::LATEST_PROVING_TIME_MS.set(0);
-                            crate::metrics::LATEST_PROVING_CYCLES.set(0);
-                            crate::metrics::LATEST_TIME_TO_INPUT_MS.set(0);
-                            crate::metrics::LATEST_RECEIVED_TIME_MS.set(0);
-
-                            crate::metrics::BLOCKS_MISSING_TOTAL.inc_by(diff);
-
+                            crate::metrics::publish_proof_failure_no_metrics(proved_block_number);
                             warn!(
                                 "No metrics entry found for block {} when trying to publish failure metrics",
                                 proved_block_number
