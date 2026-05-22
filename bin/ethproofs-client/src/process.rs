@@ -297,6 +297,20 @@ pub(crate) async fn process_input(
                 block_number
             );
             warn!("{}", msg_alert);
+
+            // Run blocks-skipped hook if configured
+            if let Some(script) = &app_state.cliargs.hooks.blocks_skipped {
+                let job_id = app_state
+                    .current_job_id
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .clone();
+                crate::hooks::run_hook(
+                    script,
+                    vec![proving_block_number.to_string(), job_id],
+                );
+            }
+
             let mut alert_handle = None;
             if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold)
                 && !app_state.skipped_alert()
@@ -407,6 +421,20 @@ pub(crate) async fn process_input(
             let msg_alert =
                 format!("Proof generation failed for block {}, error: {}", block_number, e);
             error!("❌ {}", &msg_alert);
+
+            // Run proof-failed hook if configured
+            if let Some(script) = &app_state.cliargs.hooks.proof_failed {
+                let job_id = app_state
+                    .current_job_id
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .clone();
+                crate::hooks::run_hook(
+                    script,
+                    vec![block_number.to_string(), job_id],
+                );
+            }
+
             if app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
                 if !app_state.failed_alert() {
                     app_state.set_failed_alert(true);

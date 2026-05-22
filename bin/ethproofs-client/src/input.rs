@@ -16,6 +16,7 @@ use zisk_sdk::ZiskStdin;
 use crate::{
     process::{process_input, process_queued},
     state::AppState,
+    telegram::send_started_alert,
 };
 
 /// Run process to generate input files by connecting to an Ethereum node via RPC
@@ -28,6 +29,8 @@ pub(crate) async fn process_inputs_from_rpc(app_state: &mut AppState) -> Result<
     let rpc_ws_url = app_state.cliargs.rpc.ws_url.clone();
     let rpc_http_url = app_state.cliargs.rpc.http_url.clone();
     let block_modulus = app_state.cliargs.inputs.block_modulus;
+
+    send_started_alert(app_state, "rpc").await;
 
     loop {
         info!("Connecting to node WS RPC provider at {}", rpc_ws_url);
@@ -137,6 +140,8 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
     let mut min_input_time: u128 = u128::MAX;
     let mut total_input_time: u128 = 0;
     let mut input_count: u64 = 0;
+
+    send_started_alert(app_state, "folder").await;
 
     let entries = match fs::read_dir(&inputs_queue) {
         Ok(e) => e,

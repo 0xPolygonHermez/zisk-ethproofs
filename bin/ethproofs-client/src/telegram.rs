@@ -1,8 +1,9 @@
 use anyhow::Result;
-use log::{debug, error};
+use log::{debug, error, warn};
 use reqwest::Client;
 
-use crate::cliargs::TelegramArgs;
+use crate::cliargs::{TelegramArgs, TelegramEvent};
+use crate::state::AppState;
 
 // Define the types of Telegran alerts that can be sent
 #[allow(dead_code)]
@@ -64,4 +65,18 @@ pub async fn send_telegram_alert(
     }
 
     Ok(())
+}
+
+/// Send a Telegram "Started" alert if enabled
+pub async fn send_started_alert(app_state: &AppState, mode: &str) {
+    if !app_state.cliargs.telegram_enabled(TelegramEvent::Started) {
+        return;
+    }
+    let msg = format!("EthProofs client started ({} mode)", mode);
+    let telegram_args = app_state.cliargs.telegram.clone();
+    tokio::spawn(async move {
+        if let Err(e) = send_telegram_alert(&telegram_args, &msg, AlertType::Info).await {
+            warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
+        }
+    });
 }
