@@ -3,6 +3,7 @@ use std::{path::PathBuf, sync::Arc, time::Duration};
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
 use log::{debug, error, info, warn};
+use zisk_sdk::ProveResult;
 use zisk_sdk::ZiskStdin;
 use zisk_sdk::{ExecutorKind, ProofKind};
 
@@ -88,6 +89,28 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     Err(anyhow!("Failed to start proof generation for block {}: {}", proved_block_number, e))
                 }
             };
+
+            // Report to EthProofs that we are proving this block in a separate parallel task
+            if let Some(client) = ethproofs_client {
+                tokio::spawn(async move {
+                    let start = std::time::Instant::now();
+                    match client.proof_proving(ethproofs_cluster_id.unwrap(), proved_block_number).await {
+                        Ok(_) => {
+                            info!(
+                                "Reported proving state to EthProofs for block {}, request_time: {} ms",
+                                proved_block_number,
+                                start.elapsed().as_millis()
+                            );
+                        }
+                        Err(e) => {
+                            error!(
+                                "Failed to report proving state to EthProofs for block {}, error: {}",
+                                proved_block_number, e
+                            );
+                        }
+                    }
+                });
+            }
 
             if let Ok(result) = &prove_result {
                 let proving_time_ms = result.get_proving_time();
@@ -201,240 +224,228 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
             match prove_result {
                 Ok(result) => {
-                    // If proof generation was successful, proceed to process the block proof
-
-                    let proving_time_ms = result.get_proving_time();
-                    let proving_cycles = result.get_execution_steps();
-                    let job_id_str = result.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
-
-                    // Encode compressed proof to base64
-                    let proof_bytes = match result.get_proof_u64() {
-                        Ok(bytes) => {
-                            // Convert Vec<u64> to Vec<u8> (little-endian)
-                            bytes.iter().flat_map(|x| x.to_le_bytes()).collect::<Vec<u8>>()
-                        }
-                        Err(e) => {
-                            error!(
-                                "❌ Failed to get proof bytes for block {}, error: {}",
-                                proved_block_number, e
-                            );
-                            return;
-                        }
-                    };
-
-                    // Save proof to disk if enabled
-                    if state.cliargs.proof.save {
-                        let proof_dir = PathBuf::from(&state.cliargs.proof.folder);
-                        if let Err(e) = std::fs::create_dir_all(&proof_dir) {
-                            error!(
-                                "❌ Failed to create proof directory {} for block {}, error: {}",
-                                proof_dir.display(), proved_block_number, e
-                            );
-                        } else {
-                            let proof_path = proof_dir.join(format!("{}_proof.bin", proved_block_number));
-                            match std::fs::write(&proof_path, proof_bytes.as_slice()) {
-                                Ok(_) => info!(
-                                    "Proof saved to {} for block {}",
-                                    proof_path.display(), proved_block_number
-                                ),
-                                Err(e) => error!(
-                                    "❌ Failed to save proof to {} for block {}, error: {}",
-                                    proof_path.display(), proved_block_number, e
-                                ),
-                            }
-                        }
-                    }
-
-                    let proof_base64 = match get_proof_b64(proof_bytes.as_slice()) {
-                        Ok(b64) => b64,
-                        Err(e) => {
-                            error!(
-                                "❌ Failed to get compressed proof in base64 for block {}, error: {}",
-                                proved_block_number, e
-                            );
-                            return;
-                        }
-                    };
-
-                    // Submit to EthProofs if enabled
-                    let (submitted, submit_time) = if state.cliargs.ethproofs.submit {
-                        let state = state.clone();
-                        let client = &state.ethproofs_client.clone().unwrap();
-                        let cluster_id = state.cliargs.ethproofs.cluster_id.unwrap();
-                        let start = std::time::Instant::now();
-                        match client
-                            .proof_proved(
-                                cluster_id,
-                                proved_block_number,
-                                proving_time_ms as u128,
-                                proving_cycles,
-                                &proof_base64,
-                                job_id_str,
-                            )
-                            .await
-                        {
-                            Ok(_) => {
-                                let submit_time = start.elapsed().as_millis() as f64;
-                                info!(
-                                    "Reported proved state to EthProofs for block {}, request_time: {} ms",
-                                    proved_block_number, submit_time
-                                );
-                                (true, submit_time)
-                            }
-                            Err(e) => {
-                                error!(
-                                    "❌ Failed to submit proof to EthProofs for block {}, error: {}",
-                                    proved_block_number, e
-                                );
-                                (false, 0f64)
-                            }
-                        }
-                    } else {
-                        (false, 0f64)
-                    };
-
-                    // Insert into DB if enabled
-                    if state.cliargs.db.enabled {
-                        if let Some(db) = &state.db_block_proofs {
-                            let start = std::time::Instant::now();
-                            let block_proof = BlockProof {
-                                block_number: proved_block_number,
-                                zisk_version: state
-                                    .cliargs
-                                    .db
-                                    .zisk_version
-                                    .clone()
-                                    .unwrap_or_default(),
-                                hardware: state.cliargs.db.hardware.clone().unwrap_or_default(),
-                                proving_time: proving_time_ms as u32,
-                                proof: proof_base64,
-                                steps: proving_cycles,
-                            };
-                            match db.enqueue(block_proof).await {
-                                Ok(_) => info!(
-                                    "Proof inserted into DB for block {}, insert_time: {} ms",
-                                    proved_block_number,
-                                    start.elapsed().as_millis()
-                                ),
-                                Err(e) => error!(
-                                    "❌ Failed to insert proof into DB for block {}, error: {}",
-                                    proved_block_number, e
-                                ),
-                            }
-                        } else {
-                            warn!(
-                                "DB handle not initialized, cannot insert proof for block {}",
-                                proved_block_number
-                            );
-                        }
-                    }
-
-                    // Send Telegram alert if enabled
-                    send_block_proved_alert(
-                        &state,
-                        proved_block_number,
-                        proving_time_ms,
-                        proving_cycles,
-                    );
-
-                    // Update Prometheus metrics for proof generation if metrics enabled
-                    if state.cliargs.metrics.enabled {
-                        let start = std::time::Instant::now();
-                        let mut shared_metrics = state.shared_metrics.lock().await;
-                        let entry = shared_metrics.get_mut(&proved_block_number);
-                        if let Some(metrics) = entry {
-                            metrics.proving_time_ms = Some(proving_time_ms as i64);
-                            metrics.proving_cycles = Some(proving_cycles as i64);
-                            metrics.submit_time_ms = if submitted { Some(submit_time as i64) } else { Some(0) };
-                            metrics.success = true;
-
-                            crate::metrics::publish_proof_success(metrics, proving_time_ms);
-
-                            debug!(
-                                "Published metrics for block {}, update time: {} ms",
-                                metrics.block_number,
-                                start.elapsed().as_millis()
-                            );
-                            // Remove the entry for the processed block
-                            shared_metrics.remove(&proved_block_number);
-                        } else {
-                            warn!(
-                                "No metrics entry found for block {} when trying to publish metrics",
-                                proved_block_number
-                            );
-                        }
-                    }
-
-                    // Delete input file if not needed
-                    state.delete_input_file(&block_info.filename());
+                    process_proof_success(result, block_info, proved_block_number, state).await;
                 }
                 Err(e) => {
-                    let msg = format!(
-                        "Failed proof for block {}, error: {}",
-                        proved_block_number, e
-                    );
-                    error!("❌ {}", &msg);
-
-                    // Run proof-failed hook if configured
-                    if let Some(script) = &state.cliargs.hooks.proof_failed {
-                        crate::hooks::run_hook(
-                            script,
-                            vec![proved_block_number.to_string(), prove_job_id.clone()],
-                        );
-                    }
-
-                    let telegram_task = send_proof_failed_alert(&state, msg.clone());
-
-                    if state.cliargs.metrics.enabled {
-                        let mut shared_metrics = state.shared_metrics.lock().await;
-                        let entry = shared_metrics.get(&proved_block_number);
-                        if let Some(metrics) = entry {
-                            crate::metrics::publish_proof_failure_with_metrics(metrics);
-                            debug!("Published failure metrics for block {}", metrics.block_number);
-                            // Remove the entry for the processed block
-                            shared_metrics.remove(&proved_block_number);
-                        } else {
-                            crate::metrics::publish_proof_failure_no_metrics(proved_block_number);
-                            warn!(
-                                "No metrics entry found for block {} when trying to publish failure metrics",
-                                proved_block_number
-                            );
-                        }
-                    }
-
-                    if state.cliargs.exit_on_error {
-                        if let Some(handle) = telegram_task {
-                            handle.await.ok();
-                        }
-                        std::process::exit(1);
-                    }
-                    return;
+                    process_proof_failure(e, proved_block_number, state, prove_job_id).await;
                 }
             };
         })
     });
 
-    // Report to EthProofs that we are proving this block in a separate parallel task
-    if let Some(client) = ethproofs_client {
-        tokio::spawn(async move {
-            let start = std::time::Instant::now();
-            match client.proof_proving(ethproofs_cluster_id.unwrap(), proved_block_number).await {
-                Ok(_) => {
-                    info!(
-                        "Reported proving state to EthProofs for block {}, request_time: {} ms",
-                        proved_block_number,
-                        start.elapsed().as_millis()
-                    );
-                }
-                Err(e) => {
-                    error!(
-                        "Failed to report proving state to EthProofs for block {}, error: {}",
-                        proved_block_number, e
-                    );
-                }
+    Ok("".to_string())
+}
+
+/// Process a successful proof generation: encode, optionally save to disk,
+/// submit to EthProofs, store in DB, send Telegram alert and publish metrics.
+async fn process_proof_success(
+    result: ProveResult,
+    block_info: BlockInfo,
+    proved_block_number: u64,
+    state: AppState,
+) {
+    let proving_time_ms = result.get_proving_time();
+    let proving_cycles = result.get_execution_steps();
+    let job_id_str = result.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
+
+    // Encode compressed proof to base64
+    let proof_bytes = match result.get_proof_u64() {
+        Ok(bytes) => {
+            // Convert Vec<u64> to Vec<u8> (little-endian)
+            bytes.iter().flat_map(|x| x.to_le_bytes()).collect::<Vec<u8>>()
+        }
+        Err(e) => {
+            error!(
+                "❌ Failed to get proof bytes for block {}, error: {}",
+                proved_block_number, e
+            );
+            return;
+        }
+    };
+
+    // Save proof to disk if enabled
+    if state.cliargs.proof.save {
+        let proof_dir = PathBuf::from(&state.cliargs.proof.folder);
+        if let Err(e) = std::fs::create_dir_all(&proof_dir) {
+            error!(
+                "❌ Failed to create proof directory {} for block {}, error: {}",
+                proof_dir.display(),
+                proved_block_number,
+                e
+            );
+        } else {
+            let proof_path = proof_dir.join(format!("{}_proof.bin", proved_block_number));
+            match std::fs::write(&proof_path, proof_bytes.as_slice()) {
+                Ok(_) => info!(
+                    "Proof saved to {} for block {}",
+                    proof_path.display(),
+                    proved_block_number
+                ),
+                Err(e) => error!(
+                    "❌ Failed to save proof to {} for block {}, error: {}",
+                    proof_path.display(),
+                    proved_block_number,
+                    e
+                ),
             }
-        });
+        }
     }
 
-    Ok("".to_string())
+    let proof_base64 = match get_proof_b64(proof_bytes.as_slice()) {
+        Ok(b64) => b64,
+        Err(e) => {
+            error!(
+                "❌ Failed to get compressed proof in base64 for block {}, error: {}",
+                proved_block_number, e
+            );
+            return;
+        }
+    };
+
+    // Submit to EthProofs if enabled
+    let (submitted, submit_time) = if state.cliargs.ethproofs.submit {
+        let client = state.ethproofs_client.clone().unwrap();
+        let cluster_id = state.cliargs.ethproofs.cluster_id.unwrap();
+        let start = std::time::Instant::now();
+        match client
+            .proof_proved(
+                cluster_id,
+                proved_block_number,
+                proving_time_ms as u128,
+                proving_cycles,
+                &proof_base64,
+                job_id_str,
+            )
+            .await
+        {
+            Ok(_) => {
+                let submit_time = start.elapsed().as_millis() as f64;
+                info!(
+                    "Reported proved state to EthProofs for block {}, request_time: {} ms",
+                    proved_block_number, submit_time
+                );
+                (true, submit_time)
+            }
+            Err(e) => {
+                error!(
+                    "❌ Failed to submit proof to EthProofs for block {}, error: {}",
+                    proved_block_number, e
+                );
+                (false, 0f64)
+            }
+        }
+    } else {
+        (false, 0f64)
+    };
+
+    // Insert into DB if enabled
+    if state.cliargs.db.enabled {
+        if let Some(db) = &state.db_block_proofs {
+            let start = std::time::Instant::now();
+            let block_proof = BlockProof {
+                block_number: proved_block_number,
+                zisk_version: state.cliargs.db.zisk_version.clone().unwrap_or_default(),
+                hardware: state.cliargs.db.hardware.clone().unwrap_or_default(),
+                proving_time: proving_time_ms as u32,
+                proof: proof_base64,
+                steps: proving_cycles,
+            };
+            match db.enqueue(block_proof).await {
+                Ok(_) => info!(
+                    "Proof inserted into DB for block {}, insert_time: {} ms",
+                    proved_block_number,
+                    start.elapsed().as_millis()
+                ),
+                Err(e) => error!(
+                    "❌ Failed to insert proof into DB for block {}, error: {}",
+                    proved_block_number, e
+                ),
+            }
+        } else {
+            warn!(
+                "DB handle not initialized, cannot insert proof for block {}",
+                proved_block_number
+            );
+        }
+    }
+
+    // Send Telegram alert if enabled
+    send_block_proved_alert(&state, proved_block_number, proving_time_ms, proving_cycles);
+
+    // Update Prometheus metrics for proof generation if metrics enabled
+    if state.cliargs.metrics.enabled {
+        let start = std::time::Instant::now();
+        let mut shared_metrics = state.shared_metrics.lock().await;
+        let entry = shared_metrics.get_mut(&proved_block_number);
+        if let Some(metrics) = entry {
+            metrics.proving_time_ms = Some(proving_time_ms as i64);
+            metrics.proving_cycles = Some(proving_cycles as i64);
+            metrics.submit_time_ms = if submitted { Some(submit_time as i64) } else { Some(0) };
+            metrics.success = true;
+
+            crate::metrics::publish_proof_success(metrics, proving_time_ms);
+
+            debug!(
+                "Published metrics for block {}, update time: {} ms",
+                metrics.block_number,
+                start.elapsed().as_millis()
+            );
+            // Remove the entry for the processed block
+            shared_metrics.remove(&proved_block_number);
+        } else {
+            warn!(
+                "No metrics entry found for block {} when trying to publish metrics",
+                proved_block_number
+            );
+        }
+    }
+
+    // Delete input file if not needed
+    state.delete_input_file(&block_info.filename());
+}
+
+/// Process a failed proof generation: log, run hook, send Telegram alert,
+/// publish failure metrics and optionally exit the process.
+async fn process_proof_failure(
+    e: anyhow::Error,
+    proved_block_number: u64,
+    state: AppState,
+    prove_job_id: String,
+) {
+    let msg = format!("Failed proof for block {}, error: {}", proved_block_number, e);
+    error!("❌ {}", &msg);
+
+    // Run proof-failed hook if configured
+    if let Some(script) = &state.cliargs.hooks.proof_failed {
+        crate::hooks::run_hook(
+            script,
+            vec![proved_block_number.to_string(), prove_job_id],
+        );
+    }
+
+    let telegram_task = send_proof_failed_alert(&state, msg);
+
+    if state.cliargs.metrics.enabled {
+        let mut shared_metrics = state.shared_metrics.lock().await;
+        let entry = shared_metrics.get(&proved_block_number);
+        if let Some(metrics) = entry {
+            crate::metrics::publish_proof_failure_with_metrics(metrics);
+            debug!("Published failure metrics for block {}", metrics.block_number);
+            // Remove the entry for the processed block
+            shared_metrics.remove(&proved_block_number);
+        } else {
+            crate::metrics::publish_proof_failure_no_metrics(proved_block_number);
+            warn!(
+                "No metrics entry found for block {} when trying to publish failure metrics",
+                proved_block_number
+            );
+        }
+    }
+
+    if state.cliargs.exit_on_error {
+        if let Some(handle) = telegram_task {
+            handle.await.ok();
+        }
+        std::process::exit(1);
+    }
 }
