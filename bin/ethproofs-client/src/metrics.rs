@@ -23,7 +23,6 @@ pub struct BlockMetrics {
     pub timestamp: i64, // Unix timestamp (seconds)
     pub proving_time_ms: Option<i64>,
     pub proving_cycles: Option<i64>,
-    pub submit_time_ms: Option<i64>,
     pub success: bool,
 }
 
@@ -149,6 +148,8 @@ fn compute_missing_diff(current_block: u64) -> u64 {
 
 /// Update all per-block latest gauges from the given metrics entry and
 /// increment BLOCKS_MISSING_TOTAL / BLOCKS_RECEIVED_TOTAL accordingly.
+/// Note: LATEST_SUBMIT_TIME_MS is updated asynchronously by the EthProofs API
+/// client when proof_proved completes, so it is not set here.
 fn publish_block_gauges(metrics: &BlockMetrics) {
     let diff = compute_missing_diff(metrics.block_number);
     LATEST_BLOCK_NUMBER.set(metrics.block_number as i64);
@@ -158,7 +159,6 @@ fn publish_block_gauges(metrics: &BlockMetrics) {
     LATEST_TX_COUNT.set(metrics.tx_count as i64);
     LATEST_PROVING_TIME_MS.set(metrics.proving_time_ms.unwrap_or(0));
     LATEST_PROVING_CYCLES.set(metrics.proving_cycles.unwrap_or(0));
-    LATEST_SUBMIT_TIME_MS.set(metrics.submit_time_ms.unwrap_or(0));
     LATEST_BLOCK_TIMESTAMP.set(metrics.timestamp);
     BLOCKS_MISSING_TOTAL.inc_by(diff);
     BLOCKS_RECEIVED_TOTAL.inc();
@@ -167,11 +167,11 @@ fn publish_block_gauges(metrics: &BlockMetrics) {
 /// Reset all per-block latest gauges to zero (except LATEST_BLOCK_NUMBER, which
 /// is set to the given block number) and increment BLOCKS_MISSING_TOTAL /
 /// BLOCKS_RECEIVED_TOTAL accordingly.
+/// LATEST_SUBMIT_TIME_MS is intentionally left untouched (managed by api.rs).
 fn publish_empty_block_gauges(block_number: u64) {
     let diff = compute_missing_diff(block_number);
     LATEST_BLOCK_NUMBER.set(block_number as i64);
     LATEST_BLOCK_TIMESTAMP.set(0);
-    LATEST_SUBMIT_TIME_MS.set(0);
     LATEST_MGAS.set(0);
     LATEST_TX_COUNT.set(0);
     LATEST_PROVING_TIME_MS.set(0);

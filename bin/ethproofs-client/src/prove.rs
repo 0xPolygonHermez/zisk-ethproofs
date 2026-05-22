@@ -90,26 +90,9 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 }
             };
 
-            // Report to EthProofs that we are proving this block in a separate parallel task
-            if let Some(client) = ethproofs_client {
-                tokio::spawn(async move {
-                    let start = std::time::Instant::now();
-                    match client.proof_proving(ethproofs_cluster_id.unwrap(), proved_block_number).await {
-                        Ok(_) => {
-                            info!(
-                                "Reported proving state to EthProofs for block {}, request_time: {} ms",
-                                proved_block_number,
-                                start.elapsed().as_millis()
-                            );
-                        }
-                        Err(e) => {
-                            error!(
-                                "Failed to report proving state to EthProofs for block {}, error: {}",
-                                proved_block_number, e
-                            );
-                        }
-                    }
-                });
+            // Report to EthProofs that we are proving this block
+            if let Some(client) = &ethproofs_client {
+                client.proof_proving(ethproofs_cluster_id.unwrap(), proved_block_number);
             }
 
             if let Ok(result) = &prove_result {
@@ -303,40 +286,18 @@ async fn process_proof_success(
     };
 
     // Submit to EthProofs if enabled
-    let (submitted, submit_time) = if state.cliargs.ethproofs.submit {
-        let client = state.ethproofs_client.clone().unwrap();
+    if state.cliargs.ethproofs.submit {
+        let client = state.ethproofs_client.as_ref().unwrap();
         let cluster_id = state.cliargs.ethproofs.cluster_id.unwrap();
-        let start = std::time::Instant::now();
-        match client
-            .proof_proved(
-                cluster_id,
-                proved_block_number,
-                proving_time_ms as u128,
-                proving_cycles,
-                &proof_base64,
-                job_id_str,
-            )
-            .await
-        {
-            Ok(_) => {
-                let submit_time = start.elapsed().as_millis() as f64;
-                info!(
-                    "Reported proved state to EthProofs for block {}, request_time: {} ms",
-                    proved_block_number, submit_time
-                );
-                (true, submit_time)
-            }
-            Err(e) => {
-                error!(
-                    "❌ Failed to submit proof to EthProofs for block {}, error: {}",
-                    proved_block_number, e
-                );
-                (false, 0f64)
-            }
-        }
-    } else {
-        (false, 0f64)
-    };
+        client.proof_proved(
+            cluster_id,
+            proved_block_number,
+            proving_time_ms as u128,
+            proving_cycles,
+            proof_base64.clone(),
+            job_id_str,
+        );
+    }
 
     // Insert into DB if enabled
     if state.cliargs.db.enabled {
@@ -380,7 +341,6 @@ async fn process_proof_success(
         if let Some(metrics) = entry {
             metrics.proving_time_ms = Some(proving_time_ms as i64);
             metrics.proving_cycles = Some(proving_cycles as i64);
-            metrics.submit_time_ms = if submitted { Some(submit_time as i64) } else { Some(0) };
             metrics.success = true;
 
             crate::metrics::publish_proof_success(metrics, proving_time_ms);

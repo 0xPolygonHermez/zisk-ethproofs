@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
-use log::debug;
+use log::{debug, error, info};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::time::sleep;
@@ -176,7 +176,26 @@ impl EthProofsApi {
         Ok(cluster_id)
     }
 
-    pub async fn proof_queued(&self, cluster_id: u32, block_number: u64) -> Result<u64> {
+    /// Report queued state to EthProofs in a background task. Logs success/failure.
+    pub fn proof_queued(&self, cluster_id: u32, block_number: u64) {
+        let client = self.clone();
+        tokio::spawn(async move {
+            let start = std::time::Instant::now();
+            match client.proof_queued_inner(cluster_id, block_number).await {
+                Ok(_) => info!(
+                    "Reported queued state to EthProofs for block {}, request_time: {} ms",
+                    block_number,
+                    start.elapsed().as_millis()
+                ),
+                Err(e) => error!(
+                    "Failed to report queued state to EthProofs for block {}, error: {}",
+                    block_number, e
+                ),
+            }
+        });
+    }
+
+    async fn proof_queued_inner(&self, cluster_id: u32, block_number: u64) -> Result<u64> {
         let url = Url::parse(&format!("{}/proofs/queued", self.url))?;
         debug!("proof_queued POST {}", url);
 
@@ -195,7 +214,26 @@ impl EthProofsApi {
         Ok(proof_id.proof_id)
     }
 
-    pub async fn proof_proving(&self, cluster_id: u32, block_number: u64) -> Result<u64> {
+    /// Report proving state to EthProofs in a background task. Logs success/failure.
+    pub fn proof_proving(&self, cluster_id: u32, block_number: u64) {
+        let client = self.clone();
+        tokio::spawn(async move {
+            let start = std::time::Instant::now();
+            match client.proof_proving_inner(cluster_id, block_number).await {
+                Ok(_) => info!(
+                    "Reported proving state to EthProofs for block {}, request_time: {} ms",
+                    block_number,
+                    start.elapsed().as_millis()
+                ),
+                Err(e) => error!(
+                    "Failed to report proving state to EthProofs for block {}, error: {}",
+                    block_number, e
+                ),
+            }
+        });
+    }
+
+    async fn proof_proving_inner(&self, cluster_id: u32, block_number: u64) -> Result<u64> {
         let url = Url::parse(&format!("{}/proofs/proving", self.url))?;
         debug!("proof_proving POST {}", url);
 
@@ -214,7 +252,41 @@ impl EthProofsApi {
         Ok(proof_id.proof_id)
     }
 
-    pub async fn proof_proved(
+    /// Report proved state to EthProofs in a background task. Logs success/failure
+    /// and updates the LATEST_SUBMIT_TIME_MS metric gauge on success.
+    pub fn proof_proved(
+        &self,
+        cluster_id: u32,
+        block_number: u64,
+        time: u128,
+        cycles: u64,
+        proof: String,
+        verifier_id: String,
+    ) {
+        let client = self.clone();
+        tokio::spawn(async move {
+            let start = std::time::Instant::now();
+            match client
+                .proof_proved_inner(cluster_id, block_number, time, cycles, &proof, verifier_id)
+                .await
+            {
+                Ok(_) => {
+                    let submit_time = start.elapsed().as_millis() as i64;
+                    info!(
+                        "Reported proved state to EthProofs for block {}, request_time: {} ms",
+                        block_number, submit_time
+                    );
+                    crate::metrics::LATEST_SUBMIT_TIME_MS.set(submit_time);
+                }
+                Err(e) => error!(
+                    "❌ Failed to submit proof to EthProofs for block {}, error: {}",
+                    block_number, e
+                ),
+            }
+        });
+    }
+
+    async fn proof_proved_inner(
         &self,
         cluster_id: u32,
         block_number: u64,
