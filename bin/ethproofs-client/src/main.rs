@@ -24,6 +24,7 @@ use revm::install_crypto;
 mod api;
 mod cliargs;
 mod db;
+mod hooks;
 mod input;
 mod metrics;
 mod process;

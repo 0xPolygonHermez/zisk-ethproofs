@@ -2,6 +2,7 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 
 #[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
 pub enum TelegramEvent {
+    Started,
     BlockProved,
     SkippedThreshold,
     ProofFailed,
@@ -270,6 +271,18 @@ pub struct DbArgs {
 }
 
 #[derive(Clone, Debug, Args)]
+#[command(next_help_heading = "Hooks")]
+pub struct HooksArgs {
+    /// Path to a shell script to execute when proof generation fails
+    #[arg(id = "hooks_proof_failed", long = "hooks.proof-failed")]
+    pub proof_failed: Option<String>,
+
+    /// Path to a shell script to execute when blocks are skipped over the threshold
+    #[arg(id = "hooks_blocks_skipped", long = "hooks.blocks-skipped")]
+    pub blocks_skipped: Option<String>,
+}
+
+#[derive(Clone, Debug, Args)]
 #[command(next_help_heading = "Proof storage")]
 pub struct ProofArgs {
     /// Save the generated proof to disk
@@ -371,6 +384,9 @@ pub struct CliArgs {
 
     #[command(flatten)]
     pub proof: ProofArgs,
+
+    #[command(flatten)]
+    pub hooks: HooksArgs,
 
     #[cfg(zisk_hints)]
     #[command(flatten)]

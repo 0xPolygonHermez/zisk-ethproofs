@@ -77,10 +77,11 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
             };
 
+            let mut prove_job_id = "N/A".to_string();
             let prove_result = match handle {
                 Ok(handle) => {
-                    let job_id = handle.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
-                    info!("🔄 Generating proof for block {}, job_id: {}", proved_block_number, job_id);
+                    prove_job_id = handle.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
+                    info!("🔄 Generating proof for block {}, job_id: {}", proved_block_number, prove_job_id);
 
                     handle.await
                 }
@@ -173,6 +174,16 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                             next_block_number, e
                         );
                         error!("❌ {}", msg);
+
+                        // Run proof-failed hook if configured
+                        if let Some(script) = &state.cliargs.hooks.proof_failed {
+                            let job_id =
+                                state.current_job_id.lock().unwrap_or_else(|e| e.into_inner()).clone();
+                            crate::hooks::run_hook(
+                                script,
+                                vec![next_block_number.to_string(), job_id],
+                            );
+                        }
 
                         if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
                             let telegram_args = state.cliargs.telegram.clone();
@@ -430,6 +441,14 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                         proved_block_number, e
                     );
                     error!("❌ {}", &msg);
+
+                    // Run proof-failed hook if configured
+                    if let Some(script) = &state.cliargs.hooks.proof_failed {
+                        crate::hooks::run_hook(
+                            script,
+                            vec![proved_block_number.to_string(), prove_job_id.clone()],
+                        );
+                    }
 
                     let telegram_task = if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
                         let msg_clone = msg.clone();
