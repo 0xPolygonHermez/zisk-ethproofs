@@ -188,26 +188,9 @@ pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
 
     info!("Received queued command for block {}", block_number);
 
-    if let Some(client) = app_state.ethproofs_client.clone() {
+    if let Some(client) = &app_state.ethproofs_client {
         let cluster_id = app_state.cliargs.ethproofs.cluster_id.unwrap();
-        tokio::spawn(async move {
-            let start = std::time::Instant::now();
-            match client.proof_queued(cluster_id, block_number).await {
-                Ok(_) => {
-                    info!(
-                        "Reported queued state to EthProofs for block {}, request_time: {} ms",
-                        block_number,
-                        start.elapsed().as_millis()
-                    );
-                }
-                Err(e) => {
-                    error!(
-                        "Failed to report queued state to EthProofs for block {}, error: {}",
-                        block_number, e
-                    );
-                }
-            }
-        });
+        client.proof_queued(cluster_id, block_number);
     }
 }
 
@@ -257,7 +240,6 @@ pub(crate) async fn process_input(
                 timestamp: block_info.timestamp.as_u64() as i64,
                 proving_time_ms: None,
                 proving_cycles: None,
-                submit_time_ms: None,
                 success: false,
             },
         );
