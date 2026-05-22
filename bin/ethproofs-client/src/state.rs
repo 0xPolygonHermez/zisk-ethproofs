@@ -146,7 +146,7 @@ impl AppState {
         let guest_path = std::fs::canonicalize(&cliargs.guest)
             .with_context(|| format!("Failed to resolve guest ELF path: {}", cliargs.guest))?;
         let guest = GuestProgram::from_uri(&format!("file://{}", guest_path.display()))?;
-        let client = ProverClient::remote(cliargs.coordinator.url.clone()).build()?;
+        let client = ProverClient::remote(cliargs.coordinator_url.clone()).build()?;
 
         // Upload the guest program
         info!("Uploading guest program {} to coordinator...", guest_path.display());
@@ -188,7 +188,7 @@ impl AppState {
 
         #[cfg(zisk_hints)]
         if cliargs.hints.debug {
-            std::fs::create_dir_all(&cliargs.hints.debug_path)
+            std::fs::create_dir_all(&cliargs.hints.debug_folder)
                 .context("Failed to create hints debug directory")?;
         }
 

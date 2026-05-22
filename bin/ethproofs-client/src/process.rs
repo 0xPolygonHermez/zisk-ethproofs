@@ -64,7 +64,7 @@ pub fn generate_hints(block_number: u64, app_state: AppState, ready: Option<ones
             let hint_debug_file = app_state.cliargs.hints.debug.then(|| {
                 PathBuf::from(format!(
                     "{}/{}_hints_debug.bin",
-                    app_state.cliargs.hints.debug_path, block_number
+                    app_state.cliargs.hints.debug_folder, block_number
                 ))
             });
 
