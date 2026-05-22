@@ -143,9 +143,8 @@ impl AppState {
         let zisk_stdin = Arc::new(Mutex::new(None));
 
         // Initialize the Zisk prover client
-        let guest_path = std::fs::canonicalize(&cliargs.coordinator.elf).with_context(|| {
-            format!("Failed to resolve guest ELF path: {}", cliargs.coordinator.elf)
-        })?;
+        let guest_path = std::fs::canonicalize(&cliargs.guest)
+            .with_context(|| format!("Failed to resolve guest ELF path: {}", cliargs.guest))?;
         let guest = GuestProgram::from_uri(&format!("file://{}", guest_path.display()))?;
         let client = ProverClient::remote(cliargs.coordinator.url.clone()).build()?;
 
@@ -174,11 +173,7 @@ impl AppState {
         let queued_start = Arc::new(Mutex::new(Instant::now()));
 
         let db_block_proofs = if cliargs.db.enabled {
-            let dsn = cliargs
-                .db
-                .dsn
-                .as_ref()
-                .expect("db.dsn required when db.enabled is set");
+            let dsn = cliargs.db.dsn.as_ref().expect("db.dsn required when db.enabled is set");
             Some(
                 db::DbBlockProofs::new(dsn, db::DbBlockProofsConfig::default())
                     .await
