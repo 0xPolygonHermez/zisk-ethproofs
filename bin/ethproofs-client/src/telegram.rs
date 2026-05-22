@@ -67,16 +67,100 @@ pub async fn send_telegram_alert(
     Ok(())
 }
 
-/// Send a Telegram "Started" alert if enabled
-pub async fn send_started_alert(app_state: &AppState, mode: &str) {
-    if !app_state.cliargs.telegram_enabled(TelegramEvent::Started) {
-        return;
-    }
-    let msg = format!("EthProofs client started ({} mode)", mode);
+/// Spawn a telegram alert in the background and return its JoinHandle so
+/// callers that need to await its completion (e.g. before process exit) can.
+fn spawn_alert(
+    app_state: &AppState,
+    msg: String,
+    alert_type: AlertType,
+) -> tokio::task::JoinHandle<()> {
     let telegram_args = app_state.cliargs.telegram.clone();
     tokio::spawn(async move {
-        if let Err(e) = send_telegram_alert(&telegram_args, &msg, AlertType::Info).await {
+        if let Err(e) = send_telegram_alert(&telegram_args, &msg, alert_type).await {
             warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
         }
-    });
+    })
+}
+
+/// Send a Telegram "Started" alert if enabled
+pub fn send_started_alert(
+    app_state: &AppState,
+    mode: &str,
+) -> Option<tokio::task::JoinHandle<()>> {
+    if !app_state.cliargs.telegram_enabled(TelegramEvent::Started) {
+        return None;
+    }
+    let msg = format!("EthProofs client started ({} mode)", mode);
+    Some(spawn_alert(app_state, msg, AlertType::Info))
+}
+
+/// Send a Telegram "BlockProved" alert if enabled
+pub fn send_block_proved_alert(
+    app_state: &AppState,
+    block_number: u64,
+    proving_time_ms: u64,
+    proving_cycles: u64,
+) -> Option<tokio::task::JoinHandle<()>> {
+    if !app_state.cliargs.telegram_enabled(TelegramEvent::BlockProved) {
+        return None;
+    }
+    let msg = format!(
+        "Proof generated for block {}, proving_time: {}s, cycles: {}",
+        block_number,
+        proving_time_ms / 1000,
+        proving_cycles,
+    );
+    Some(spawn_alert(app_state, msg, AlertType::Success))
+}
+
+/// Send a Telegram "SkippedThreshold" alert if enabled
+pub fn send_skipped_threshold_alert(
+    app_state: &AppState,
+    proving_block_number: u64,
+    block_number: u64,
+    skipped_count: u64,
+) -> Option<tokio::task::JoinHandle<()>> {
+    if !app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
+        return None;
+    }
+    let msg = format!(
+        "Skipped {} consecutive blocks. Currently proving block {}, next queued block is {}.",
+        skipped_count, proving_block_number, block_number
+    );
+    Some(spawn_alert(app_state, msg, AlertType::Warning))
+}
+
+/// Send a Telegram alert when proving resumes after a skipped-threshold alert
+pub fn send_skipped_resumed_alert(
+    app_state: &AppState,
+    proving_block_number: u64,
+) -> Option<tokio::task::JoinHandle<()>> {
+    if !app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold) {
+        return None;
+    }
+    let msg = format!("Resumed proving. Now proving block {}.", proving_block_number);
+    Some(spawn_alert(app_state, msg, AlertType::Info))
+}
+
+/// Send a Telegram "ProofFailed" alert if enabled
+pub fn send_proof_failed_alert(
+    app_state: &AppState,
+    msg: String,
+) -> Option<tokio::task::JoinHandle<()>> {
+    if !app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+        return None;
+    }
+    Some(spawn_alert(app_state, msg, AlertType::Error))
+}
+
+/// Send a Telegram alert when proving resumes after a proof-failed alert
+pub fn send_proof_resumed_alert(
+    app_state: &AppState,
+    block_number: u64,
+) -> Option<tokio::task::JoinHandle<()>> {
+    if !app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
+        return None;
+    }
+    let msg = format!("Resumed proving. Now proving block {}.", block_number);
+    Some(spawn_alert(app_state, msg, AlertType::Info))
 }

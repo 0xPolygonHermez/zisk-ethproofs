@@ -8,10 +8,9 @@ use zisk_sdk::{ExecutorKind, ProofKind};
 
 use crate::state::ZiskStdinWrapper;
 use crate::{
-    cliargs::TelegramEvent,
     db::BlockProof,
     state::AppState,
-    telegram::{send_telegram_alert, AlertType},
+    telegram::{send_block_proved_alert, send_proof_failed_alert},
 };
 use ethproofs_common::protocol::BlockInfo;
 
@@ -185,17 +184,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                             );
                         }
 
-                        if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
-                            let telegram_args = state.cliargs.telegram.clone();
-                            tokio::spawn(async move {
-                                if let Err(e) =
-                                    send_telegram_alert(&telegram_args, &msg, AlertType::Error)
-                                        .await
-                                {
-                                    warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
-                                }
-                            });
-                        }
+                        send_proof_failed_alert(&state, msg);
 
                         // Clean up input file if not needed
                         state.delete_input_file(&next_block.filename());
@@ -341,21 +330,12 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     }
 
                     // Send Telegram alert if enabled
-                    if state.cliargs.telegram_enabled(TelegramEvent::BlockProved) {
-                        let msg = format!(
-                            "Proof generated for block {}, proving_time: {}s, cycles: {}",
-                            proved_block_number,
-                            proving_time_ms / 1000,
-                            proving_cycles,
-                        );
-
-                        if let Err(e) =
-                            send_telegram_alert(&state.cliargs.telegram, &msg, AlertType::Success)
-                                .await
-                        {
-                            warn!("Failed to send Telegram alert: {}, error: {}", msg, e);
-                        }
-                    }
+                    send_block_proved_alert(
+                        &state,
+                        proved_block_number,
+                        proving_time_ms,
+                        proving_cycles,
+                    );
 
                     // Update Prometheus metrics for proof generation if metrics enabled
                     if state.cliargs.metrics.enabled {
@@ -450,20 +430,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                         );
                     }
 
-                    let telegram_task = if state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
-                        let msg_clone = msg.clone();
-                        let telegram_args = state.cliargs.telegram.clone();
-                        Some(tokio::spawn(async move {
-                            if let Err(e) =
-                                send_telegram_alert(&telegram_args, &msg_clone, AlertType::Error)
-                                    .await
-                            {
-                                warn!("Failed to send Telegram alert: {}, error: {}", msg_clone, e);
-                            }
-                        }))
-                    } else {
-                        None
-                    };
+                    let telegram_task = send_proof_failed_alert(&state, msg.clone());
 
                     if state.cliargs.metrics.enabled {
                         crate::metrics::PROOF_FAILURE_TOTAL.inc();

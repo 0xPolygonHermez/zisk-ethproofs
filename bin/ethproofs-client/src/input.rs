@@ -30,7 +30,7 @@ pub(crate) async fn process_inputs_from_rpc(app_state: &mut AppState) -> Result<
     let rpc_http_url = app_state.cliargs.rpc.http_url.clone();
     let block_modulus = app_state.cliargs.inputs.block_modulus;
 
-    send_started_alert(app_state, "rpc").await;
+    send_started_alert(app_state, "rpc");
 
     loop {
         info!("Connecting to node WS RPC provider at {}", rpc_ws_url);
@@ -141,7 +141,7 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
     let mut total_input_time: u128 = 0;
     let mut input_count: u64 = 0;
 
-    send_started_alert(app_state, "folder").await;
+    send_started_alert(app_state, "folder");
 
     let entries = match fs::read_dir(&inputs_queue) {
         Ok(e) => e,

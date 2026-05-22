@@ -17,12 +17,14 @@ use zisk_sdk::ZiskStdin;
 #[cfg(zisk_hints)]
 use ziskos::hints::{close_hints, init_hints_file, init_hints_socket};
 
-use crate::cliargs::TelegramEvent;
 use crate::metrics::BlockMetrics;
 use crate::prove::generate_proof;
 use crate::state::AppState;
 use crate::state::ZiskStdinWrapper;
-use crate::telegram::{send_telegram_alert, AlertType};
+use crate::telegram::{
+    send_proof_failed_alert, send_proof_resumed_alert, send_skipped_resumed_alert,
+    send_skipped_threshold_alert,
+};
 
 #[cfg(zisk_hints)]
 #[inline(always)]
@@ -290,13 +292,11 @@ pub(crate) async fn process_input(
         // Check if skipped blocks exceed threshold and send Telegram alert if enabled
         let proving_block_number = proving_block.clone().unwrap().clone().block_number;
         if block_number - proving_block_number > app_state.cliargs.skipped.threshold as u64 {
-            let msg_alert = format!(
+            let skipped_count = block_number - proving_block_number - 1;
+            warn!(
                 "Skipped {} consecutive blocks. Currently proving block {}, next queued block is {}.",
-                block_number - proving_block_number - 1,
-                proving_block_number,
-                block_number
+                skipped_count, proving_block_number, block_number
             );
-            warn!("{}", msg_alert);
 
             // Run blocks-skipped hook if configured
             if let Some(script) = &app_state.cliargs.hooks.blocks_skipped {
@@ -312,20 +312,16 @@ pub(crate) async fn process_input(
             }
 
             let mut alert_handle = None;
-            if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold)
-                && !app_state.skipped_alert()
-            {
-                app_state.set_skipped_alert(true);
-                let msg_alert_clone = msg_alert.clone();
-                let telegram_args = app_state.cliargs.telegram.clone();
-                alert_handle = Some(tokio::spawn(async move {
-                    if let Err(e) =
-                        send_telegram_alert(&telegram_args, &msg_alert_clone, AlertType::Warning)
-                            .await
-                    {
-                        warn!("Failed to send Telegram alert: {}, error: {}", msg_alert_clone, e);
-                    }
-                }));
+            if !app_state.skipped_alert() {
+                alert_handle = send_skipped_threshold_alert(
+                    app_state,
+                    proving_block_number,
+                    block_number,
+                    skipped_count,
+                );
+                if alert_handle.is_some() {
+                    app_state.set_skipped_alert(true);
+                }
             }
             if app_state.cliargs.skipped.panic {
                 if let Some(handle) = alert_handle {
@@ -333,20 +329,9 @@ pub(crate) async fn process_input(
                 }
                 panic!("Skipped blocks exceeded threshold, panicking as per configuration");
             }
-        } else if app_state.cliargs.telegram_enabled(TelegramEvent::SkippedThreshold)
-            && app_state.skipped_alert()
-        {
+        } else if app_state.skipped_alert() {
             app_state.set_skipped_alert(false);
-            let telegram_args = app_state.cliargs.telegram.clone();
-            tokio::spawn(async move {
-                let msg_alert =
-                    format!("Resumed proving. Now proving block {}.", proving_block_number);
-                if let Err(e) =
-                    send_telegram_alert(&telegram_args, &msg_alert, AlertType::Info).await
-                {
-                    warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
-                }
-            });
+            send_skipped_resumed_alert(app_state, proving_block_number);
         }
         return;
     }
@@ -401,20 +386,9 @@ pub(crate) async fn process_input(
             let mut current_job_id = current_job_id_shared_clone.lock().unwrap();
             *current_job_id = job_id;
 
-            if app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
-                if app_state.failed_alert() {
-                    app_state.set_failed_alert(false);
-                    let msg_alert =
-                        format!("Resumed proving. Now proving block {}.", block_info.block_number);
-                    let telegram_args = app_state.cliargs.telegram.clone();
-                    tokio::spawn(async move {
-                        if let Err(e) =
-                            send_telegram_alert(&telegram_args, &msg_alert, AlertType::Info).await
-                        {
-                            warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
-                        }
-                    });
-                }
+            if app_state.failed_alert() {
+                app_state.set_failed_alert(false);
+                send_proof_resumed_alert(app_state, block_info.block_number);
             }
         }
         Err(e) => {
@@ -435,17 +409,9 @@ pub(crate) async fn process_input(
                 );
             }
 
-            if app_state.cliargs.telegram_enabled(TelegramEvent::ProofFailed) {
-                if !app_state.failed_alert() {
+            if !app_state.failed_alert() {
+                if send_proof_failed_alert(app_state, msg_alert).is_some() {
                     app_state.set_failed_alert(true);
-                    let telegram_args = app_state.cliargs.telegram.clone();
-                    tokio::spawn(async move {
-                        if let Err(e) =
-                            send_telegram_alert(&telegram_args, &msg_alert, AlertType::Error).await
-                        {
-                            warn!("Failed to send Telegram alert: {}, error: {}", msg_alert, e);
-                        }
-                    });
                 }
             }
         }
