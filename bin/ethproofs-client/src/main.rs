@@ -58,6 +58,9 @@ async fn main() -> Result<()> {
 
     // Parse CLI args
     let cliargs = CliArgs::parse();
+    if let Err(e) = cliargs.validate() {
+        e.exit();
+    }
 
     // Handle hidden subcommands
     if let Some(cmd) = &cliargs.command {

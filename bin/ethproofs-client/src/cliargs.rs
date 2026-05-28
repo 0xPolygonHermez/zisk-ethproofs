@@ -1,4 +1,5 @@
-use clap::{Args, Parser, Subcommand, ValueEnum};
+use clap::error::ErrorKind;
+use clap::{Args, CommandFactory, Error, Parser, Subcommand, ValueEnum};
 
 #[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
 pub enum TelegramEvent {
@@ -338,5 +339,19 @@ pub struct CliArgs {
 impl CliArgs {
     pub fn telegram_enabled(&self, event: TelegramEvent) -> bool {
         self.telegram.alert.iter().any(|e| *e == event)
+    }
+
+    /// Validate combinations that clap cannot express declaratively.
+    pub fn validate(&self) -> Result<(), Error> {
+        // Submitting to Ethproofs requires real (RPC-driven) blocks; the
+        // folder-based input mode replays pre-generated inputs and would
+        // submit stale or synthetic proofs.
+        if self.ethproofs.submit && self.inputs.mode == InputGen::Folder {
+            return Err(Self::command().error(
+                ErrorKind::ArgumentConflict,
+                "'--ethproofs.submit' cannot be used with '--input.mode folder'",
+            ));
+        }
+        Ok(())
     }
 }
