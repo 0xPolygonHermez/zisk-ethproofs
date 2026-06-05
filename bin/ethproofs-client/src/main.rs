@@ -17,8 +17,6 @@ use tokio::task;
 #[cfg(zisk_hints)]
 use alloy_consensus::crypto::install_default_provider;
 #[cfg(zisk_hints)]
-use input::guest_reth::CustomEvmCrypto;
-#[cfg(zisk_hints)]
 use revm::install_crypto;
 
 mod api;
@@ -100,6 +98,8 @@ async fn main() -> Result<()> {
     // Install custom EVM crypto
     #[cfg(zisk_hints)]
     {
+        use ::input::guest_reth::CustomEvmCrypto;
+
         install_crypto(CustomEvmCrypto::default());
         install_default_provider(Arc::new(CustomEvmCrypto::default())).unwrap();
     }
