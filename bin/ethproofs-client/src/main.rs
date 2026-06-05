@@ -17,7 +17,7 @@ use tokio::task;
 #[cfg(zisk_hints)]
 use alloy_consensus::crypto::install_default_provider;
 #[cfg(zisk_hints)]
-use guest_reth::CustomEvmCrypto;
+use input::guest_reth::CustomEvmCrypto;
 #[cfg(zisk_hints)]
 use revm::install_crypto;
 

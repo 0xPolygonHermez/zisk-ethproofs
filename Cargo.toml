@@ -34,8 +34,6 @@ tokio-tungstenite = "0.21"
 url = "2.5.4"
 input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "develop-0.11.0" }
 # input = { path = "../zisk-eth-client/crates/input" }
-guest-reth = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "develop-0.11.0" }
-# guest-reth = { path = "../zisk-eth-client/crates/guest-reth" }
 
 [patch.crates-io]
 # Needed for deterministic Hashmap sort
