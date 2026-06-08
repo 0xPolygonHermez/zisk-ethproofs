@@ -252,42 +252,41 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                         }
                     };
 
-                    // Submit to EthProofs if enabled
-                    let (submitted, submit_time) = if state.cliargs.submit_ethproofs {
-                        let state = state.clone();
-                        let client = &state.ethproofs_client.unwrap();
+                    // Report proved state to EthProofs in a separate parallel task
+                    if state.cliargs.submit_ethproofs {
+                        let client = state.ethproofs_client.clone().unwrap();
                         let cluster_id = state.ethproofs_cluster_id.unwrap();
-                        let start = std::time::Instant::now();
-                        match client
-                            .proof_proved(
-                                cluster_id,
-                                proved_block_number,
-                                proving_time_ms as u128,
-                                proving_cycles,
-                                &proof_base64,
-                                job_id_str,
-                            )
-                            .await
-                        {
-                            Ok(_) => {
-                                let submit_time = start.elapsed().as_millis() as f64;
-                                info!(
-                                    "Reported proved state to EthProofs for block {}, request_time: {} ms",
-                                    proved_block_number, submit_time
-                                );
-                                (true, submit_time)
+                        let proof_base64 = proof_base64.clone();
+                        let job_id_str = job_id_str.clone();
+                        tokio::spawn(async move {
+                            let start = std::time::Instant::now();
+                            match client
+                                .proof_proved(
+                                    cluster_id,
+                                    proved_block_number,
+                                    proving_time_ms as u128,
+                                    proving_cycles,
+                                    &proof_base64,
+                                    job_id_str,
+                                )
+                                .await
+                            {
+                                Ok(_) => {
+                                    info!(
+                                        "Reported proved state to EthProofs for block {}, request_time: {} ms",
+                                        proved_block_number,
+                                        start.elapsed().as_millis()
+                                    );
+                                }
+                                Err(e) => {
+                                    error!(
+                                        "❌ Failed to submit proof to EthProofs for block {}, error: {}",
+                                        proved_block_number, e
+                                    );
+                                }
                             }
-                            Err(e) => {
-                                error!(
-                                    "❌ Failed to submit proof to EthProofs for block {}, error: {}",
-                                    proved_block_number, e
-                                );
-                                (false, 0f64)
-                            }
-                        }
-                    } else {
-                        (false, 0f64)
-                    };
+                        });
+                    }
 
                     // Insert into DB if enabled
                     if state.cliargs.insert_db {
@@ -343,7 +342,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                         if let Some(metrics) = entry {
                             metrics.proving_time_ms = Some(proving_time_ms as i64);
                             metrics.proving_cycles = Some(proving_cycles as i64);
-                            metrics.submit_time_ms = if submitted { Some(submit_time as i64) } else { Some(0) };
+                            metrics.submit_time_ms = Some(0);
                             metrics.success = true;
 
                             // Publish all metrics for the current block
