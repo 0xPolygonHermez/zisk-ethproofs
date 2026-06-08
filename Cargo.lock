@@ -3560,7 +3560,6 @@ dependencies = [
  "ethproofs-common",
  "flate2",
  "futures-util",
- "guest-reth",
  "input",
  "lazy_static",
  "log",
@@ -4427,7 +4426,7 @@ dependencies = [
 [[package]]
 name = "guest-common"
 version = "0.9.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.11.0#f854f3b13e44232b3fac02554dadc75f551274e9"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.11.0#fdbe2d1395f7b473314e7b18de72ebd0f0cf82f9"
 dependencies = [
  "zkvm-interface",
 ]
@@ -4435,7 +4434,7 @@ dependencies = [
 [[package]]
 name = "guest-ethrex"
 version = "0.9.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.11.0#f854f3b13e44232b3fac02554dadc75f551274e9"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.11.0#fdbe2d1395f7b473314e7b18de72ebd0f0cf82f9"
 dependencies = [
  "anyhow",
  "bincode",
@@ -4455,7 +4454,7 @@ dependencies = [
 [[package]]
 name = "guest-reth"
 version = "0.9.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.11.0#f854f3b13e44232b3fac02554dadc75f551274e9"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.11.0#fdbe2d1395f7b473314e7b18de72ebd0f0cf82f9"
 dependencies = [
  "alloy-consensus 2.0.5",
  "alloy-genesis",
@@ -5125,7 +5124,7 @@ dependencies = [
 [[package]]
 name = "input"
 version = "0.9.0"
-source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.11.0#f854f3b13e44232b3fac02554dadc75f551274e9"
+source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.11.0#fdbe2d1395f7b473314e7b18de72ebd0f0cf82f9"
 dependencies = [
  "alloy-genesis",
  "alloy-provider 2.0.5",
@@ -9056,9 +9055,9 @@ dependencies = [
 
 [[package]]
 name = "serde_with"
-version = "3.20.0"
+version = "3.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e72c1c2cb7b223fafb600a619537a871c2818583d619401b785e7c0b746ccde2"
+checksum = "76a5c54c7310e7b8b9577c286d7e399ddd876c3e12b3ed917a8aabc4b96e9e8c"
 dependencies = [
  "base64 0.22.1",
  "bs58",
@@ -9076,9 +9075,9 @@ dependencies = [
 
 [[package]]
 name = "serde_with_macros"
-version = "3.20.0"
+version = "3.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b90c488738ecb4fb0262f41f43bc40efc5868d9fb744319ddf5f5317f417bfac"
+checksum = "84d57bc0c8b9a17920c178daa6bb924850d54a9c97ab45194bb8c17ad66bb660"
 dependencies = [
  "darling 0.23.0",
  "proc-macro2",

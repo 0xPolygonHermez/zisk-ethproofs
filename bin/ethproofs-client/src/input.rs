@@ -4,8 +4,8 @@ use anyhow::Result;
 use chrono::Utc;
 use ethers::providers::{Middleware, Provider, Ws};
 use futures_util::StreamExt;
-use guest_reth::{RethInputPublic, RethInputWitness};
-use input::FromRpc;
+use input::guest_reth::{RethInputPublic, RethInputWitness};
+use input::{RethClient, RpcConfig};
 use log::{error, info, warn};
 use regex::Regex;
 use tokio::time::{sleep, Duration, Instant};
@@ -90,12 +90,13 @@ pub(crate) async fn process_inputs_from_rpc(app_state: &mut AppState) -> Result<
 
             let inputs_result = {
                 let _permit_reth = app_state.calling_reth.acquire().await.unwrap();
+                let rpc_config = RpcConfig::new(rpc_http_url.clone());
                 async {
-                    let pk = guest_reth::RethInputPublic::from_rpc(&rpc_http_url, block_number)
+                    let pk = RethClient.public_from_rpc(&rpc_config, block_number)
                         .await
                         .map_err(|e| format!("Public input generation failed: {e}"))?;
                     let witness =
-                        guest_reth::RethInputWitness::from_rpc(&rpc_http_url, block_number)
+                        RethClient.witness_from_rpc(&rpc_config, block_number)
                             .await
                             .map_err(|e| format!("Witness input generation failed: {e}"))?;
                     Ok::<_, String>((pk, witness))
