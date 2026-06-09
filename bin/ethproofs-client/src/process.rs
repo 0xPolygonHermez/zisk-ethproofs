@@ -3,12 +3,12 @@ use std::sync::Arc;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use ethproofs_common::protocol::BlockInfo;
-use guest_reth::RethInputPublic;
-use guest_reth::RethInputWitness;
+use input::guest_reth::RethInputPublic;
+use input::guest_reth::RethInputWitness;
 use log::{error, info, warn};
 
 #[cfg(zisk_hints)]
-use guest_reth::{get_chain_spec, validate_block_stateless, verify_signatures};
+use input::guest_reth::{get_chain_spec, validate_block_stateless, verify_signatures};
 
 #[cfg(zisk_hints)]
 use tokio::sync::oneshot;
