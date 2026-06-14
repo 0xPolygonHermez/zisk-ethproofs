@@ -83,7 +83,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     prove_job_id = handle.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
                     info!("🔄 Generating proof for block {}, job_id: {}", proved_block_number, prove_job_id);
 
-                    handle.await
+                    handle.await.map_err(|e| anyhow!(e))
                 }
                 Err(e) => {
                     Err(anyhow!("Failed to start proof generation for block {}: {}", proved_block_number, e))
@@ -238,10 +238,7 @@ async fn process_proof_success(
             bytes.iter().flat_map(|x| x.to_le_bytes()).collect::<Vec<u8>>()
         }
         Err(e) => {
-            error!(
-                "❌ Failed to get proof bytes for block {}, error: {}",
-                proved_block_number, e
-            );
+            error!("❌ Failed to get proof bytes for block {}, error: {}", proved_block_number, e);
             return;
         }
     };
@@ -377,10 +374,7 @@ async fn process_proof_failure(
 
     // Run proof-failed hook if configured
     if let Some(script) = &state.cliargs.hooks.proof_failed {
-        crate::hooks::run_hook(
-            script,
-            vec![proved_block_number.to_string(), prove_job_id],
-        );
+        crate::hooks::run_hook(script, vec![proved_block_number.to_string(), prove_job_id]);
     }
 
     let telegram_task = send_proof_failed_alert(&state, msg);
