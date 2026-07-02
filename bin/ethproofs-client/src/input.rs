@@ -70,6 +70,22 @@ pub(crate) async fn process_inputs_from_rpc(app_state: &mut AppState) -> Result<
                 continue;
             }
 
+            // Stop accepting new blocks once the configured '--run-time' has elapsed
+            if app_state
+                .run_deadline
+                .is_some_and(|deadline| std::time::Instant::now() >= deadline)
+            {
+                if app_state.proving_block.lock().unwrap().is_none() {
+                    info!("Run time elapsed and no current proof in-progress, exiting.");
+                    return Ok(());
+                }
+                info!(
+                    "Run time elapsed, skipping block {} and waiting for in-progress proof to finish...",
+                    block_number
+                );
+                continue;
+            }
+
             info!("Received block {}, processing...", block_number);
 
             process_queued(block_number, &app_state);

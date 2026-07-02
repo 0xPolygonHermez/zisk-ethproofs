@@ -301,6 +301,11 @@ pub struct CliArgs {
     #[arg(long)]
     pub exit_on_error: bool,
 
+    /// Maximum run time in minutes. When set, the application exits once this
+    /// time has elapsed
+    #[arg(long, short = 'r')]
+    pub run_time: Option<u64>,
+
     #[command(flatten)]
     pub inputs: InputsArgs,
 
@@ -350,6 +355,15 @@ impl CliArgs {
             return Err(Self::command().error(
                 ErrorKind::ArgumentConflict,
                 "'--ethproofs.submit' cannot be used with '--input.mode folder'",
+            ));
+        }
+
+        // The run-time limit is driven by the WS block subscription, so it only makes sense
+        // when generating inputs from RPC.
+        if self.run_time.is_some() && self.inputs.mode != InputGen::Rpc {
+            return Err(Self::command().error(
+                ErrorKind::ArgumentConflict,
+                "'--run-time' can only be used with '--input.mode rpc'",
             ));
         }
         Ok(())

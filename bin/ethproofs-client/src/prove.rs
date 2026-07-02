@@ -1,4 +1,8 @@
-use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::{
+    path::PathBuf,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
@@ -120,8 +124,13 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 }
             };
 
-            // Check and start proof generation for next block if set
-            if next_block.is_some() {
+            // If the configured '--run-time' has elapsed, we must not start proving any queued
+            // block; the process exits right after the current proof has been fully processed.
+            let deadline_reached =
+                state.run_deadline.is_some_and(|deadline| Instant::now() >= deadline);
+
+            // Check and start proof generation for next block if set (unless the run time is up)
+            if next_block.is_some() && !deadline_reached {
                 // Set proving_block to next_block_number in atomic scope
                 {
                     let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
@@ -207,12 +216,17 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
             match prove_result {
                 Ok(result) => {
-                    process_proof_success(result, block_info, proved_block_number, state).await;
+                    process_proof_success(result, block_info, proved_block_number, state.clone()).await;
                 }
                 Err(e) => {
-                    process_proof_failure(e, proved_block_number, state, prove_job_id).await;
+                    process_proof_failure(e, proved_block_number, state.clone(), prove_job_id).await;
                 }
             };
+
+            if deadline_reached {
+                info!("Configured run time elapsed, exiting after proof completion.");
+                std::process::exit(0);
+            }
         })
     });
 

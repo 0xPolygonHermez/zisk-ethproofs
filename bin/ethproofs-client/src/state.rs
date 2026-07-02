@@ -1,6 +1,6 @@
 use std::{
     sync::{Arc, Mutex},
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use anyhow::{Context, Result};
@@ -114,6 +114,7 @@ pub struct AppState {
     pub db_block_proofs: Option<DbBlockProofs>,
     pub fired_alerts: Arc<Mutex<FiredAlerts>>,
     pub proof_done_signal: Arc<tokio::sync::Notify>,
+    pub run_deadline: Option<Instant>,
 }
 
 impl AppState {
@@ -186,6 +187,15 @@ impl AppState {
         let fired_alerts = Arc::new(Mutex::new(FiredAlerts::default()));
         let proof_done_signal = Arc::new(tokio::sync::Notify::new());
 
+        let run_deadline = if cliargs.inputs.mode == crate::cliargs::InputGen::Rpc {
+            cliargs.run_time.map(|minutes| {
+                info!("Client will run for {} minute(s) before exiting", minutes);
+                Instant::now() + Duration::from_secs(minutes * 60)
+            })
+        } else {
+            None
+        };
+
         #[cfg(zisk_hints)]
         if cliargs.hints.debug {
             std::fs::create_dir_all(&cliargs.hints.debug_folder)
@@ -206,6 +216,7 @@ impl AppState {
             db_block_proofs,
             fired_alerts,
             proof_done_signal,
+            run_deadline,
             queued_start,
             shared_metrics: crate::SharedMetrics::default(),
         })
