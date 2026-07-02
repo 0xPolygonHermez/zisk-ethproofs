@@ -2,7 +2,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-use ethproofs_common::protocol::BlockInfo;
 use input::guest_reth::RethInputPublic;
 use input::guest_reth::RethInputWitness;
 use log::{error, info, warn};
@@ -20,6 +19,7 @@ use ziskos::hints::{close_hints, init_hints_file, init_hints_socket};
 use crate::metrics::BlockMetrics;
 use crate::prove::generate_proof;
 use crate::state::AppState;
+use crate::state::BlockInfo;
 use crate::state::ZiskStdinWrapper;
 use crate::telegram::{
     send_proof_failed_alert, send_proof_resumed_alert, send_skipped_resumed_alert,

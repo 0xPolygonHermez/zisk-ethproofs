@@ -1,5 +1,5 @@
 use clap::error::ErrorKind;
-use clap::{Args, CommandFactory, Error, Parser, Subcommand, ValueEnum};
+use clap::{Args, CommandFactory, Error, Parser, ValueEnum};
 
 #[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
 pub enum TelegramEvent {
@@ -19,12 +19,6 @@ pub enum InputGen {
 pub enum HintsMode {
     File,
     Socket,
-}
-
-#[derive(Clone, Subcommand, Debug)]
-pub enum Commands {
-    #[command(hide = true)]
-    InputServer,
 }
 
 #[derive(Clone, Debug, Args)]
@@ -282,9 +276,6 @@ pub struct HintsArgs {
 #[derive(Clone, Parser)]
 #[command(next_line_help = true)]
 pub struct CliArgs {
-    #[command(subcommand)]
-    pub command: Option<Commands>,
-
     /// Skip the proving step (useful for testing)
     #[arg(short = 'k', long)]
     pub skip_proving: bool,

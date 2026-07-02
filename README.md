@@ -2,93 +2,46 @@
 
 ## EthProofs Client
 
-### Setup
-
-Copy the file `bin/ethproofs-client/example.env` to `.env`, then edit it to set the environment variables:
-
-| Variable               | Description                                                                 |
-|------------------------|-----------------------------------------------------------------------------|
-| `INPUT_GEN_SERVER_URL` | URL of the input-gen-server                                                 |
-| `WEBHOOK_PORT`         | Listening port for the Webhook server                                       |
-| `METRICS_PORT`         | Listening port for the Prometheus metrics server                            |
-| `COORDINATOR_URL`      | URL of the Zisk Coordinator                                                 |
-| `ETHPROOFS_API_URL`    | URL of the EthProofs API                                                    |
-| `ETHPROOFS_API_TOKEN`  | Token used to authenticate with the EthProofs API                           |
-| `ETHPROOFS_CLUSTER`    | EthProofs cluster ID where proofs will be submitted                         |
-| `TELEGRAM_BOT_TOKEN`   | Telegram Bot API token for sending alerts                                   |
-| `TELEGRAM_CHAT_ID`     | Telegram chat ID where alerts will be sent                                  |
-| `INPUTS_FOLDER`        | Folder where input files will be stored                                     |
-| `COMPUTE_CAPACITY`     | Compute capacity required for block proofs                                  |
+The EthProofs client connects to an Ethereum node, generates the block inputs, proves each block with ZisK and, optionally, submits the proofs to EthProofs. It is configured entirely through command-line flags.
 
 ### Build
 
 To build `ethproofs-client`, run:
 
 ```bash
-cargo build --release --bin ethproofs-client
+cargo build --release
 ```
 
 ### Run
 
-To run `ethproofs-client` and start submitting block proofs to EthProofs, run:
+The client needs a running ZisK Cluster and access to an Ethereum full node (HTTP and WebSocket JSON-RPC) that supports the `debug_executionWitness` endpoint, required to generate the block inputs (Reth full node supports it). By default it connects to a local coordinator (`http://localhost:50051`) and a local node (`http://localhost:8545` / `ws://localhost:8546`), generates inputs from RPC and proves every new block:
 
 ```bash
-target/release/ethproofs-client -s
+target/release/ethproofs-client
 ```
 
-### Command-line Flags
-```
-  -s, --submit-ethproofs
-          Enable proof submission to Ethproofs
-  -t, --telegram-alert <TELEGRAM_ALERT>...
-          Send Telegram alerts for specified events [possible values: block-proved, skipped-threshold, proof-failed]
-  -d, --insert-db
-          Insert block proof data into the database
-  -k, --skip-proving
-          Skip the proving step (useful for testing)
-  -m, --enable-metrics
-          Enable Prometheus metrics server
-  -i, --keep-input
-          Keep the input file after processing
-  -b, --skipped-threshold <SKIPPED_THRESHOLD>
-          Number of skipped blocks before triggering an alert [default: 5]
-  -p, --panic-on-skipped
-          Panic when skipped blocks exceed the threshold
-```
-
----
-
-## Input Generator Server
-
-### Setup
-
-Copy the file `bin/input-gen-server/example.env` to `.env`, then edit it to set the environment variables:
-
-| Variable             | Description                                                                 |
-|----------------------|-----------------------------------------------------------------------------|
-| `RPC_URL`            | HTTP JSON-RPC URL for Ethereum Mainnet                                      |
-| `RPC_WS_URL`         | WebSocket JSON-RPC URL for Ethereum Mainnet                                 |
-| `WS_PORT`            | Listening port for the input-gen-server WebSocket server                    |
-| `INPUTS_FOLDER`      | Folder where the block input files are stored                               |
-| `BLOCK_MODULUS`      | Modulus used to select which blocks will generate input files               |
-
-### Build
-
-To build `input-gen-server`, run:
+To also submit the generated proofs to EthProofs, enable submission and provide the API credentials and cluster ID:
 
 ```bash
-cargo build --release --bin input-gen-server
+target/release/ethproofs-client \
+    --ethproofs.submit \
+    --ethproofs.api-url <API_URL> \
+    --ethproofs.api-token <API_TOKEN> \
+    --ethproofs.cluster-id <CLUSTER_ID>
 ```
 
-### Run
+### Relevant flags
 
-To run `input-gen-server` and start generating block inputs for the `zec-rsp.elf` client, run:
+| Flag | Description |
+|------|-------------|
+| `-g, --guest <PATH>` | Path to the guest ELF file (default `./elf/zec-reth.elf`) |
+| `-c, --coordinator-url <URL>` | Zisk coordinator URL (default `http://localhost:50051`) |
+| `--rpc.http-url <URL>` | Ethereum node HTTP RPC URL (default `http://localhost:8545`) |
+| `--rpc.ws-url <URL>` | Ethereum node WebSocket RPC URL (default `ws://localhost:8546`) |
+| `--input.block-modulus <N>` | Only process blocks whose number is a multiple of this value (default `1`) |
+| `-s, --ethproofs.submit` | Submit proofs to EthProofs. Requires `--ethproofs.api-url`, `--ethproofs.api-token` and `--ethproofs.cluster-id` |
+| `--ethproofs.api-url <URL>` | EthProofs API URL |
+| `--ethproofs.api-token <TOKEN>` | EthProofs API token |
+| `--ethproofs.cluster-id <ID>` | EthProofs cluster ID where proofs are submitted |
 
-```bash
-target/release/input-gen-server
-```
-
-### Command-line Flags
-```
-  -g, --guest <GUEST>  Guest program for which to generate inputs [default: rsp] [possible values: rsp, zeth]
-```
+Run `target/release/ethproofs-client --help` to see the full list of available flags.

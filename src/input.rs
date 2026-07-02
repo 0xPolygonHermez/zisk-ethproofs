@@ -10,12 +10,11 @@ use log::{error, info, warn};
 use regex::Regex;
 use tokio::time::{sleep, Duration, Instant};
 
-use ethproofs_common::protocol::BlockInfo;
 use zisk_sdk::ZiskStdin;
 
 use crate::{
     process::{process_input, process_queued},
-    state::AppState,
+    state::{AppState, BlockInfo},
     telegram::send_started_alert,
 };
 

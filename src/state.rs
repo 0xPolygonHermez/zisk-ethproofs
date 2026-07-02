@@ -8,10 +8,10 @@ use std::{
 };
 
 use anyhow::{Context, Result};
+use ethers::types::U256;
 use log::{info, warn};
-// serde derive imports no longer needed after moving protocol types
-use ethproofs_common::protocol::BlockInfo;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 //use tokio::sync::Semaphore;
 use zisk_sdk::{GuestProgram, ProverClient, RemoteClient, ZiskStdin};
 
@@ -20,6 +20,25 @@ use crate::{
     cliargs::CliArgs,
     db::{self, DbBlockProofs},
 };
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct BlockInfo {
+    pub block_number: u64,
+    pub timestamp: U256,
+    pub block_hash: String,
+    pub tx_count: usize,
+    pub mgas: u64,
+}
+
+impl BlockInfo {
+    pub fn short_hash(&self) -> String {
+        self.block_hash.chars().take(6).collect()
+    }
+
+    pub fn filename(&self) -> String {
+        format!("{}_{}.bin", self.block_number, self.short_hash())
+    }
+}
 
 #[derive(Debug, Default)]
 pub(crate) struct FiredAlerts {

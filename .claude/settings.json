@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo check *)",
+      "Bash(cargo tree *)",
+      "Bash(mpicc --version)",
+      "Read(//usr/lib/x86_64-linux-gnu/openmpi/include/**)",
+      "Bash(dpkg -l)",
+      "Bash(cargo metadata *)",
+      "Bash(echo \"=== exit: $? ===\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\([t['kind'] for t in d['packages'][0]['targets']]\\)\")"
+    ]
+  }
+}

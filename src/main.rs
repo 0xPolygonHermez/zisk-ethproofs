@@ -9,7 +9,7 @@ use chrono::Utc;
 use clap::Parser;
 use env_logger::{Builder, Env};
 // TODO: Replace log for tracing crate
-use log::{error, warn};
+use log::error;
 use tokio::fs::create_dir_all;
 use tokio::sync::Mutex;
 use tokio::task;
@@ -58,16 +58,6 @@ async fn main() -> Result<()> {
     let cliargs = CliArgs::parse();
     if let Err(e) = cliargs.validate() {
         e.exit();
-    }
-
-    // Handle hidden subcommands
-    if let Some(cmd) = &cliargs.command {
-        match cmd {
-            cliargs::Commands::InputServer => {
-                warn!("InputServer subcommand is not yet implemented");
-                return Ok(());
-            }
-        }
     }
 
     // Initialize application state

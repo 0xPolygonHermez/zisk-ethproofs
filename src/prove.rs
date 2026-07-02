@@ -14,10 +14,9 @@ use zisk_sdk::{ExecutorKind, ProofKind};
 use crate::state::ZiskStdinWrapper;
 use crate::{
     db::BlockProof,
-    state::AppState,
+    state::{AppState, BlockInfo},
     telegram::{send_block_proved_alert, send_proof_failed_alert},
 };
-use ethproofs_common::protocol::BlockInfo;
 
 pub fn get_proof_b64(proof_data: &[u8]) -> Result<String> {
     Ok(general_purpose::STANDARD.encode(proof_data))
