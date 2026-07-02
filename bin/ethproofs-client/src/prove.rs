@@ -225,6 +225,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
             if deadline_reached {
                 info!("Configured run time elapsed, exiting after proof completion.");
+                state.log_proved_blocks_summary();
                 std::process::exit(0);
             }
         })
@@ -244,6 +245,14 @@ async fn process_proof_success(
     let proving_time_ms = result.get_proving_time();
     let proving_cycles = result.get_execution_steps();
     let job_id_str = result.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
+
+    // Record the successfully proved block (updates the counter and the '--proof.csv' file).
+    state.record_proved_block(
+        proved_block_number,
+        block_info.mgas,
+        proving_cycles,
+        proving_time_ms as u64,
+    );
 
     // Encode compressed proof to base64
     let proof_bytes = match result.get_proof_u64() {
@@ -414,6 +423,7 @@ async fn process_proof_failure(
         if let Some(handle) = telegram_task {
             handle.await.ok();
         }
+        state.log_proved_blocks_summary();
         std::process::exit(1);
     }
 }

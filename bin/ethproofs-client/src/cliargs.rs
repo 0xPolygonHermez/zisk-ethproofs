@@ -231,6 +231,10 @@ pub struct ProofArgs {
         requires = "proof_save"
     )]
     pub folder: String,
+
+    /// Path to a CSV file where information about proved blocks is stored
+    #[arg(id = "proof_csv", long = "proof.csv")]
+    pub csv: Option<String>,
 }
 
 #[cfg(zisk_hints)]

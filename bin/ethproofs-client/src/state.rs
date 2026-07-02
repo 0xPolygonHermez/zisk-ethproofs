@@ -1,5 +1,9 @@
 use std::{
-    sync::{Arc, Mutex},
+    fs::File,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc, Mutex,
+    },
     time::{Duration, Instant},
 };
 
@@ -115,6 +119,8 @@ pub struct AppState {
     pub fired_alerts: Arc<Mutex<FiredAlerts>>,
     pub proof_done_signal: Arc<tokio::sync::Notify>,
     pub run_deadline: Option<Instant>,
+    pub proved_blocks: Arc<AtomicU64>,
+    pub proved_csv: Option<Arc<Mutex<File>>>,
 }
 
 impl AppState {
@@ -187,6 +193,21 @@ impl AppState {
         let fired_alerts = Arc::new(Mutex::new(FiredAlerts::default()));
         let proof_done_signal = Arc::new(tokio::sync::Notify::new());
 
+        let proved_blocks = Arc::new(AtomicU64::new(0));
+
+        // Open the proved-blocks CSV file (if configured) and write its header.
+        let proved_csv = if let Some(path) = &cliargs.proof.csv {
+            use std::io::Write;
+            let mut file = File::create(path)
+                .with_context(|| format!("Failed to create proof CSV file: {}", path))?;
+            writeln!(file, "block_number,mgas,steps,proving_time_ms")
+                .context("Failed to write header to proof CSV file")?;
+            info!("Storing proved block info in CSV file: {}", path);
+            Some(Arc::new(Mutex::new(file)))
+        } else {
+            None
+        };
+
         let run_deadline = if cliargs.inputs.mode == crate::cliargs::InputGen::Rpc {
             cliargs.run_time.map(|minutes| {
                 info!("Client will run for {} minute(s) before exiting", minutes);
@@ -217,9 +238,34 @@ impl AppState {
             fired_alerts,
             proof_done_signal,
             run_deadline,
+            proved_blocks,
+            proved_csv,
             queued_start,
             shared_metrics: crate::SharedMetrics::default(),
         })
+    }
+
+    /// Record a successfully proved block: increment the proved-blocks counter and, if a
+    /// '--proof.csv' file is configured, append a row with its info.
+    pub fn record_proved_block(&self, block_number: u64, mgas: u64, steps: u64, proving_time_ms: u64) {
+        self.proved_blocks.fetch_add(1, Ordering::SeqCst);
+
+        if let Some(csv) = &self.proved_csv {
+            use std::io::Write;
+            let mut file = csv.lock().unwrap_or_else(|e| e.into_inner());
+            if let Err(e) = writeln!(file, "{},{},{},{}", block_number, mgas, steps, proving_time_ms)
+            {
+                warn!("Failed to write block {} to proof CSV file, error: {}", block_number, e);
+            }
+        }
+    }
+
+    /// Log a summary with the number of blocks proved successfully.
+    pub fn log_proved_blocks_summary(&self) {
+        info!(
+            "Proved {} block(s) successfully during this run",
+            self.proved_blocks.load(Ordering::SeqCst)
+        );
     }
 
     pub fn delete_input_file(&self, filename: &String) {

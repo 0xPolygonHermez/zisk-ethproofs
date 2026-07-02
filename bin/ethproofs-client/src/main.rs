@@ -113,5 +113,9 @@ async fn main() -> Result<()> {
             process_inputs_from_folder(&mut app_state).await?;
         }
     }
+
+    // Show the number of successfully proved blocks before terminating.
+    app_state.log_proved_blocks_summary();
+
     Ok(())
 }
