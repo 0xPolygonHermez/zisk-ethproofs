@@ -8,11 +8,8 @@ use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
 use chrono::Utc;
 use log::{debug, error, info, warn};
-use zisk_sdk::ProveResult;
-use zisk_sdk::ZiskStdin;
-use zisk_sdk::{ExecutorKind, ProofKind};
+use zisk_sdk::{ExecutorKind, ProofKind, ProveResult, ZiskStdin};
 
-use crate::state::ZiskStdinWrapper;
 use crate::{
     db::BlockProof,
     state::{AppState, BlockInfo},
@@ -76,7 +73,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     .unwrap();
 
                 prover_client
-                    .prove(&guest_program, stdin.stdin)
+                    .prove(&guest_program, stdin)
                     .timeout(Duration::from_secs(state.cliargs.prove_timeout))
                     .executor(ExecutorKind::Assembly)
                     .wrap(ProofKind::VadcopFinalMinimal)
@@ -156,14 +153,11 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     }
                 };
 
-                // Wrap ZiskStdin in ZiskStdinWrapper
-                let zisk_stdin_wrapper = ZiskStdinWrapper::from_zisk_stdin(zisk_stdin);
-
-                // Store ZiskStdinWrapper in shared state for next proof generation
+                // Store input in shared state for next proof generation
                 {
                     let zisk_stdin_shared = Arc::clone(&state.zisk_stdin);
                     let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
-                    *zisk_stdin_lock = Some(zisk_stdin_wrapper);
+                    *zisk_stdin_lock = Some(zisk_stdin);
                 }
 
                 // Start proof generation for next block without waiting for current block proof to complete

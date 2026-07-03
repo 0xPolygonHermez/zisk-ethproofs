@@ -4,8 +4,7 @@ use anyhow::Result;
 use chrono::Utc;
 use ethers::providers::{Middleware, Provider, Ws};
 use futures_util::StreamExt;
-use input::guest_reth::{RethInputPublic, RethInputWitness};
-use input::{RethClient, RpcConfig};
+use input::{create_client, RpcConfig};
 use log::{error, info, warn};
 use regex::Regex;
 use tokio::time::{sleep, Duration, Instant};
@@ -103,26 +102,20 @@ pub(crate) async fn process_inputs_from_rpc(app_state: &mut AppState) -> Result<
             info!("Fetching input for block {}", block_number);
             let start_time = Instant::now();
 
-            let inputs_result = {
-                let _permit_reth = app_state.calling_reth.acquire().await.unwrap();
-                let rpc_config = RpcConfig::new(rpc_http_url.clone());
-                async {
-                    let pk = RethClient.public_from_rpc(&rpc_config, block_number)
-                        .await
-                        .map_err(|e| format!("Public input generation failed: {e}"))?;
-                    let witness =
-                        RethClient.witness_from_rpc(&rpc_config, block_number)
-                            .await
-                            .map_err(|e| format!("Witness input generation failed: {e}"))?;
-                    Ok::<_, String>((pk, witness))
-                }
-                .await
+            let input_result = {
+                let _permit = app_state.calling_client.acquire().await.unwrap();
+                create_client(app_state.cliargs.client)
+                    .from_rpc(&RpcConfig::new(rpc_http_url.clone()), block_number)
+                    .await
             };
 
-            let (input_pk, input_witness) = match inputs_result {
+            let (zisk_stdin, _stats) = match input_result {
                 Ok(result) => result,
-                Err(msg) => {
-                    error!("{} for block {}, skipping...", msg, block_number);
+                Err(e) => {
+                    error!(
+                        "Input generation failed for block {}: {}, skipping...",
+                        block_number, e
+                    );
                     continue;
                 }
             };
@@ -142,7 +135,7 @@ pub(crate) async fn process_inputs_from_rpc(app_state: &mut AppState) -> Result<
                 min_input_time
             );
 
-            process_input(block_info, &input_pk, &input_witness, app_state).await;
+            process_input(block_info, zisk_stdin, app_state).await;
         }
 
         warn!("Block subscription ended, reconnecting...");
@@ -183,43 +176,22 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
                 continue;
             }
 
-            // Read input file into ZiskStdin
+            // Folder mode is client-agnostic: confirm the file loads as a
+            // ZiskStdin, but derive block metadata from the filename rather than
+            // decoding client-specific input types.
             let path = entry.path();
-            let zisk_stdin = match ZiskStdin::from_file(&path) {
-                Ok(stdin) => stdin,
-                Err(e) => {
-                    return Err(anyhow::anyhow!(
-                        "Error opening input file {}: {}",
-                        path.display(),
-                        e
-                    ));
-                }
-            };
+            if let Err(e) = ZiskStdin::from_file(&path) {
+                return Err(anyhow::anyhow!("Error opening input file {}: {}", path.display(), e));
+            }
 
-            let input_pk: RethInputPublic = {
-                match zisk_stdin.read() {
-                    Ok(input) => input,
-                    Err(e) => {
-                        return Err(anyhow::anyhow!(
-                            "Failed to read public keys input for file {}, error: {}",
-                            path.display(),
-                            e
-                        ));
-                    }
-                }
-            };
+            let stem =
+                path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+            // First underscore-separated numeric token is treated as the block number.
+            let block_number_from_name =
+                stem.split('_').find_map(|tok| tok.parse::<u64>().ok()).unwrap_or(u64::MAX);
+            let hash_str: String = stem.chars().take(6).collect();
 
-            let hash_str: String = input_pk
-                .block
-                .header
-                .hash_slow()
-                .to_string()
-                .trim_start_matches("0x")
-                .chars()
-                .take(6)
-                .collect();
-
-            files.push((input_pk.block.number, hash_str, entry.path()));
+            files.push((block_number_from_name, hash_str, entry.path()));
         }
     }
 
@@ -239,7 +211,8 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
         info!("Reading block {}, processing...", block_number);
 
         // Calculate elapsed time since timestamp of last block processed
-        let elapsed_since_previous = last_block_processed_time.map_or(0, |t: Instant| t.elapsed().as_secs());
+        let elapsed_since_previous =
+            last_block_processed_time.map_or(0, |t: Instant| t.elapsed().as_secs());
         // Calculate timestamp for current block by adding elapsed time to timestamp of last block
         current_timestamp = current_timestamp.saturating_add(elapsed_since_previous);
         // Reset last_block_processed_time to now for next iteration
@@ -282,24 +255,15 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
             min_input_time
         );
 
-        let path =
-            PathBuf::from(&app_state.cliargs.inputs.folder).join(block_info.filename());
-        let zisk_stdin_file = ZiskStdin::from_file(&path)?;
-        let input_pk: RethInputPublic = match zisk_stdin_file.read() {
-            Ok(pk) => pk,
+        let path = PathBuf::from(&app_state.cliargs.inputs.folder).join(block_info.filename());
+        let zisk_stdin = match ZiskStdin::from_file(&path) {
+            Ok(stdin) => stdin,
             Err(e) => {
-                error!("Error reading public input from file {}: {}", path.display(), e);
+                error!("Error reading input from file {}: {}", path.display(), e);
                 continue;
             }
         };
-        let input_witness: RethInputWitness = match zisk_stdin_file.read() {
-            Ok(witness) => witness,
-            Err(e) => {
-                error!("Error reading witness input from file {}: {}", path.display(), e);
-                continue;
-            }
-        };
-        process_input(block_info, &input_pk, &input_witness, app_state).await;
+        process_input(block_info, zisk_stdin, app_state).await;
 
         info!("Waiting for block {} proof completion before processing next file...", block_number);
         app_state.proof_done_signal.notified().await;

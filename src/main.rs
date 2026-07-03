@@ -14,11 +14,6 @@ use tokio::fs::create_dir_all;
 use tokio::sync::Mutex;
 use tokio::task;
 
-#[cfg(zisk_hints)]
-use alloy_consensus::crypto::install_default_provider;
-#[cfg(zisk_hints)]
-use revm::install_crypto;
-
 mod api;
 mod cliargs;
 mod db;
@@ -83,15 +78,6 @@ async fn main() -> Result<()> {
                 panic!("Metrics server exited, error: {}", e);
             }
         });
-    }
-
-    // Install custom EVM crypto
-    #[cfg(zisk_hints)]
-    {
-        use ::input::guest_reth::CustomEvmCrypto;
-
-        install_crypto(CustomEvmCrypto::default());
-        install_default_provider(Arc::new(CustomEvmCrypto::default())).unwrap();
     }
 
     // Select input generation method
