@@ -287,8 +287,10 @@ impl AppState {
         );
     }
 
-    pub fn delete_input_file(&self, filename: &String) {
-        if !self.cliargs.inputs.keep {
+    /// Delete a block's input file. When `force` is true the file is removed regardless of the
+    /// `--input.keep` flag; otherwise it is only removed when `--input.keep` is not set.
+    pub fn delete_input_file(&self, filename: &String, force: bool) {
+        if force || !self.cliargs.inputs.keep {
             let input_file_path = format!("{}/{}", &self.cliargs.inputs.folder, filename);
             if std::fs::exists(&input_file_path).unwrap_or(false) {
                 if let Err(e) = std::fs::remove_file(&input_file_path) {

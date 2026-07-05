@@ -201,7 +201,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                         send_proof_failed_alert(&state, msg);
 
                         // Clean up input file if not needed
-                        state.delete_input_file(&next_block.filename());
+                        state.delete_input_file(&next_block.filename(), false);
                     }
                 }
             } else {
@@ -380,7 +380,7 @@ async fn process_proof_success(
     }
 
     // Delete input file if not needed
-    state.delete_input_file(&block_info.filename());
+    state.delete_input_file(&block_info.filename(), false);
 }
 
 /// Process a failed proof generation: log, run hook, send Telegram alert,

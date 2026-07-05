@@ -269,6 +269,13 @@ pub(crate) async fn process_input(
         // Set next proving block to this block
         let next_proving_block_shared_clone = Arc::clone(&app_state.next_proving_block);
         let mut next_proving_block = next_proving_block_shared_clone.lock().unwrap();
+
+        // The previously queued block (if any) is now skipped: it will never be proved, so its
+        // input file must be deleted even when --input.keep is set (which only keeps proved blocks).
+        if let Some(skipped_block) = next_proving_block.take() {
+            app_state.delete_input_file(&skipped_block.filename(), true);
+        }
+
         *next_proving_block = Some(block_info);
 
         // Check if skipped blocks exceed threshold and send Telegram alert if enabled
