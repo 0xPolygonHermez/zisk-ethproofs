@@ -2,12 +2,12 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-use input::guest_reth::RethInputPublic;
-use input::guest_reth::RethInputWitness;
+use input_reth::guest::RethInputPublic;
+use input_reth::guest::RethInputWitness;
 use log::{error, info, warn};
 
 #[cfg(zisk_hints)]
-use input::guest_reth::{get_chain_spec, validate_block_stateless, verify_signatures};
+use input_reth::guest::{get_chain_spec, validate_block_stateless, verify_signatures};
 
 #[cfg(zisk_hints)]
 use tokio::sync::oneshot;

@@ -26,8 +26,8 @@ tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "develop-0.10.0" }
-# input = { path = "../zisk-eth-client/crates/input" }
+input-reth = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "develop-0.11.0" }
+# input-reth = { path = "../zisk-eth-client/crates/clients/reth/input" }
 
 lazy_static = "1.4"
 axum = { version = "0.7", features = ["macros", "json"] }

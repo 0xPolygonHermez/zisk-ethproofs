@@ -88,7 +88,7 @@ async fn main() -> Result<()> {
     // Install custom EVM crypto
     #[cfg(zisk_hints)]
     {
-        use ::input::guest_reth::CustomEvmCrypto;
+        use ::guest_reth::CustomEvmCrypto;
 
         install_crypto(CustomEvmCrypto::default());
         install_default_provider(Arc::new(CustomEvmCrypto::default())).unwrap();
