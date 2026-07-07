@@ -1338,19 +1338,37 @@ dependencies = [
 [[package]]
 name = "asm-runner"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "anyhow",
  "libc",
- "mem-common",
- "mem-planner-cpp",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "mem-planner-cpp 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "named-sem",
- "proofman-util",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "thiserror 2.0.18",
  "tracing",
- "zisk-common",
- "zisk-core",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "asm-runner"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "anyhow",
+ "libc",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "mem-planner-cpp 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "named-sem",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "thiserror 2.0.18",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
@@ -1612,6 +1630,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "az"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be5eb007b7cacc6c660343e96f650fedf4b5a77512399eb952ca6642cf8d13f7"
+
+[[package]]
 name = "base16ct"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1666,7 +1690,7 @@ dependencies = [
  "bitflags 2.13.0",
  "cexpr",
  "clang-sys",
- "itertools 0.13.0",
+ "itertools 0.11.0",
  "log",
  "prettyplease",
  "proc-macro2",
@@ -1857,6 +1881,16 @@ checksum = "bf88ba1141d185c399bee5288d850d63b8369520c1eafc32a0430b5b6c287bf4"
 dependencies = [
  "sha2",
  "tinyvec",
+]
+
+[[package]]
+name = "bstr"
+version = "1.12.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5cee35f73844aa3014bb606320a6c1f010249dbdf43342fe54b5a4f6a8ed4b79"
+dependencies = [
+ "memchr",
+ "serde_core",
 ]
 
 [[package]]
@@ -2057,6 +2091,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "chrono-tz"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93698b29de5e97ad0ae26447b344c482a7284c737d9ddc5f9e52b74a336671bb"
+dependencies = [
+ "chrono",
+ "chrono-tz-build",
+ "phf 0.11.3",
+]
+
+[[package]]
+name = "chrono-tz-build"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c088aee841df9c3041febbb73934cfc39708749bf96dc827e3359cd39ef11b1"
+dependencies = [
+ "parse-zoneinfo",
+ "phf 0.11.3",
+ "phf_codegen",
+]
+
+[[package]]
 name = "cipher"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2069,7 +2125,12 @@ dependencies = [
 [[package]]
 name = "circuit"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
+
+[[package]]
+name = "circuit"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
 
 [[package]]
 name = "clang-sys"
@@ -2195,7 +2256,7 @@ version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -2505,9 +2566,19 @@ dependencies = [
 [[package]]
 name = "curves"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#32e0758da898254faeac08c97c8114fb822ae63b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
 dependencies = [
- "fields",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "num-bigint",
+ "num-traits",
+]
+
+[[package]]
+name = "curves"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#aa47988a70cad34500f758013a8f56e1af8c7d47"
+dependencies = [
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
  "num-bigint",
  "num-traits",
 ]
@@ -2606,9 +2677,17 @@ dependencies = [
 [[package]]
 name = "data-bus"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "zisk-common",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "data-bus"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
@@ -2788,6 +2867,12 @@ dependencies = [
  "syn 2.0.118",
  "unicode-xid",
 ]
+
+[[package]]
+name = "deunicode"
+version = "1.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "abd57806937c9cc163efc8ea3910e00a62e2aeb0b8119f1793a978088f8f6b04"
 
 [[package]]
 name = "digest"
@@ -3449,9 +3534,9 @@ dependencies = [
  "tokio-tungstenite 0.21.0",
  "tonic",
  "url",
- "zisk-common",
- "zisk-sdk",
- "ziskos",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-sdk 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "ziskos 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "zstd 0.13.3",
 ]
 
@@ -3469,44 +3554,100 @@ dependencies = [
 [[package]]
 name = "executor"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "anyhow",
  "arc-swap",
- "asm-runner",
+ "asm-runner 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "crossbeam",
- "data-bus",
- "fields",
- "mem-common",
+ "data-bus 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "named-sem",
  "paste",
- "pil-std-lib",
- "precomp-arith-eq",
- "precomp-arith-eq-384",
- "precomp-big-int",
- "precomp-blake2",
- "precomp-dma",
- "precomp-keccakf",
- "precomp-poseidon",
- "precomp-sha256f",
- "precompiles-common",
- "precompiles-hints",
- "proofman",
- "proofman-common",
- "proofman-util",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "precomp-arith-eq 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precomp-arith-eq-384 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precomp-big-int 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precomp-blake2 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precomp-dma 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precomp-keccakf 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precomp-poseidon 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precomp-sha256f 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precompiles-hints 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "proofman 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
- "sm-arith",
- "sm-binary",
- "sm-main",
- "sm-mem",
- "sm-rom",
+ "sm-arith 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "sm-binary 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "sm-main 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "sm-mem 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "sm-rom 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "thiserror 2.0.18",
  "tracing",
- "witness",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
- "ziskemu",
+ "witness 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "ziskemu 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "executor"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "asm-runner 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "crossbeam",
+ "data-bus 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "named-sem",
+ "paste",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "precomp-arith-eq 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precomp-arith-eq-384 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precomp-big-int 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precomp-blake2 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precomp-dma 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precomp-keccakf 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precomp-poseidon 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precomp-sha256f 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-hints 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "proofman 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "sm-arith 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "sm-binary 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "sm-main 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "sm-mem 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "sm-rom 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "thiserror 2.0.18",
+ "tracing",
+ "witness 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "ziskemu 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+]
+
+[[package]]
+name = "exps-codegen"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
+dependencies = [
+ "anyhow",
+ "rayon",
+ "regex",
+ "serde",
+ "serde_json",
+ "tracing",
 ]
 
 [[package]]
@@ -3572,7 +3713,18 @@ dependencies = [
 [[package]]
 name = "fields"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#32e0758da898254faeac08c97c8114fb822ae63b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
+dependencies = [
+ "cfg-if",
+ "num-bigint",
+ "paste",
+ "serde",
+]
+
+[[package]]
+name = "fields"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#aa47988a70cad34500f758013a8f56e1af8c7d47"
 dependencies = [
  "cfg-if",
  "num-bigint",
@@ -3928,6 +4080,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
 
 [[package]]
+name = "globset"
+version = "0.4.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52dfc19153a48bde0cbd630453615c8151bce3a5adfac7a0aebfbf0a1e1f57e3"
+dependencies = [
+ "aho-corasick",
+ "bstr",
+ "log",
+ "regex-automata",
+ "regex-syntax",
+]
+
+[[package]]
+name = "globwalk"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0bf760ebf69878d9fd8f110c89703d90ce35095324d1f1edcb595c63945ee757"
+dependencies = [
+ "bitflags 2.13.0",
+ "ignore",
+ "walkdir",
+]
+
+[[package]]
 name = "gloo-timers"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3937,6 +4113,16 @@ dependencies = [
  "futures-core",
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "gmp-mpfr-sys"
+version = "1.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7db155b537cb791b133341f99f68371d86ee7fa4c79aacfbc376d72d23c70531"
+dependencies = [
+ "libc",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3955,7 +4141,7 @@ name = "guest-common"
 version = "0.10.0"
 source = "git+https://github.com/0xPolygonHermez/zisk-eth-client.git?branch=develop-0.11.0#a1f76cf79f247aabed6121260f0bbe7875ec8eaa"
 dependencies = [
- "zkvm-interface",
+ "zkvm-interface 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
@@ -3983,7 +4169,7 @@ dependencies = [
  "stateless",
  "tiny-keccak",
  "tries",
- "ziskos",
+ "ziskos 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
@@ -4218,6 +4404,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
 
 [[package]]
+name = "humansize"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6cb51c9a029ddc91b07a787f1d86b53ccfa49b0e86688c946ebe8d3555685dd7"
+dependencies = [
+ "libm",
+]
+
+[[package]]
 name = "hybrid-array"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4347,7 +4542,7 @@ dependencies = [
  "libc",
  "percent-encoding",
  "pin-project-lite",
- "socket2 0.6.4",
+ "socket2 0.5.10",
  "system-configuration 0.7.0",
  "tokio",
  "tower-service",
@@ -4489,6 +4684,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "ignore"
+version = "0.4.27"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe112b004901c62c2faa11f4f75e9864e0cc5af8da71c9115d184a3aa888749f"
+dependencies = [
+ "crossbeam-deque",
+ "globset",
+ "log",
+ "memchr",
+ "regex-automata",
+ "same-file",
+ "walkdir",
+ "winapi-util",
+]
+
+[[package]]
 name = "impl-codec"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4574,8 +4785,8 @@ dependencies = [
  "rayon",
  "tokio",
  "tracing",
- "zisk-sdk",
- "ziskos",
+ "zisk-sdk 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "ziskos 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
@@ -4598,7 +4809,7 @@ dependencies = [
  "stateless",
  "tracing",
  "url",
- "zisk-sdk",
+ "zisk-sdk 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
@@ -4899,7 +5110,12 @@ dependencies = [
 [[package]]
 name = "lib-c"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
+
+[[package]]
+name = "lib-c"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
 
 [[package]]
 name = "libc"
@@ -4990,6 +5206,12 @@ dependencies = [
 
 [[package]]
 name = "linux-raw-sys"
+version = "0.4.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d26c52dbd32dccf2d10cac7725f8eae5296885fb5703b261f7d0a0739ec807ab"
+
+[[package]]
+name = "linux-raw-sys"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
@@ -5075,28 +5297,55 @@ dependencies = [
 [[package]]
 name = "mem-common"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "clap",
- "fields",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "static_assertions",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "mem-common"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "clap",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "static_assertions",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "mem-planner-cpp"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "mem-common",
- "proofman-common",
- "proofman-util",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "tracing",
- "zisk-common",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "mem-planner-cpp"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
@@ -5656,6 +5905,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "parse-zoneinfo"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f2a05b18d44e2957b88f96ba460715e295bc1d7510468a2f3d3b44535d26c24"
+dependencies = [
+ "regex",
+]
+
+[[package]]
 name = "password-hash"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5751,6 +6009,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "pest_derive"
+version = "2.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11f486f1ea21e6c10ed15d5a7c77165d0ee443402f0780849d1768e7d9d6fe77"
+dependencies = [
+ "pest",
+ "pest_generator",
+]
+
+[[package]]
+name = "pest_generator"
+version = "2.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8040c4647b13b210a963c1ed407c1ff4fdfa01c31d6d2a098218702e6664f94f"
+dependencies = [
+ "pest",
+ "pest_meta",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.118",
+]
+
+[[package]]
+name = "pest_meta"
+version = "2.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89815c69d36021a140146f26659a81d6c2afa33d216d736dd4be5381a7362220"
+dependencies = [
+ "pest",
+ "sha2",
+]
+
+[[package]]
 name = "petgraph"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5800,6 +6091,16 @@ dependencies = [
  "phf_macros 0.13.1",
  "phf_shared 0.13.1",
  "serde",
+]
+
+[[package]]
+name = "phf_codegen"
+version = "0.11.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aef8048c789fa5e851558d709946d6d79a8ff88c0440c587967f8e94bfb1216a"
+dependencies = [
+ "phf_generator 0.11.3",
+ "phf_shared 0.11.3",
 ]
 
 [[package]]
@@ -5869,21 +6170,79 @@ dependencies = [
 [[package]]
 name = "pil-std-lib"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#32e0758da898254faeac08c97c8114fb822ae63b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
 dependencies = [
  "colored",
- "fields",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "num-bigint",
  "num-traits",
- "proofman-common",
- "proofman-hints",
- "proofman-util",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-hints 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "rustc-hash",
  "serde",
  "serde_json",
  "tracing",
- "witness",
+ "witness 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+]
+
+[[package]]
+name = "pil-std-lib"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#aa47988a70cad34500f758013a8f56e1af8c7d47"
+dependencies = [
+ "colored",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "num-bigint",
+ "num-traits",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-hints 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "tracing",
+ "witness 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+]
+
+[[package]]
+name = "pil2-stark-setup"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
+dependencies = [
+ "anyhow",
+ "clap",
+ "exps-codegen",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "indexmap 2.14.0",
+ "mpi",
+ "pilout",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-starks-lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "prost 0.13.5",
+ "rayon",
+ "rug",
+ "serde",
+ "serde_json",
+ "stark-recurser",
+ "tempfile",
+ "tracing",
+ "tracing-subscriber",
+ "which",
+]
+
+[[package]]
+name = "pilout"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
+dependencies = [
+ "bytes",
+ "prost 0.13.5",
+ "prost-build 0.13.5",
+ "tracing",
 ]
 
 [[package]]
@@ -5993,184 +6352,361 @@ dependencies = [
 [[package]]
 name = "precomp-arith-eq"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "ark-bn254",
  "ark-ff 0.5.0",
  "ark-secp256k1",
  "ark-secp256r1",
  "ark-std 0.5.0",
- "fields",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "lazy_static",
- "lib-c",
+ "lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "num-bigint",
  "num-traits",
  "path-clean",
- "pil-std-lib",
- "precompiles-common",
- "precompiles-helpers",
- "proofman-common",
- "proofman-util",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "regex",
  "rustfmt-wrapper",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
- "ziskemu",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "ziskemu 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "precomp-arith-eq"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "ark-bn254",
+ "ark-ff 0.5.0",
+ "ark-secp256k1",
+ "ark-secp256r1",
+ "ark-std 0.5.0",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "lazy_static",
+ "lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "num-bigint",
+ "num-traits",
+ "path-clean",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "regex",
+ "rustfmt-wrapper",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "ziskemu 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "precomp-arith-eq-384"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "ark-bls12-381",
  "ark-ff 0.5.0",
- "fields",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "lazy_static",
  "num-bigint",
  "num-traits",
  "path-clean",
- "pil-std-lib",
- "precomp-arith-eq",
- "precompiles-common",
- "precompiles-helpers",
- "proofman-common",
- "proofman-util",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "precomp-arith-eq 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "rustfmt-wrapper",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "precomp-arith-eq-384"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "ark-bls12-381",
+ "ark-ff 0.5.0",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "lazy_static",
+ "num-bigint",
+ "num-traits",
+ "path-clean",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "precomp-arith-eq 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "rustfmt-wrapper",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "precomp-big-int"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "fields",
- "lib-c",
- "pil-std-lib",
- "precompiles-common",
- "proofman-common",
- "proofman-util",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "precomp-big-int"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "precomp-blake2"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "fields",
- "pil-std-lib",
- "precompiles-common",
- "proofman-common",
- "proofman-util",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "precomp-blake2"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "precomp-dma"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "fields",
- "pil-std-lib",
- "precompiles-common",
- "precompiles-helpers",
- "proofman-common",
- "proofman-util",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "precomp-dma"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "precomp-keccakf"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "circuit",
- "fields",
+ "circuit 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "path-clean",
- "pil-std-lib",
- "precompiles-common",
- "precompiles-helpers",
- "proofman-common",
- "proofman-util",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "tiny-keccak",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "precomp-keccakf"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "circuit 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "path-clean",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "tiny-keccak",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "precomp-poseidon"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "fields",
- "pil-std-lib",
- "precompiles-common",
- "proofman-common",
- "proofman-util",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "precomp-poseidon"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "precomp-sha256f"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "fields",
- "pil-std-lib",
- "precompiles-common",
- "proofman-common",
- "proofman-util",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "precomp-sha256f"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "precompiles-common"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "fields",
- "mem-common",
- "sm-mem",
- "zisk-common",
- "zisk-core",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "sm-mem 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "precompiles-common"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "sm-mem 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "precompiles-helpers"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -6178,9 +6714,27 @@ dependencies = [
  "ark-secp256k1",
  "ark-secp256r1",
  "cfg-if",
- "circuit",
+ "circuit 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "crunchy",
- "lib-c",
+ "lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "num-bigint",
+ "num-traits",
+]
+
+[[package]]
+name = "precompiles-helpers"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-ff 0.5.0",
+ "ark-secp256k1",
+ "ark-secp256r1",
+ "cfg-if",
+ "circuit 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "crunchy",
+ "lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
  "num-bigint",
  "num-traits",
 ]
@@ -6188,16 +6742,31 @@ dependencies = [
 [[package]]
 name = "precompiles-hints"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "anyhow",
  "borsh",
  "rayon",
  "rustls 0.23.41",
  "tracing",
- "zisk-cluster-common",
- "zisk-common",
- "ziskos-hints",
+ "zisk-cluster-common 0.1.0 (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "ziskos-hints 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "precompiles-hints"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "anyhow",
+ "borsh",
+ "rayon",
+ "rustls 0.23.41",
+ "tracing",
+ "zisk-cluster-common 0.1.0 (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "ziskos-hints 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
@@ -6297,7 +6866,7 @@ dependencies = [
 [[package]]
 name = "proofman"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#32e0758da898254faeac08c97c8114fb822ae63b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
 dependencies = [
  "bincode",
  "blake3",
@@ -6306,32 +6875,66 @@ dependencies = [
  "colored",
  "crossbeam-channel",
  "csv",
- "curves",
- "fields",
+ "curves 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "libloading",
  "mpi",
  "num-bigint",
  "num-traits",
- "pil-std-lib",
- "proofman-common",
- "proofman-hints",
- "proofman-macros",
- "proofman-starks-lib-c",
- "proofman-util",
- "proofman-verifier",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-hints 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-macros 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-starks-lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "serde",
  "serde_json",
  "tokio",
  "tokio-util",
  "tracing",
- "witness",
+ "witness 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+]
+
+[[package]]
+name = "proofman"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#aa47988a70cad34500f758013a8f56e1af8c7d47"
+dependencies = [
+ "bincode",
+ "blake3",
+ "borsh",
+ "chrono",
+ "colored",
+ "crossbeam-channel",
+ "csv",
+ "curves 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "libloading",
+ "mpi",
+ "num-bigint",
+ "num-traits",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-hints 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-macros 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-starks-lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "witness 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "proofman-common"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#32e0758da898254faeac08c97c8114fb822ae63b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
 dependencies = [
  "bincode",
  "borsh",
@@ -6340,15 +6943,46 @@ dependencies = [
  "crossbeam-queue",
  "csv",
  "env",
- "fields",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "lazy_static",
  "libc",
  "libloading",
  "mpi",
  "num_cpus",
- "proofman-macros",
- "proofman-starks-lib-c",
- "proofman-util",
+ "proofman-macros 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-starks-lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "rayon",
+ "serde",
+ "serde_json",
+ "sysinfo 0.35.2",
+ "thiserror 2.0.18",
+ "tracing",
+ "tracing-subscriber",
+ "yansi 1.0.1",
+]
+
+[[package]]
+name = "proofman-common"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#aa47988a70cad34500f758013a8f56e1af8c7d47"
+dependencies = [
+ "bincode",
+ "borsh",
+ "colored",
+ "crossbeam-channel",
+ "crossbeam-queue",
+ "csv",
+ "env",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "lazy_static",
+ "libc",
+ "libloading",
+ "mpi",
+ "num_cpus",
+ "proofman-macros 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-starks-lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
  "rayon",
  "serde",
  "serde_json",
@@ -6362,20 +6996,43 @@ dependencies = [
 [[package]]
 name = "proofman-hints"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#32e0758da898254faeac08c97c8114fb822ae63b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
 dependencies = [
- "fields",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "itoa",
- "proofman-common",
- "proofman-starks-lib-c",
- "proofman-util",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-starks-lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "tracing",
+]
+
+[[package]]
+name = "proofman-hints"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#aa47988a70cad34500f758013a8f56e1af8c7d47"
+dependencies = [
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "itoa",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-starks-lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
  "tracing",
 ]
 
 [[package]]
 name = "proofman-macros"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#32e0758da898254faeac08c97c8114fb822ae63b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.118",
+]
+
+[[package]]
+name = "proofman-macros"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#aa47988a70cad34500f758013a8f56e1af8c7d47"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6385,7 +7042,16 @@ dependencies = [
 [[package]]
 name = "proofman-starks-lib-c"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#32e0758da898254faeac08c97c8114fb822ae63b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
+dependencies = [
+ "crossbeam-channel",
+ "tracing",
+]
+
+[[package]]
+name = "proofman-starks-lib-c"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#aa47988a70cad34500f758013a8f56e1af8c7d47"
 dependencies = [
  "crossbeam-channel",
  "tracing",
@@ -6394,7 +7060,18 @@ dependencies = [
 [[package]]
 name = "proofman-util"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#32e0758da898254faeac08c97c8114fb822ae63b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
+dependencies = [
+ "bincode",
+ "colored",
+ "serde",
+ "sysinfo 0.35.2",
+]
+
+[[package]]
+name = "proofman-util"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#aa47988a70cad34500f758013a8f56e1af8c7d47"
 dependencies = [
  "bincode",
  "colored",
@@ -6405,10 +7082,23 @@ dependencies = [
 [[package]]
 name = "proofman-verifier"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#32e0758da898254faeac08c97c8114fb822ae63b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
 dependencies = [
  "bincode",
- "fields",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "num-traits",
+ "rayon",
+ "serde",
+ "tracing",
+]
+
+[[package]]
+name = "proofman-verifier"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#aa47988a70cad34500f758013a8f56e1af8c7d47"
+dependencies = [
+ "bincode",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
  "num-traits",
  "rayon",
  "serde",
@@ -6436,12 +7126,42 @@ dependencies = [
 
 [[package]]
 name = "prost"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2796faa41db3ec313a31f7624d9286acf277b52de526150b7e69f3debf891ee5"
+dependencies = [
+ "bytes",
+ "prost-derive 0.13.5",
+]
+
+[[package]]
+name = "prost"
 version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "528ac67416ff8646872a3c02cad9cc4ee5dc9f9540c9b10771855c95cb2e5ae1"
 dependencies = [
  "bytes",
- "prost-derive",
+ "prost-derive 0.14.4",
+]
+
+[[package]]
+name = "prost-build"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
+dependencies = [
+ "heck",
+ "itertools 0.11.0",
+ "log",
+ "multimap",
+ "once_cell",
+ "petgraph 0.6.5",
+ "prettyplease",
+ "prost 0.13.5",
+ "prost-types 0.13.5",
+ "regex",
+ "syn 2.0.118",
+ "tempfile",
 ]
 
 [[package]]
@@ -6451,13 +7171,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "03da047801ff44bb6a4d407d4860c05fd70bb81714e6b2f3812603d5b145b042"
 dependencies = [
  "heck",
- "itertools 0.14.0",
+ "itertools 0.11.0",
  "log",
  "multimap",
  "petgraph 0.8.3",
  "prettyplease",
- "prost",
- "prost-types",
+ "prost 0.14.4",
+ "prost-types 0.14.4",
  "pulldown-cmark",
  "pulldown-cmark-to-cmark",
  "regex",
@@ -6467,15 +7187,37 @@ dependencies = [
 
 [[package]]
 name = "prost-derive"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
+dependencies = [
+ "anyhow",
+ "itertools 0.11.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.118",
+]
+
+[[package]]
+name = "prost-derive"
 version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b570b25f7617e43d59005d0990ccb79e950a423952cea19671b7a876da390adf"
 dependencies = [
  "anyhow",
- "itertools 0.14.0",
+ "itertools 0.11.0",
  "proc-macro2",
  "quote",
  "syn 2.0.118",
+]
+
+[[package]]
+name = "prost-types"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52c2c1bf36ddb1a1c396b3601a3cec27c2462e45f07c386894ec3ccf5332bd16"
+dependencies = [
+ "prost 0.13.5",
 ]
 
 [[package]]
@@ -6484,7 +7226,7 @@ version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f94967dc7688f3054c7fac87473ffae4cc4c3904800e2d9f5b857246d8963b0a"
 dependencies = [
- "prost",
+ "prost 0.14.4",
 ]
 
 [[package]]
@@ -6546,7 +7288,7 @@ dependencies = [
  "quinn-udp",
  "rustc-hash",
  "rustls 0.23.41",
- "socket2 0.6.4",
+ "socket2 0.5.10",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
@@ -6586,7 +7328,7 @@ dependencies = [
  "cfg_aliases",
  "libc",
  "once_cell",
- "socket2 0.6.4",
+ "socket2 0.5.10",
  "tracing",
  "windows-sys 0.60.2",
 ]
@@ -6730,6 +7472,27 @@ dependencies = [
  "time",
  "x509-parser",
  "yasna",
+]
+
+[[package]]
+name = "recurser"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
+dependencies = [
+ "anyhow",
+ "blake3",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "pil2-stark-setup",
+ "pilout",
+ "proofman 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "serde",
+ "serde_json",
+ "stark-recurser",
+ "tera",
+ "thiserror 2.0.18",
+ "tracing",
+ "zisk-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
 ]
 
 [[package]]
@@ -7520,20 +8283,39 @@ dependencies = [
 [[package]]
 name = "riscv"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "zisk-core",
- "zisk-definitions",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "riscv"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "riscv2zisk"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "transpilers-common",
- "zisk-core",
- "zisk-definitions",
+ "transpilers-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "riscv2zisk"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "transpilers-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
@@ -7561,18 +8343,35 @@ dependencies = [
 [[package]]
 name = "rom-setup"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "anyhow",
  "blake3",
- "fields",
- "proofman-common",
- "riscv2zisk",
- "sm-rom",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "riscv2zisk 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "sm-rom 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "rom-setup"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "anyhow",
+ "blake3",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "riscv2zisk 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "sm-rom 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
@@ -7593,6 +8392,18 @@ dependencies = [
  "spki",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "rug"
+version = "1.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07a8857882aec59d27254b02481c709327c13de6fad1da60bfc4f9783eaaa61e"
+dependencies = [
+ "az",
+ "gmp-mpfr-sys",
+ "libc",
+ "libm",
 ]
 
 [[package]]
@@ -7689,6 +8500,19 @@ dependencies = [
 
 [[package]]
 name = "rustix"
+version = "0.38.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fdb5bc1ae2baa591800df16c9ca78619bf65c0488b41b96ccec5d11220d8c154"
+dependencies = [
+ "bitflags 2.13.0",
+ "errno",
+ "libc",
+ "linux-raw-sys 0.4.15",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "rustix"
 version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6fe4565b9518b83ef4f91bb47ce29620ca828bd32cb7e408f0062e9930ba190"
@@ -7696,7 +8520,7 @@ dependencies = [
  "bitflags 2.13.0",
  "errno",
  "libc",
- "linux-raw-sys",
+ "linux-raw-sys 0.12.1",
  "windows-sys 0.61.2",
 ]
 
@@ -8366,103 +9190,213 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
+name = "slug"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "882a80f72ee45de3cc9a5afeb2da0331d58df69e4e7d8eeb5d3c7784ae67e724"
+dependencies = [
+ "deunicode",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "sm-arith"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "fields",
- "pil-std-lib",
- "proofman-common",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
- "sm-binary",
- "sm-frequent-ops",
+ "sm-binary 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "sm-frequent-ops 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "sm-arith"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "sm-binary 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "sm-frequent-ops 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "sm-binary"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "fields",
- "pil-std-lib",
- "proofman-common",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
- "sm-frequent-ops",
+ "sm-frequent-ops 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "static_assertions",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "sm-binary"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "sm-frequent-ops 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "static_assertions",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "sm-frequent-ops"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "clap",
- "fields",
- "proofman-common",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "static_assertions",
- "zisk-core",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "sm-frequent-ops"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "clap",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "static_assertions",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "sm-main"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "fields",
- "mem-common",
- "pil-std-lib",
- "proofman-common",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "thiserror 2.0.18",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
- "ziskemu",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "ziskemu 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "sm-main"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "thiserror 2.0.18",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "ziskemu 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "sm-mem"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "env",
- "fields",
- "mem-common",
- "pil-std-lib",
- "proofman-common",
- "proofman-util",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "sm-mem"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "env",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "pil-std-lib 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "sm-rom"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "asm-runner",
- "fields",
- "mem-common",
- "proofman-common",
+ "asm-runner 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "rayon",
- "riscv2zisk",
+ "riscv2zisk 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "thiserror 2.0.18",
  "tracing",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "sm-rom"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "asm-runner 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "riscv2zisk 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "thiserror 2.0.18",
+ "tracing",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
@@ -8728,6 +9662,23 @@ name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
+
+[[package]]
+name = "stark-recurser"
+version = "0.1.0"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
+dependencies = [
+ "anyhow",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "indexmap 2.14.0",
+ "num-bigint",
+ "num-traits",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "serde",
+ "serde_json",
+ "tera",
+ "tracing",
+]
 
 [[package]]
 name = "stateless"
@@ -9047,8 +9998,30 @@ dependencies = [
  "fastrand",
  "getrandom 0.4.3",
  "once_cell",
- "rustix",
+ "rustix 1.1.4",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "tera"
+version = "1.20.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8004bca281f2d32df3bacd59bc67b312cb4c70cea46cbd79dbe8ac5ed206722"
+dependencies = [
+ "chrono",
+ "chrono-tz",
+ "globwalk",
+ "humansize",
+ "lazy_static",
+ "percent-encoding",
+ "pest",
+ "pest_derive",
+ "rand 0.8.6",
+ "regex",
+ "serde",
+ "serde_json",
+ "slug",
+ "unicode-segmentation",
 ]
 
 [[package]]
@@ -9311,6 +10284,21 @@ dependencies = [
 
 [[package]]
 name = "toml"
+version = "0.9.12+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf92845e79fc2e2def6a5d828f0801e29a2f8acc037becc5ab08595c7d5e9863"
+dependencies = [
+ "indexmap 2.14.0",
+ "serde_core",
+ "serde_spanned 1.1.1",
+ "toml_datetime 0.7.5+spec-1.1.0",
+ "toml_parser",
+ "toml_writer",
+ "winnow 0.7.15",
+]
+
+[[package]]
+name = "toml"
 version = "1.1.2+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81f3d15e84cbcd896376e6730314d59fb5a87f31e4b038454184435cd57defee"
@@ -9329,6 +10317,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22cddaf88f4fbc13c51aebbf5f8eceb5c7c5a9da2ac40a13519eb5b0a0e8f11c"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "toml_datetime"
+version = "0.7.5+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92e1cfed4a3038bc5a127e35a2d360f145e1f4b971b551a2ba5fd7aedf7e1347"
+dependencies = [
+ "serde_core",
 ]
 
 [[package]]
@@ -9382,6 +10379,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
 
 [[package]]
+name = "toml_writer"
+version = "1.1.1+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "756daf9b1013ebe47a8776667b466417e2d4c5679d441c26230efd9ef78692db"
+
+[[package]]
 name = "tonic"
 version = "0.14.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9429,7 +10432,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "50849f68853be452acf590cde0b146665b8d507b3b8af17261df47e02c209ea0"
 dependencies = [
  "bytes",
- "prost",
+ "prost 0.14.4",
  "tonic",
 ]
 
@@ -9441,8 +10444,8 @@ checksum = "654e5643eff75d7f8c99197ce1440ed19a3474eada74c12bbac488b2cafdae27"
 dependencies = [
  "prettyplease",
  "proc-macro2",
- "prost-build",
- "prost-types",
+ "prost-build 0.14.4",
+ "prost-types 0.14.4",
  "quote",
  "syn 2.0.118",
  "tempfile",
@@ -9628,12 +10631,23 @@ dependencies = [
 [[package]]
 name = "transpilers-common"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "elf",
- "riscv",
- "zisk-core",
- "zisk-definitions",
+ "riscv 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "transpilers-common"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "elf",
+ "riscv 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
@@ -10081,6 +11095,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "which"
+version = "6.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4ee928febd44d98f2f459a4a79bd4d928591333a494a10a868418ac1b39cf1f"
+dependencies = [
+ "either",
+ "home",
+ "rustix 0.38.44",
+ "winsafe",
+]
+
+[[package]]
 name = "whoami"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10112,7 +11138,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -10648,6 +11674,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "winsafe"
+version = "0.0.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d135d17ab770252ad95e9a872d365cf3090e3be864a34ab46f48555993efc904"
+
+[[package]]
 name = "wit-bindgen"
 version = "0.57.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10656,13 +11688,27 @@ checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 [[package]]
 name = "witness"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#32e0758da898254faeac08c97c8114fb822ae63b"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta#1d568538d3087f5c560fd86aadb13d814cd22a9f"
 dependencies = [
  "colored",
- "fields",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "libloading",
- "proofman-common",
- "proofman-util",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
+name = "witness"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta#aa47988a70cad34500f758013a8f56e1af8c7d47"
+dependencies = [
+ "colored",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "libloading",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
  "serde_json",
  "tracing",
 ]
@@ -10726,7 +11772,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32e45ad4206f6d2479085147f02bc2ef834ac85886624a23575ae137c8aa8156"
 dependencies = [
  "libc",
- "rustix",
+ "rustix 1.1.4",
 ]
 
 [[package]]
@@ -10902,14 +11948,31 @@ dependencies = [
 [[package]]
 name = "zisk-build"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "anyhow",
  "blake3",
  "cargo-config2",
  "cargo_metadata 0.23.1",
  "clap",
- "rom-setup",
+ "rom-setup 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "serde",
+ "tempfile",
+ "toml 0.9.12+spec-1.1.0",
+ "vergen-git2",
+]
+
+[[package]]
+name = "zisk-build"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "anyhow",
+ "blake3",
+ "cargo-config2",
+ "cargo_metadata 0.23.1",
+ "clap",
+ "rom-setup 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
  "tempfile",
  "vergen-git2",
 ]
@@ -10917,66 +11980,126 @@ dependencies = [
 [[package]]
 name = "zisk-cluster-common"
 version = "0.1.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "anyhow",
  "borsh",
  "chrono",
- "proofman",
- "proofman-common",
+ "proofman 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "serde",
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
  "uuid 1.23.4",
- "zisk-common",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "zisk-cluster-common"
+version = "0.1.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "anyhow",
+ "borsh",
+ "chrono",
+ "proofman 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "serde",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "uuid 1.23.4",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "zisk-common"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "alloy-sol-types",
  "bincode",
  "clap",
  "dirs 6.0.0",
- "fields",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "num-bigint",
  "paste",
- "proofman",
- "proofman-common",
- "proofman-verifier",
+ "proofman 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "serde",
  "serde_json",
  "sha2",
  "thiserror 2.0.18",
  "tracing",
- "zisk-core",
- "zisk-definitions",
- "zisk-stream",
- "zisk-verifier",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-stream 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "zisk-common"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "alloy-sol-types",
+ "bincode",
+ "clap",
+ "dirs 6.0.0",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "paste",
+ "proofman 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.18",
+ "tracing",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-stream 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "zisk-coordinator-api"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "anyhow",
  "chrono",
- "prost",
- "prost-types",
+ "prost 0.14.4",
+ "prost-types 0.14.4",
  "tonic",
  "tonic-prost",
  "tonic-prost-build",
  "uuid 1.23.4",
- "zisk-common",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "zisk-coordinator-api"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "prost 0.14.4",
+ "prost-types 0.14.4",
+ "tonic",
+ "tonic-prost",
+ "tonic-prost-build",
+ "uuid 1.23.4",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "zisk-coordinator-client"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "anyhow",
  "bytes",
@@ -10985,40 +12108,90 @@ dependencies = [
  "tokio-stream",
  "tonic",
  "uuid 1.23.4",
- "zisk-common",
- "zisk-coordinator-api",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-coordinator-api 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "zisk-coordinator-client"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "futures",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "uuid 1.23.4",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-coordinator-api 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "zisk-core"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "elf",
- "fields",
- "lib-c",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "paste",
- "precompiles-helpers",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "rayon",
  "sha2",
  "tiny-keccak",
- "zisk-definitions",
- "ziskos",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "ziskos 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "zisk-core"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "elf",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "paste",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "rayon",
+ "sha2",
+ "tiny-keccak",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "ziskos 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "zisk-definitions"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
+
+[[package]]
+name = "zisk-definitions"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
 
 [[package]]
 name = "zisk-pil"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "fields",
- "proofman-common",
- "proofman-macros",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-macros 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "serde",
+ "serde_arrays",
+]
+
+[[package]]
+name = "zisk-pil"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-macros 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
  "serde",
  "serde_arrays",
 ]
@@ -11026,7 +12199,19 @@ dependencies = [
 [[package]]
 name = "zisk-program-macros"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
+dependencies = [
+ "blake3",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.118",
+]
+
+[[package]]
+name = "zisk-program-macros"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
 dependencies = [
  "blake3",
  "proc-macro-crate",
@@ -11038,56 +12223,127 @@ dependencies = [
 [[package]]
 name = "zisk-prover-backend"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
- "asm-runner",
+ "asm-runner 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "blake3",
  "borsh",
  "colored",
- "executor",
- "fields",
- "precompiles-hints",
- "proofman",
- "proofman-common",
- "proofman-util",
- "proofman-verifier",
- "riscv2zisk",
- "rom-setup",
+ "executor 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "precompiles-hints 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "proofman 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "recurser",
+ "riscv2zisk 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "rom-setup 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "serde",
  "tracing",
- "zisk-cluster-common",
- "zisk-common",
- "zisk-core",
- "zisk-pil",
- "zisk-program-macros",
- "ziskemu",
+ "zisk-cluster-common 0.1.0 (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-program-macros 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "ziskemu 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "zisk-prover-backend"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "alloy-sol-types",
+ "anyhow",
+ "asm-runner 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "blake3",
+ "borsh",
+ "colored",
+ "executor 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "precompiles-hints 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "proofman 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-util 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "proofman-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "riscv2zisk 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "rom-setup 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "serde",
+ "tracing",
+ "zisk-cluster-common 0.1.0 (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-program-macros 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "ziskemu 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "zisk-sdk"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "bincode",
- "proofman-common",
- "rom-setup",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "proofman-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+ "rayon",
+ "recurser",
+ "rom-setup 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "uuid 1.23.4",
+ "zisk-build 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-coordinator-api 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-coordinator-client 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-prover-backend 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "zisk-sdk"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "bincode",
+ "proofman-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "rom-setup 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
  "serde",
  "thiserror 2.0.18",
  "tokio",
  "uuid 1.23.4",
- "zisk-build",
- "zisk-common",
- "zisk-coordinator-api",
- "zisk-coordinator-client",
- "zisk-prover-backend",
+ "zisk-build 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-coordinator-api 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-coordinator-client 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-prover-backend 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "zisk-stream"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
+dependencies = [
+ "libc",
+ "quinn",
+ "rcgen",
+ "rustls 0.23.41",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "zisk-stream"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
 dependencies = [
  "libc",
  "quinn",
@@ -11101,46 +12357,85 @@ dependencies = [
 [[package]]
 name = "zisk-verifier"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
- "proofman-verifier",
+ "proofman-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
+]
+
+[[package]]
+name = "zisk-verifier"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "proofman-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "ziskemu"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "clap",
- "data-bus",
- "fields",
+ "data-bus 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "flate2",
- "mem-common",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "memmap2",
  "num-format",
  "object",
  "rayon",
  "regex",
- "riscv",
- "riscv2zisk",
+ "riscv 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "riscv2zisk 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "serde_json",
- "sm-arith",
- "sm-binary",
+ "sm-arith 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "sm-binary 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "symbolic-demangle",
  "sysinfo 0.38.4",
  "time",
- "transpilers-common",
+ "transpilers-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "vergen-git2",
- "zisk-common",
- "zisk-core",
- "zisk-definitions",
- "zisk-pil",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "ziskemu"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "clap",
+ "data-bus 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "flate2",
+ "mem-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "memmap2",
+ "num-format",
+ "object",
+ "rayon",
+ "regex",
+ "riscv 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "riscv2zisk 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "serde_json",
+ "sm-arith 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "sm-binary 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "symbolic-demangle",
+ "sysinfo 0.38.4",
+ "time",
+ "transpilers-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "vergen-git2",
+ "zisk-common 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-core 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-pil 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "ziskos"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "anyhow",
  "ark-bn254",
@@ -11153,17 +12448,17 @@ dependencies = [
  "bytes",
  "cfg-if",
  "ctor",
- "fields",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "getrandom 0.2.17",
  "lazy_static",
- "lib-c",
+ "lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "libc",
  "num-bigint",
  "num-integer",
  "num-traits",
  "once_cell",
  "paste",
- "precompiles-helpers",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "rand 0.8.6",
  "ripemd",
  "secp256k1 0.31.1",
@@ -11171,42 +12466,116 @@ dependencies = [
  "sha2",
  "tiny-keccak",
  "tokio",
- "zisk-definitions",
- "zisk-stream",
- "zisk-verifier",
- "zkvm-interface",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-stream 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zisk-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zkvm-interface 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "ziskos"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "anyhow",
+ "ark-bn254",
+ "ark-ec",
+ "ark-ff 0.5.0",
+ "ark-serialize 0.5.0",
+ "aurora-engine-modexp",
+ "bincode",
+ "blst",
+ "bytes",
+ "cfg-if",
+ "ctor",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "getrandom 0.2.17",
+ "lazy_static",
+ "lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "libc",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "once_cell",
+ "paste",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "rand 0.8.6",
+ "ripemd",
+ "secp256k1 0.31.1",
+ "serde",
+ "sha2",
+ "tiny-keccak",
+ "tokio",
+ "zisk-definitions 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-stream 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zisk-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zkvm-interface 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "ziskos-hints"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
 dependencies = [
  "anyhow",
  "bincode",
  "cfg-if",
- "fields",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=feature%2Frecurser-1.0.0-beta)",
  "getrandom 0.2.17",
  "lazy_static",
- "lib-c",
+ "lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "num-bigint",
  "num-integer",
  "num-traits",
  "paste",
- "precompiles-helpers",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
  "rand 0.8.6",
  "ripemd",
  "serde",
  "sha2",
  "tiny-keccak",
- "zisk-verifier",
- "zkvm-interface",
+ "zisk-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+ "zkvm-interface 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge)",
+]
+
+[[package]]
+name = "ziskos-hints"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "cfg-if",
+ "fields 1.0.0-beta (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-1.0.0-beta)",
+ "getrandom 0.2.17",
+ "lazy_static",
+ "lib-c 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "paste",
+ "precompiles-helpers 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "rand 0.8.6",
+ "ripemd",
+ "serde",
+ "sha2",
+ "tiny-keccak",
+ "zisk-verifier 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
+ "zkvm-interface 1.0.0-beta (git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta)",
 ]
 
 [[package]]
 name = "zkvm-interface"
 version = "1.0.0-beta"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#a9ff5114e0bae9d768462bf3e223d9598701e3ed"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=feature%2Frecurser-1.0.0-beta-merge#94eb16b73dc278f5b9ada3d50b79a3a7977ef023"
+dependencies = [
+ "bindgen",
+]
+
+[[package]]
+name = "zkvm-interface"
+version = "1.0.0-beta"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?branch=pre-develop-1.0.0-beta#4fd28097958a7494b448eb18ca1f2dc5cbd2e348"
 dependencies = [
  "bindgen",
 ]
