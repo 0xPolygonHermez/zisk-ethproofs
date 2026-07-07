@@ -248,6 +248,7 @@ async fn process_proof_success(
     // Record the successfully proved block (updates the counter and the '--proof.csv' file).
     state.record_proved_block(
         proved_block_number,
+        block_info.tx_count,
         block_info.mgas,
         proving_cycles,
         proving_time_ms as u64,
