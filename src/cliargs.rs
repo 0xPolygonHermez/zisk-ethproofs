@@ -296,8 +296,7 @@ pub struct CliArgs {
     #[arg(long)]
     pub exit_on_error: bool,
 
-    /// Maximum run time in minutes. When set, the application exits once this
-    /// time has elapsed
+    /// Maximum run time in minutes. When set, the application exits once this time has elapsed
     #[arg(long, short = 'r')]
     pub run_time: Option<u64>,
 
