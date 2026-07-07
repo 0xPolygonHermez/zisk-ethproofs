@@ -26,7 +26,7 @@ tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "develop-0.10.0" }
+input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "develop-0.10.1" }
 # input = { path = "../zisk-eth-client/crates/input" }
 
 lazy_static = "1.4"
@@ -40,9 +40,9 @@ tonic = "0.14"
 zstd = "0.13.3"
 regex = "1.12.2"
 
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.0.0-beta" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.0.0-beta" }
-zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.0.0-beta" }
+zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/recurser-1.0.0-beta-merge" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/recurser-1.0.0-beta-merge" }
+zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feature/recurser-1.0.0-beta-merge" }
 # Local development
 # zisk-common = { path = "../../../zisk/common" }
 # ziskos = { path = "../../../zisk/ziskos/entrypoint" }
