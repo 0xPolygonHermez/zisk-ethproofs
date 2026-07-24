@@ -219,7 +219,7 @@ impl AppState {
             use std::io::Write;
             let mut file = File::create(path)
                 .with_context(|| format!("Failed to create proof CSV file: {}", path))?;
-            writeln!(file, "block_number,mgas,steps,proving_time_ms")
+            writeln!(file, "timestamp,block_number,mgas,tx_count,steps,proving_time_ms")
                 .context("Failed to write header to proof CSV file")?;
             info!("Storing proved block info in CSV file: {}", path);
             Some(Arc::new(Mutex::new(file)))
@@ -266,14 +266,25 @@ impl AppState {
 
     /// Record a successfully proved block: increment the proved-blocks counter and, if a
     /// '--proof.csv' file is configured, append a row with its info.
-    pub fn record_proved_block(&self, block_number: u64, mgas: u64, steps: u64, proving_time_ms: u64) {
+    pub fn record_proved_block(
+        &self,
+        proof_start_ts: &str,
+        block_number: u64,
+        mgas: u64,
+        tx_count: usize,
+        steps: u64,
+        proving_time_ms: u64,
+    ) {
         self.proved_blocks.fetch_add(1, Ordering::SeqCst);
 
         if let Some(csv) = &self.proved_csv {
             use std::io::Write;
             let mut file = csv.lock().unwrap_or_else(|e| e.into_inner());
-            if let Err(e) = writeln!(file, "{},{},{},{}", block_number, mgas, steps, proving_time_ms)
-            {
+            if let Err(e) = writeln!(
+                file,
+                "{},{},{},{},{},{}",
+                proof_start_ts, block_number, mgas, tx_count, steps, proving_time_ms
+            ) {
                 warn!("Failed to write block {} to proof CSV file, error: {}", block_number, e);
             }
         }

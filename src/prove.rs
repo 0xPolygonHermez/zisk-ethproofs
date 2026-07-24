@@ -6,6 +6,7 @@ use std::{
 
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
+use chrono::Utc;
 use log::{debug, error, info, warn};
 use zisk_sdk::ProveResult;
 use zisk_sdk::ZiskStdin;
@@ -35,6 +36,9 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
         rt.block_on(async {
             let prover_client = prover_client_clone.lock().unwrap();
             let guest_program = guest_program_clone.lock().unwrap();
+
+            // Wall-clock timestamp marking the start of this block's proof generation.
+            let proof_start_ts = Utc::now().format("%Y-%m-%dT%H:%M:%S%.6fZ").to_string();
 
             #[cfg(zisk_hints)]
             let handle = {
@@ -215,7 +219,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
             match prove_result {
                 Ok(result) => {
-                    process_proof_success(result, block_info, proved_block_number, state.clone()).await;
+                    process_proof_success(result, block_info, proved_block_number, proof_start_ts, state.clone()).await;
                 }
                 Err(e) => {
                     process_proof_failure(e, proved_block_number, state.clone(), prove_job_id).await;
@@ -239,6 +243,7 @@ async fn process_proof_success(
     result: ProveResult,
     block_info: BlockInfo,
     proved_block_number: u64,
+    proof_start_ts: String,
     state: AppState,
 ) {
     let proving_time_ms = result.get_proving_time();
@@ -247,8 +252,10 @@ async fn process_proof_success(
 
     // Record the successfully proved block (updates the counter and the '--proof.csv' file).
     state.record_proved_block(
+        &proof_start_ts,
         proved_block_number,
         block_info.mgas,
+        block_info.tx_count,
         proving_cycles,
         proving_time_ms as u64,
     );
