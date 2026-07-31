@@ -55,6 +55,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 prover_client
                     .prove(&guest_program, ZiskStdin::new())
                     .hints(hints_stream)
+                    .metadata("block_number", proved_block_number.to_string())
+                    .metadata("mgas", block_info.mgas.to_string())
                     .timeout(Duration::from_secs(state.cliargs.prove_timeout))
                     .executor(ExecutorKind::Assembly)
                     .wrap(ProofKind::VadcopFinalMinimal)
@@ -74,6 +76,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
                 prover_client
                     .prove(&guest_program, stdin)
+                    .metadata("block_number", proved_block_number.to_string())
+                    .metadata("mgas", block_info.mgas.to_string())
                     .timeout(Duration::from_secs(state.cliargs.prove_timeout))
                     .executor(ExecutorKind::Assembly)
                     .wrap(ProofKind::VadcopFinalMinimal)

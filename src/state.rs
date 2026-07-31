@@ -12,7 +12,7 @@ use ethers::types::U256;
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 //use tokio::sync::Semaphore;
-use zisk_sdk::{GuestProgram, ProverClient, RemoteClient, ZiskStdin};
+use zisk_sdk::{GuestProgram, ProverClient, RemoteClientExt, ZiskStdin};
 
 use crate::{
     api::EthProofsApi,
@@ -53,7 +53,7 @@ pub struct AppState {
     pub proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub next_proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub zisk_stdin: Arc<Mutex<Option<ZiskStdin>>>,
-    pub prover_client: Arc<Mutex<RemoteClient>>,
+    pub prover_client: Arc<Mutex<RemoteClientExt>>,
     pub guest_program: Arc<Mutex<GuestProgram>>,
     // pub zisk_stdin_ready: Option<Arc<Semaphore>>,
     pub current_job_id: Arc<Mutex<String>>,
@@ -97,7 +97,7 @@ impl AppState {
         let guest_path = std::fs::canonicalize(&cliargs.guest)
             .with_context(|| format!("Failed to resolve guest ELF path: {}", cliargs.guest))?;
         let guest = GuestProgram::from_uri(&format!("file://{}", guest_path.display()))?;
-        let client = ProverClient::remote(cliargs.coordinator_url.clone()).build()?;
+        let client = ProverClient::remote(cliargs.coordinator_url.clone()).build_ext()?;
 
         // Upload the guest program
         info!("Uploading guest program {} to coordinator...", guest_path.display());
