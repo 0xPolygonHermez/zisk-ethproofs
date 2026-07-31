@@ -40,9 +40,9 @@ tonic = "0.14"
 zstd = "0.13.3"
 regex = "1.12.2"
 
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.2.0-alpha" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.2.0-alpha" }
-zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.2.0-alpha" }
+zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.1.0-alpha" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.1.0-alpha" }
+zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.1.0-alpha" }
 # Local development
 # zisk-common = { path = "../../../zisk/common" }
 # ziskos = { path = "../../../zisk/ziskos/entrypoint" }
