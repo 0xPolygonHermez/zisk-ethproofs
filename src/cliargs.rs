@@ -276,6 +276,10 @@ pub struct HintsArgs {
 #[derive(Clone, Parser)]
 #[command(next_line_help = true)]
 pub struct CliArgs {
+    /// Execution client
+    #[arg(long, value_enum, default_value = "reth")]
+    pub client: ::input::Client,
+
     /// Skip the proving step (useful for testing)
     #[arg(short = 'k', long)]
     pub skip_proving: bool,

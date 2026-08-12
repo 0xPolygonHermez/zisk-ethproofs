@@ -26,8 +26,8 @@ tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "develop-0.10.1" }
-# input = { path = "../zisk-eth-client/crates/input" }
+input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "develop-0.11.0", features = ["cli", "reth", "ethrex", "ziskethone"] }
+# input = { path = "../zisk-eth-client/crates/input", features = ["cli", "reth", "ethrex", "ziskethone"] }
 
 lazy_static = "1.4"
 axum = { version = "0.7", features = ["macros", "json"] }
@@ -40,26 +40,6 @@ tonic = "0.14"
 zstd = "0.13.3"
 regex = "1.12.2"
 
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.1.0-alpha" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.1.0-alpha" }
 zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.1.0-alpha" }
 # Local development
-# zisk-common = { path = "../../../zisk/common" }
-# ziskos = { path = "../../../zisk/ziskos/entrypoint" }
 # zisk-sdk = { path = "../../../zisk/sdk" }
-
-[target.'cfg(zisk_hints)'.dependencies]
-alloy-primitives = { version = "1.5.6", default-features = false, features = ["native-keccak"] }
-alloy-consensus = { version = "2.0.0", default-features = false }
-revm = { version = "38.0.0", default-features = false }
-
-[patch.crates-io]
-# Needed for deterministic Hashmap sort
-alloy-evm = { git = "https://github.com/0xPolygonHermez/zisk-patch-alloy-evm.git", branch = "zisk-hints/v0.33.3" }
-# alloy-evm = { path = "../../../zisk-patch-alloy-evm/crates/evm" }
-
-# TODO: This can be removed when a new version of reth is released
-[patch."https://github.com/paradigmxyz/reth.git"]
-# Needed for deterministic Hashmap sort
-reth-trie-common = { git = "https://github.com/0xPolygonHermez/zisk-patch-reth.git", branch = "zisk-hints/v2.1.0" }
-# reth-trie-common = { path = "../../../zisk-patch-reth/crates/trie/common" }

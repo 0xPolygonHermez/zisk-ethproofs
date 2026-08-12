@@ -7,13 +7,12 @@ use std::{
     time::{Duration, Instant},
 };
 
-use anyhow::{Context, Result};
+use anyhow::Context;
 use ethers::types::U256;
 use log::{info, warn};
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 //use tokio::sync::Semaphore;
-use zisk_sdk::{GuestProgram, ProverClient, RemoteClient, ZiskStdin};
+use zisk_sdk::{GuestProgram, ProverClient, RemoteClientExt, ZiskStdin};
 
 use crate::{
     api::EthProofsApi,
@@ -46,89 +45,15 @@ pub(crate) struct FiredAlerts {
     pub(crate) failed: bool,
 }
 
-#[cfg(zisk_hints)]
-extern "C" {
-    fn hint_input_data(input_data_ptr: *const u8, input_data_len: usize);
-}
-
-#[cfg(zisk_hints_debug)]
-extern "C" {
-    fn hint_log_c(msg: *const std::os::raw::c_char);
-}
-
-#[cfg(zisk_hints_debug)]
-pub fn hint_log<S: AsRef<str>>(msg: S) {
-    // On native we call external C function to log hints, since it controls if hints are paused or not
-    #[cfg(not(all(target_os = "zkvm", target_vendor = "zisk")))]
-    {
-        use std::ffi::CString;
-
-        if let Ok(c) = CString::new(msg.as_ref()) {
-            unsafe { hint_log_c(c.as_ptr()) };
-        }
-    }
-    // On zkvm/zisk, we can just print directly
-    #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
-    {
-        println!("{}", msg.as_ref());
-    }
-}
-
-#[allow(dead_code)]
-#[derive(Clone)]
-// Wrapper around ZiskStdin to provide hint generation support when reading
-pub struct ZiskStdinWrapper {
-    pub stdin: ZiskStdin,
-}
-
-#[allow(dead_code)]
-impl ZiskStdinWrapper {
-    pub fn new() -> Self {
-        Self { stdin: ZiskStdin::new() }
-    }
-
-    pub fn from_zisk_stdin(zisk_stdin: ZiskStdin) -> Self {
-        Self { stdin: zisk_stdin }
-    }
-
-    pub fn read<T: DeserializeOwned>(&self) -> Result<T> {
-        let input_bytes = self.stdin.read_bytes();
-
-        #[cfg(zisk_hints)]
-        unsafe {
-            hint_input_data(input_bytes.as_ptr(), input_bytes.len());
-        }
-
-        #[cfg(zisk_hints_debug)]
-        {
-            let start_bytes = &input_bytes[..input_bytes.len().min(64)];
-            let ellipsis = if input_bytes.len() > 64 { "..." } else { "" };
-            hint_log(format!(
-                "hint_input_data (input_data: {:x?}{} , input_data_len: {}",
-                start_bytes,
-                ellipsis,
-                input_bytes.len()
-            ));
-        }
-
-        bincode::serde::decode_from_slice(&input_bytes, bincode::config::standard())
-            .map(|(v, _)| v)
-            .context("Failed to deserialize input data")
-    }
-
-    pub fn write<T: serde::Serialize>(&self, data: &T) {
-        self.stdin.write(data);
-    }
-}
 #[derive(Clone)]
 pub struct AppState {
     pub shared_metrics: crate::SharedMetrics,
     pub cliargs: CliArgs,
-    pub calling_reth: Arc<tokio::sync::Semaphore>,
+    pub calling_client: Arc<tokio::sync::Semaphore>,
     pub proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub next_proving_block: Arc<Mutex<Option<BlockInfo>>>,
-    pub zisk_stdin: Arc<Mutex<Option<ZiskStdinWrapper>>>,
-    pub prover_client: Arc<Mutex<RemoteClient>>,
+    pub zisk_stdin: Arc<Mutex<Option<ZiskStdin>>>,
+    pub prover_client: Arc<Mutex<RemoteClientExt>>,
     pub guest_program: Arc<Mutex<GuestProgram>>,
     // pub zisk_stdin_ready: Option<Arc<Semaphore>>,
     pub current_job_id: Arc<Mutex<String>>,
@@ -163,7 +88,7 @@ impl AppState {
             None
         };
 
-        let calling_reth = Arc::new(tokio::sync::Semaphore::new(1));
+        let calling_client = Arc::new(tokio::sync::Semaphore::new(1));
         let proving_block = Arc::new(Mutex::new(None));
         let next_proving_block = Arc::new(Mutex::new(None));
         let zisk_stdin = Arc::new(Mutex::new(None));
@@ -172,7 +97,7 @@ impl AppState {
         let guest_path = std::fs::canonicalize(&cliargs.guest)
             .with_context(|| format!("Failed to resolve guest ELF path: {}", cliargs.guest))?;
         let guest = GuestProgram::from_uri(&format!("file://{}", guest_path.display()))?;
-        let client = ProverClient::remote(cliargs.coordinator_url.clone()).build()?;
+        let client = ProverClient::remote(cliargs.coordinator_url.clone()).build_ext()?;
 
         // Upload the guest program
         info!("Uploading guest program {} to coordinator...", guest_path.display());
@@ -244,7 +169,7 @@ impl AppState {
 
         Ok(Self {
             cliargs,
-            calling_reth,
+            calling_client,
             proving_block,
             next_proving_block,
             zisk_stdin,
