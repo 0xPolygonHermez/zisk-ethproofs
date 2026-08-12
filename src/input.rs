@@ -267,6 +267,12 @@ pub(crate) async fn process_inputs_from_folder(app_state: &mut AppState) -> Resu
 
         info!("Waiting for block {} proof completion before processing next file...", block_number);
         app_state.proof_done_signal.notified().await;
+
+        let input_delay = app_state.cliargs.folder.input_delay;
+        if input_delay > 0 && idx + 1 < files.len() {
+            info!("Waiting {} ms before processing next input file...", input_delay);
+            sleep(Duration::from_millis(input_delay)).await;
+        }
     }
 
     Ok(())

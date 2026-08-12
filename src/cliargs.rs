@@ -70,9 +70,14 @@ pub struct FolderArgs {
     #[arg(id = "folder_initial_timestamp", long = "folder.initial-timestamp", default_value = "0")]
     pub initial_timestamp: u64,
 
-    /// Simulated input processed time in milliseconds in folder input generation mode
+    /// Simulated input generation time in milliseconds in folder input generation mode
     #[arg(id = "folder_input_time", long = "folder.input-time", default_value = "0")]
     pub input_time: u64,
+
+    /// Wait time in milliseconds before processing the next input file in folder input
+    /// generation mode
+    #[arg(id = "folder_input_delay", long = "folder.input-delay", default_value = "0")]
+    pub input_delay: u64,
 
     /// Comma-separated list of input file names to process in folder input generation mode
     #[arg(
