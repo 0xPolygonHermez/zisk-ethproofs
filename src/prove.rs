@@ -31,8 +31,22 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     tokio::task::spawn_blocking(move || {
         let rt = tokio::runtime::Handle::current();
         rt.block_on(async {
-            let prover_client = prover_client_clone.lock().unwrap();
-            let guest_program = guest_program_clone.lock().unwrap();
+            let prover_client_guard = prover_client_clone.lock().unwrap();
+            let Some(prover_client) = prover_client_guard.as_ref() else {
+                error!(
+                    "Prover client not initialized for block {}, skipping proof generation",
+                    proved_block_number
+                );
+                return;
+            };
+            let guest_program_guard = guest_program_clone.lock().unwrap();
+            let Some(guest_program) = guest_program_guard.as_ref() else {
+                error!(
+                    "Guest program not initialized for block {}, skipping proof generation",
+                    proved_block_number
+                );
+                return;
+            };
 
             // Wall-clock timestamp marking the start of this block's proof generation.
             let proof_start_ts = Utc::now().format("%Y-%m-%dT%H:%M:%S%.6fZ").to_string();
@@ -53,7 +67,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 let hints_stream = ZiskStream::unix_external(&state.cliargs.hints.socket);
 
                 prover_client
-                    .prove(&guest_program, ZiskStdin::new())
+                    .prove(guest_program, ZiskStdin::new())
                     .hints(hints_stream)
                     .metadata("block_number", proved_block_number.to_string())
                     .metadata("mgas", block_info.mgas.to_string())
@@ -75,7 +89,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     .unwrap();
 
                 prover_client
-                    .prove(&guest_program, stdin)
+                    .prove(guest_program, stdin)
                     .metadata("block_number", proved_block_number.to_string())
                     .metadata("mgas", block_info.mgas.to_string())
                     .timeout(Duration::from_secs(state.cliargs.prove_timeout))

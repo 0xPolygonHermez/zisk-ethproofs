@@ -53,8 +53,8 @@ pub struct AppState {
     pub proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub next_proving_block: Arc<Mutex<Option<BlockInfo>>>,
     pub zisk_stdin: Arc<Mutex<Option<ZiskStdin>>>,
-    pub prover_client: Arc<Mutex<RemoteClientExt>>,
-    pub guest_program: Arc<Mutex<GuestProgram>>,
+    pub prover_client: Arc<Mutex<Option<RemoteClientExt>>>,
+    pub guest_program: Arc<Mutex<Option<GuestProgram>>>,
     // pub zisk_stdin_ready: Option<Arc<Semaphore>>,
     pub current_job_id: Arc<Mutex<String>>,
     pub queued_start: Arc<Mutex<Instant>>,
@@ -93,31 +93,35 @@ impl AppState {
         let next_proving_block = Arc::new(Mutex::new(None));
         let zisk_stdin = Arc::new(Mutex::new(None));
 
-        // Initialize the Zisk prover client
-        let guest_path = std::fs::canonicalize(&cliargs.guest)
-            .with_context(|| format!("Failed to resolve guest ELF path: {}", cliargs.guest))?;
-        let guest = GuestProgram::from_uri(&format!("file://{}", guest_path.display()))?;
-        let client = ProverClient::remote(cliargs.coordinator_url.clone()).build_ext()?;
+        let (prover_client, guest_program) = if cliargs.skip_proving {
+            info!("skip_proving enabled: skipping guest ELF setup and coordinator initialization");
+            (Arc::new(Mutex::new(None)), Arc::new(Mutex::new(None)))
+        } else {
+            // Initialize the Zisk prover client
+            let guest_path = std::fs::canonicalize(&cliargs.guest)
+                .with_context(|| format!("Failed to resolve guest ELF path: {}", cliargs.guest))?;
+            let guest = GuestProgram::from_uri(&format!("file://{}", guest_path.display()))?;
+            let client = ProverClient::remote(cliargs.coordinator_url.clone()).build_ext()?;
 
-        // Upload the guest program
-        info!("Uploading guest program {} to coordinator...", guest_path.display());
-        client.upload(&guest).run()?;
+            // Upload the guest program
+            info!("Uploading guest program {} to coordinator...", guest_path.display());
+            client.upload(&guest).run()?;
 
-        // Perform guest program setup
-        #[cfg(zisk_hints)]
-        {
-            info!("Performing guest program setup with hints...");
-            client.setup(&guest).with_hints().run()?.await?;
-        }
-        #[cfg(not(zisk_hints))]
-        {
-            info!("Performing guest program setup...");
-            client.setup(&guest).run()?.await?;
-        }
-        info!("Guest program setup complete");
+            // Perform guest program setup
+            #[cfg(zisk_hints)]
+            {
+                info!("Performing guest program setup with hints...");
+                client.setup(&guest).with_hints().run()?.await?;
+            }
+            #[cfg(not(zisk_hints))]
+            {
+                info!("Performing guest program setup...");
+                client.setup(&guest).run()?.await?;
+            }
+            info!("Guest program setup complete");
 
-        let prover_client = Arc::new(Mutex::new(client));
-        let guest_program = Arc::new(Mutex::new(guest));
+            (Arc::new(Mutex::new(Some(client))), Arc::new(Mutex::new(Some(guest))))
+        };
 
         //let zisk_stdin_ready = None;
         let current_job_id = Arc::new(Mutex::new(String::new()));

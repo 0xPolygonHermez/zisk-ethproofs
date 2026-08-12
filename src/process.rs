@@ -173,7 +173,19 @@ pub(crate) async fn process_input(
     }
 
     if app_state.cliargs.skip_proving {
+        if let Err(e) = zisk_stdin.save(&input_file_path) {
+            error!(
+                "Failed to save input to file {} for block {}, error: {}",
+                input_file_path.display(),
+                block_number,
+                e
+            );
+        } else {
+            info!("Input saved to {} for block {}", input_file_path.display(), block_number);
+        }
+
         info!("Skipping proving for block {} as per configuration", block_number);
+        app_state.proof_done_signal.notify_waiters();
         return;
     }
 
@@ -209,15 +221,9 @@ pub(crate) async fn process_input(
 
             // Run blocks-skipped hook if configured
             if let Some(script) = &app_state.cliargs.hooks.blocks_skipped {
-                let job_id = app_state
-                    .current_job_id
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .clone();
-                crate::hooks::run_hook(
-                    script,
-                    vec![proving_block_number.to_string(), job_id],
-                );
+                let job_id =
+                    app_state.current_job_id.lock().unwrap_or_else(|e| e.into_inner()).clone();
+                crate::hooks::run_hook(script, vec![proving_block_number.to_string(), job_id]);
             }
 
             let mut alert_handle = None;
@@ -305,15 +311,9 @@ pub(crate) async fn process_input(
 
             // Run proof-failed hook if configured
             if let Some(script) = &app_state.cliargs.hooks.proof_failed {
-                let job_id = app_state
-                    .current_job_id
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .clone();
-                crate::hooks::run_hook(
-                    script,
-                    vec![block_number.to_string(), job_id],
-                );
+                let job_id =
+                    app_state.current_job_id.lock().unwrap_or_else(|e| e.into_inner()).clone();
+                crate::hooks::run_hook(script, vec![block_number.to_string(), job_id]);
             }
 
             if !app_state.failed_alert() {
