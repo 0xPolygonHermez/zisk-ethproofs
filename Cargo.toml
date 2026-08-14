@@ -40,6 +40,8 @@ tonic = "0.14"
 zstd = "0.13.3"
 regex = "1.12.2"
 
-zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.1.0-alpha" }
+# zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.1.0-alpha" }
+# crates.io dependency
+zisk-sdk = "1.1.0-alpha"
 # Local development
 # zisk-sdk = { path = "../../../zisk/sdk" }
