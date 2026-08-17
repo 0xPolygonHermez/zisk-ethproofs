@@ -9,15 +9,10 @@ use chrono::Utc;
 use clap::Parser;
 use env_logger::{Builder, Env};
 // TODO: Replace log for tracing crate
-use log::{error, warn};
+use log::error;
 use tokio::fs::create_dir_all;
 use tokio::sync::Mutex;
 use tokio::task;
-
-#[cfg(zisk_hints)]
-use alloy_consensus::crypto::install_default_provider;
-#[cfg(zisk_hints)]
-use revm::install_crypto;
 
 mod api;
 mod cliargs;
@@ -60,16 +55,6 @@ async fn main() -> Result<()> {
         e.exit();
     }
 
-    // Handle hidden subcommands
-    if let Some(cmd) = &cliargs.command {
-        match cmd {
-            cliargs::Commands::InputServer => {
-                warn!("InputServer subcommand is not yet implemented");
-                return Ok(());
-            }
-        }
-    }
-
     // Initialize application state
     let mut app_state = match AppState::new(cliargs).await {
         Ok(state) => state,
@@ -95,15 +80,6 @@ async fn main() -> Result<()> {
         });
     }
 
-    // Install custom EVM crypto
-    #[cfg(zisk_hints)]
-    {
-        use ::input::guest_reth::CustomEvmCrypto;
-
-        install_crypto(CustomEvmCrypto::default());
-        install_default_provider(Arc::new(CustomEvmCrypto::default())).unwrap();
-    }
-
     // Select input generation method
     match app_state.cliargs.inputs.mode {
         cliargs::InputGen::Rpc => {
@@ -113,5 +89,9 @@ async fn main() -> Result<()> {
             process_inputs_from_folder(&mut app_state).await?;
         }
     }
+
+    // Show the number of successfully proved blocks before terminating.
+    app_state.log_proved_blocks_summary();
+
     Ok(())
 }

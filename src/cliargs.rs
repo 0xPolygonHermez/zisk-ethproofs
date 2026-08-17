@@ -1,5 +1,5 @@
 use clap::error::ErrorKind;
-use clap::{Args, CommandFactory, Error, Parser, Subcommand, ValueEnum};
+use clap::{Args, CommandFactory, Error, Parser, ValueEnum};
 
 #[derive(Clone, Debug, ValueEnum, Eq, PartialEq, Hash)]
 pub enum TelegramEvent {
@@ -19,12 +19,6 @@ pub enum InputGen {
 pub enum HintsMode {
     File,
     Socket,
-}
-
-#[derive(Clone, Subcommand, Debug)]
-pub enum Commands {
-    #[command(hide = true)]
-    InputServer,
 }
 
 #[derive(Clone, Debug, Args)]
@@ -76,9 +70,14 @@ pub struct FolderArgs {
     #[arg(id = "folder_initial_timestamp", long = "folder.initial-timestamp", default_value = "0")]
     pub initial_timestamp: u64,
 
-    /// Simulated input processed time in milliseconds in folder input generation mode
+    /// Simulated input generation time in milliseconds in folder input generation mode
     #[arg(id = "folder_input_time", long = "folder.input-time", default_value = "0")]
     pub input_time: u64,
+
+    /// Wait time in milliseconds before processing the next input file in folder input
+    /// generation mode
+    #[arg(id = "folder_input_delay", long = "folder.input-delay", default_value = "0")]
+    pub input_delay: u64,
 
     /// Comma-separated list of input file names to process in folder input generation mode
     #[arg(
@@ -231,6 +230,10 @@ pub struct ProofArgs {
         requires = "proof_save"
     )]
     pub folder: String,
+
+    /// Path to a CSV file where information about proved blocks is stored
+    #[arg(id = "proof_csv", long = "proof.csv")]
+    pub csv: Option<String>,
 }
 
 #[cfg(zisk_hints)]
@@ -278,8 +281,9 @@ pub struct HintsArgs {
 #[derive(Clone, Parser)]
 #[command(next_line_help = true)]
 pub struct CliArgs {
-    #[command(subcommand)]
-    pub command: Option<Commands>,
+    /// Execution client
+    #[arg(long, value_enum, default_value = "reth")]
+    pub client: ::input::Client,
 
     /// Skip the proving step (useful for testing)
     #[arg(short = 'k', long)]
@@ -300,6 +304,11 @@ pub struct CliArgs {
     /// Exit process with code 1 when proof generation fails
     #[arg(long)]
     pub exit_on_error: bool,
+
+    /// Maximum run time in minutes. When set, the application exits once this
+    /// time has elapsed
+    #[arg(long, short = 'r')]
+    pub run_time: Option<u64>,
 
     #[command(flatten)]
     pub inputs: InputsArgs,
@@ -350,6 +359,15 @@ impl CliArgs {
             return Err(Self::command().error(
                 ErrorKind::ArgumentConflict,
                 "'--ethproofs.submit' cannot be used with '--input.mode folder'",
+            ));
+        }
+
+        // The run-time limit is driven by the WS block subscription, so it only makes sense
+        // when generating inputs from RPC.
+        if self.run_time.is_some() && self.inputs.mode != InputGen::Rpc {
+            return Err(Self::command().error(
+                ErrorKind::ArgumentConflict,
+                "'--run-time' can only be used with '--input.mode rpc'",
             ));
         }
         Ok(())

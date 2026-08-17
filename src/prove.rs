@@ -1,19 +1,20 @@
-use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::{
+    path::PathBuf,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
+use chrono::Utc;
 use log::{debug, error, info, warn};
-use zisk_sdk::ProveResult;
-use zisk_sdk::ZiskStdin;
-use zisk_sdk::{ExecutorKind, ProofKind};
+use zisk_sdk::{ExecutorKind, ProofKind, ProveResult, ZiskStdin};
 
-use crate::state::ZiskStdinWrapper;
 use crate::{
     db::BlockProof,
-    state::AppState,
+    state::{AppState, BlockInfo},
     telegram::{send_block_proved_alert, send_proof_failed_alert},
 };
-use ethproofs_common::protocol::BlockInfo;
 
 pub fn get_proof_b64(proof_data: &[u8]) -> Result<String> {
     Ok(general_purpose::STANDARD.encode(proof_data))
@@ -30,8 +31,25 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
     tokio::task::spawn_blocking(move || {
         let rt = tokio::runtime::Handle::current();
         rt.block_on(async {
-            let prover_client = prover_client_clone.lock().unwrap();
-            let guest_program = guest_program_clone.lock().unwrap();
+            let prover_client_guard = prover_client_clone.lock().unwrap();
+            let Some(prover_client) = prover_client_guard.as_ref() else {
+                error!(
+                    "Prover client not initialized for block {}, skipping proof generation",
+                    proved_block_number
+                );
+                return;
+            };
+            let guest_program_guard = guest_program_clone.lock().unwrap();
+            let Some(guest_program) = guest_program_guard.as_ref() else {
+                error!(
+                    "Guest program not initialized for block {}, skipping proof generation",
+                    proved_block_number
+                );
+                return;
+            };
+
+            // Wall-clock timestamp marking the start of this block's proof generation.
+            let proof_start_ts = Utc::now().format("%Y-%m-%dT%H:%M:%S%.6fZ").to_string();
 
             #[cfg(zisk_hints)]
             let handle = {
@@ -49,8 +67,10 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 let hints_stream = ZiskStream::unix_external(&state.cliargs.hints.socket);
 
                 prover_client
-                    .prove(&guest_program, ZiskStdin::new())
+                    .prove(guest_program, ZiskStdin::new())
                     .hints(hints_stream)
+                    .metadata("block_number", proved_block_number.to_string())
+                    .metadata("mgas", block_info.mgas.to_string())
                     .timeout(Duration::from_secs(state.cliargs.prove_timeout))
                     .executor(ExecutorKind::Assembly)
                     .wrap(ProofKind::VadcopFinalMinimal)
@@ -69,7 +89,9 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     .unwrap();
 
                 prover_client
-                    .prove(&guest_program, stdin.stdin)
+                    .prove(guest_program, stdin)
+                    .metadata("block_number", proved_block_number.to_string())
+                    .metadata("mgas", block_info.mgas.to_string())
                     .timeout(Duration::from_secs(state.cliargs.prove_timeout))
                     .executor(ExecutorKind::Assembly)
                     .wrap(ProofKind::VadcopFinalMinimal)
@@ -120,8 +142,13 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 }
             };
 
-            // Check and start proof generation for next block if set
-            if next_block.is_some() {
+            // If the configured '--run-time' has elapsed, we must not start proving any queued
+            // block; the process exits right after the current proof has been fully processed.
+            let deadline_reached =
+                state.run_deadline.is_some_and(|deadline| Instant::now() >= deadline);
+
+            // Check and start proof generation for next block if set (unless the run time is up)
+            if next_block.is_some() && !deadline_reached {
                 // Set proving_block to next_block_number in atomic scope
                 {
                     let mut proving_block = state.proving_block.lock().unwrap_or_else(|e| e.into_inner());
@@ -144,14 +171,11 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     }
                 };
 
-                // Wrap ZiskStdin in ZiskStdinWrapper
-                let zisk_stdin_wrapper = ZiskStdinWrapper::from_zisk_stdin(zisk_stdin);
-
-                // Store ZiskStdinWrapper in shared state for next proof generation
+                // Store input in shared state for next proof generation
                 {
                     let zisk_stdin_shared = Arc::clone(&state.zisk_stdin);
                     let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
-                    *zisk_stdin_lock = Some(zisk_stdin_wrapper);
+                    *zisk_stdin_lock = Some(zisk_stdin);
                 }
 
                 // Start proof generation for next block without waiting for current block proof to complete
@@ -207,12 +231,18 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
 
             match prove_result {
                 Ok(result) => {
-                    process_proof_success(result, block_info, proved_block_number, state).await;
+                    process_proof_success(result, block_info, proved_block_number, proof_start_ts, state.clone()).await;
                 }
                 Err(e) => {
-                    process_proof_failure(e, proved_block_number, state, prove_job_id).await;
+                    process_proof_failure(e, proved_block_number, state.clone(), prove_job_id).await;
                 }
             };
+
+            if deadline_reached {
+                info!("Configured run time elapsed, exiting after proof completion.");
+                state.log_proved_blocks_summary();
+                std::process::exit(0);
+            }
         })
     });
 
@@ -225,11 +255,22 @@ async fn process_proof_success(
     result: ProveResult,
     block_info: BlockInfo,
     proved_block_number: u64,
+    proof_start_ts: String,
     state: AppState,
 ) {
     let proving_time_ms = result.get_proving_time();
     let proving_cycles = result.get_execution_steps();
     let job_id_str = result.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
+
+    // Record the successfully proved block (updates the counter and the '--proof.csv' file).
+    state.record_proved_block(
+        &proof_start_ts,
+        proved_block_number,
+        block_info.mgas,
+        block_info.tx_count,
+        proving_cycles,
+        proving_time_ms as u64,
+    );
 
     // Encode compressed proof to base64
     let proof_bytes = match result.get_proof_u64() {
@@ -400,6 +441,7 @@ async fn process_proof_failure(
         if let Some(handle) = telegram_task {
             handle.await.ok();
         }
+        state.log_proved_blocks_summary();
         std::process::exit(1);
     }
 }

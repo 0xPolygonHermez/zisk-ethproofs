@@ -2,25 +2,19 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-use ethproofs_common::protocol::BlockInfo;
-use input::guest_reth::RethInputPublic;
-use input::guest_reth::RethInputWitness;
 use log::{error, info, warn};
 
 #[cfg(zisk_hints)]
-use input::guest_reth::{get_chain_spec, validate_block_stateless, verify_signatures};
-
+use input::{create_client, generate_hints_to_file, generate_hints_to_socket};
 #[cfg(zisk_hints)]
 use tokio::sync::oneshot;
 
 use zisk_sdk::ZiskStdin;
-#[cfg(zisk_hints)]
-use ziskos::hints::{close_hints, init_hints_file, init_hints_socket};
 
 use crate::metrics::BlockMetrics;
 use crate::prove::generate_proof;
 use crate::state::AppState;
-use crate::state::ZiskStdinWrapper;
+use crate::state::BlockInfo;
 use crate::telegram::{
     send_proof_failed_alert, send_proof_resumed_alert, send_skipped_resumed_alert,
     send_skipped_threshold_alert,
@@ -36,11 +30,11 @@ pub async fn launch_hints_generation(
     let app_state_clone = app_state.clone();
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel::<()>();
 
-    let permit_reth =
-        app_state_clone.calling_reth.clone().acquire_owned().await.expect("Semaphore closed");
+    let permit =
+        app_state_clone.calling_client.clone().acquire_owned().await.expect("Semaphore closed");
 
     let handle = tokio::task::spawn_blocking(move || {
-        let _permit_reth = permit_reth;
+        let _permit = permit;
 
         generate_hints(block_number, app_state_clone, Some(ready_tx));
     });
@@ -53,131 +47,72 @@ pub async fn launch_hints_generation(
 
 #[cfg(zisk_hints)]
 pub fn generate_hints(block_number: u64, app_state: AppState, ready: Option<oneshot::Sender<()>>) {
-    // Execute the block to get precompile hints populated
     info!("Generating hints for block {}", block_number);
-
     let start_hints = Instant::now();
 
-    let hints_init_result = match app_state.cliargs.hints.mode {
+    let zisk_stdin = {
+        let lock = app_state.zisk_stdin.lock().unwrap();
+        match lock.as_ref() {
+            Some(stdin) => stdin.clone(),
+            None => {
+                error!("ZiskStdin not available for block {} hint generation", block_number);
+                return;
+            }
+        }
+    };
+
+    let client = create_client(app_state.cliargs.client);
+
+    let debug_file = app_state.cliargs.hints.debug.then(|| {
+        PathBuf::from(format!(
+            "{}/{}_hints_debug.bin",
+            app_state.cliargs.hints.debug_folder, block_number
+        ))
+    });
+
+    let result = match app_state.cliargs.hints.mode {
         crate::cliargs::HintsMode::Socket => {
-            #[cfg(zisk_hints)]
-            let hint_debug_file = app_state.cliargs.hints.debug.then(|| {
-                PathBuf::from(format!(
-                    "{}/{}_hints_debug.bin",
-                    app_state.cliargs.hints.debug_folder, block_number
-                ))
-            });
-
-            #[cfg(not(zisk_hints))]
-            let hint_debug_file: Option<PathBuf> = None;
-
             info!(
-                "Initializing hints socket for block {}, socket: {}",
+                "Streaming hints over socket for block {}, socket: {}",
                 block_number, app_state.cliargs.hints.socket
             );
-            init_hints_socket(
+            generate_hints_to_socket(
+                &zisk_stdin,
                 PathBuf::from(&app_state.cliargs.hints.socket),
-                hint_debug_file,
+                debug_file,
                 None,
                 ready,
+                client.as_ref(),
             )
         }
         crate::cliargs::HintsMode::File => {
-            // Create ./hints directory if it doesn't exist
+            // File mode does not wait for a prover; signal readiness up front.
+            if let Some(tx) = ready {
+                let _ = tx.send(());
+            }
             let hints_dir = std::path::PathBuf::from("./hints");
             if !hints_dir.exists() {
-                std::fs::create_dir_all(&hints_dir).expect("Failed to create hints directory");
+                if let Err(e) = std::fs::create_dir_all(&hints_dir) {
+                    error!("Failed to create hints directory for block {}: {}", block_number, e);
+                    return;
+                }
             }
-            init_hints_file(
-                PathBuf::from(format!("{}/{}_hints.bin", hints_dir.display(), block_number)),
-                ready,
+            generate_hints_to_file(
+                &zisk_stdin,
+                hints_dir.join(format!("{}_hints.bin", block_number)),
+                client.as_ref(),
             )
         }
     };
 
-    if let Err(e) = hints_init_result {
-        error!("Failed to init hints for block {}, error: {}", block_number, e);
-        return;
+    match result {
+        Ok(_) => info!(
+            "Hints for block {} generated in {} ms",
+            block_number,
+            start_hints.elapsed().as_millis()
+        ),
+        Err(e) => error!("Hint generation failed for block {}: {}", block_number, e),
     }
-
-    info!("Hints socket initialized for block {}", block_number);
-
-    let start_execution = Instant::now();
-
-    let input_pk: RethInputPublic = {
-        let zisk_stdin_shared = Arc::clone(&app_state.zisk_stdin);
-        let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
-        let zisk_stdin: ZiskStdinWrapper = zisk_stdin_lock.as_mut().unwrap().clone();
-        match zisk_stdin.read() {
-            Ok(input) => input,
-            Err(e) => {
-                error!(
-                    "Failed to read public keys input for block {} from zisk_stdin, error: {}",
-                    block_number, e
-                );
-                return;
-            }
-        }
-    };
-
-    // Get chain config
-    let chain_config = input_pk.chain_config().clone();
-
-    info!("Verifying signatures for block {}...", block_number);
-    // Verify signatures
-    let chain_spec = get_chain_spec(&chain_config);
-    let block = input_pk.block().clone();
-    let recoverd_block = match verify_signatures(block, chain_spec.clone(), input_pk.public_keys) {
-        Ok(b) => b,
-        Err(e) => {
-            error!("Signature verification failed for block {}, error: {}", block_number, e);
-            return;
-        }
-    };
-
-    // // Wait for the signal that witness input is ready
-    // match app_state.zisk_stdin_ready.clone() {
-    //     Some(sem) => tokio::task::block_in_place(|| {
-    //         let _permit = tokio::runtime::Handle::current().block_on(async {
-    //             sem.acquire_owned().await.expect("semaphore closed")
-    //         });
-    //     }),
-    //     None => {
-    //         error!("zisk_stdin_ready semaphore is not initialized for block {}", block_number);
-    //         return;
-    //     }
-    // }
-
-    let input_witness: RethInputWitness = {
-        let zisk_stdin_shared = Arc::clone(&app_state.zisk_stdin);
-        let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
-        let zisk_stdin: ZiskStdinWrapper = zisk_stdin_lock.as_mut().unwrap().clone();
-        match zisk_stdin.read() {
-            Ok(input) => input,
-            Err(e) => {
-                error!(
-                    "Failed to read witness input for block {} from zisk_stdin, error: {}",
-                    block_number, e
-                );
-                return;
-            }
-        }
-    };
-
-    info!("Validating block {} statelessly...", block_number);
-    let execution_witness = input_witness.witness().clone();
-    if let Err(e) = validate_block_stateless(recoverd_block, execution_witness, chain_spec) {
-        error!("Stateless validation failed for block {}, error: {}", block_number, e);
-        return;
-    }
-
-    info!("Block {} validation done in {} ms", block_number, start_execution.elapsed().as_millis());
-
-    if let Err(e) = close_hints() {
-        error!("Failed to close hints for block {}, error: {}", block_number, e);
-        return;
-    }
-    info!("Hints for block {} generated in {} ms", block_number, start_hints.elapsed().as_millis());
 }
 
 pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
@@ -196,20 +131,12 @@ pub(crate) fn process_queued(block_number: u64, app_state: &AppState) {
 
 pub(crate) async fn process_input(
     block_info: BlockInfo,
-    input_pk: &RethInputPublic,
-    input_witness: &RethInputWitness,
+    zisk_stdin: ZiskStdin,
     app_state: &mut AppState,
 ) {
     let input_file_path =
         PathBuf::from(&app_state.cliargs.inputs.folder).join(block_info.filename());
     let block_number = block_info.block_number;
-
-    let zisk_stdin = ZiskStdin::new();
-    zisk_stdin.write(input_pk);
-    zisk_stdin.write(input_witness);
-
-    // let zisk_input_ready = Arc::new(tokio::sync::Semaphore::new(0));
-    // app_state.zisk_stdin_ready = Some(zisk_input_ready.clone());
 
     let input_time = {
         let queued_start = app_state.queued_start.lock().unwrap();
@@ -246,7 +173,19 @@ pub(crate) async fn process_input(
     }
 
     if app_state.cliargs.skip_proving {
+        if let Err(e) = zisk_stdin.save(&input_file_path) {
+            error!(
+                "Failed to save input to file {} for block {}, error: {}",
+                input_file_path.display(),
+                block_number,
+                e
+            );
+        } else {
+            info!("Input saved to {} for block {}", input_file_path.display(), block_number);
+        }
+
         info!("Skipping proving for block {} as per configuration", block_number);
+        app_state.proof_done_signal.notify_waiters();
         return;
     }
 
@@ -282,15 +221,9 @@ pub(crate) async fn process_input(
 
             // Run blocks-skipped hook if configured
             if let Some(script) = &app_state.cliargs.hooks.blocks_skipped {
-                let job_id = app_state
-                    .current_job_id
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .clone();
-                crate::hooks::run_hook(
-                    script,
-                    vec![proving_block_number.to_string(), job_id],
-                );
+                let job_id =
+                    app_state.current_job_id.lock().unwrap_or_else(|e| e.into_inner()).clone();
+                crate::hooks::run_hook(script, vec![proving_block_number.to_string(), job_id]);
             }
 
             let mut alert_handle = None;
@@ -330,13 +263,11 @@ pub(crate) async fn process_input(
         }
     }
 
-    // Write input to zisk_stdin wrapper for hint generation and proof generation
+    // Store input for hint generation and proof generation
     {
-        let zisk_stdin_wrapper = ZiskStdinWrapper::from_zisk_stdin(zisk_stdin);
-
         let zisk_stdin_shared = Arc::clone(&app_state.zisk_stdin);
         let mut zisk_stdin_lock = zisk_stdin_shared.lock().unwrap();
-        *zisk_stdin_lock = Some(zisk_stdin_wrapper);
+        *zisk_stdin_lock = Some(zisk_stdin);
     }
 
     // #[cfg(zisk_hints)]
@@ -380,15 +311,9 @@ pub(crate) async fn process_input(
 
             // Run proof-failed hook if configured
             if let Some(script) = &app_state.cliargs.hooks.proof_failed {
-                let job_id = app_state
-                    .current_job_id
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .clone();
-                crate::hooks::run_hook(
-                    script,
-                    vec![block_number.to_string(), job_id],
-                );
+                let job_id =
+                    app_state.current_job_id.lock().unwrap_or_else(|e| e.into_inner()).clone();
+                crate::hooks::run_hook(script, vec![block_number.to_string(), job_id]);
             }
 
             if !app_state.failed_alert() {
