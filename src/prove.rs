@@ -51,6 +51,12 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
             // Wall-clock timestamp marking the start of this block's proof generation.
             let proof_start_ts = Utc::now().format("%Y-%m-%dT%H:%M:%S%.6fZ").to_string();
 
+            let proof_kind = if state.cliargs.compressed {
+                ProofKind::VadcopFinalMinimal
+            } else {
+                ProofKind::VadcopFinal
+            };
+
             #[cfg(zisk_hints)]
             let handle = {
                 use zisk_sdk::ZiskStream;
@@ -73,7 +79,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     .metadata("mgas", block_info.mgas.to_string())
                     .timeout(Duration::from_secs(state.cliargs.prove_timeout))
                     .executor(ExecutorKind::Assembly)
-                    .wrap(ProofKind::VadcopFinalMinimal)
+                    .wrap(proof_kind)
                     .run()
             };
 
@@ -94,7 +100,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                     .metadata("mgas", block_info.mgas.to_string())
                     .timeout(Duration::from_secs(state.cliargs.prove_timeout))
                     .executor(ExecutorKind::Assembly)
-                    .wrap(ProofKind::VadcopFinalMinimal)
+                    .wrap(proof_kind)
                     .run()
 
             };
