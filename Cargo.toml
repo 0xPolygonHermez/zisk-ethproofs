@@ -26,7 +26,7 @@ tar = "0.4.44"
 tokio = { version = "1.44.0", features = ["full"] }
 tokio-tungstenite = "0.21"
 url = "2.5.4"
-input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "fix/ziskethone-macos", features = ["cli", "reth", "ethrex", "ziskethone"] }
+input = { git = "https://github.com/0xPolygonHermez/zisk-eth-client.git", branch = "feat/blake3-recursion", features = ["cli", "reth", "ethrex", "ziskethone"] }
 # input = { path = "../zisk-eth-client/crates/input", features = ["cli", "reth", "ethrex", "ziskethone"] }
 
 lazy_static = "1.4"
@@ -40,7 +40,7 @@ tonic = "0.14"
 zstd = "0.13.3"
 regex = "1.12.2"
 
-zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.3.0-alpha" }
+zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "feat/blake3-recursion" }
 # crates.io dependency
 # zisk-sdk = "1.3.0-alpha"
 # Local development
