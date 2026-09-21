@@ -39,6 +39,7 @@ target/release/ethproofs-client \
 | `--rpc.http-url <URL>` | Ethereum node HTTP RPC URL (default `http://localhost:8545`) |
 | `--rpc.ws-url <URL>` | Ethereum node WebSocket RPC URL (default `ws://localhost:8546`) |
 | `--input.block-modulus <N>` | Only process blocks whose number is a multiple of this value (default `1`) |
+| `--compressed` | Wrap the final proof into its compressed (size-optimized) variant |
 | `-s, --ethproofs.submit` | Submit proofs to EthProofs. Requires `--ethproofs.api-url`, `--ethproofs.api-token` and `--ethproofs.cluster-id` |
 | `--ethproofs.api-url <URL>` | EthProofs API URL |
 | `--ethproofs.api-token <TOKEN>` | EthProofs API token |

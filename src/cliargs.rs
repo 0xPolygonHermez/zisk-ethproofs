@@ -305,6 +305,10 @@ pub struct CliArgs {
     #[arg(long)]
     pub exit_on_error: bool,
 
+    /// Wrap the final proof into its compressed (size-optimized) variant
+    #[arg(long)]
+    pub compressed: bool,
+
     /// Maximum run time in minutes. When set, the application exits once this
     /// time has elapsed
     #[arg(long, short = 'r')]
