@@ -326,8 +326,7 @@ info "Worker registered with the coordinator"
 
 # --- Start ethproofs-client -------------------------------------------------
 
-# --coordinator-url must be the client-facing API port; the client's own default
-# is the worker-facing one, which would never connect.
+# --coordinator-url must be the client-facing API port, not the worker-facing one.
 client_args=(
     --guest "$ELF"
     --client "$CLIENT"
