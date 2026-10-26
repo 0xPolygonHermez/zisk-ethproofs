@@ -58,6 +58,11 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
             } else {
                 ProofKind::VadcopFinal
             };
+            let proof_type = match proof_kind {
+                ProofKind::Plonk => "PLONK",
+                ProofKind::VadcopFinalMinimal => "STARK compressed",
+                ProofKind::VadcopFinal => "STARK",
+            };
 
             #[cfg(zisk_hints)]
             let handle = {
@@ -111,7 +116,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
             let prove_result = match handle {
                 Ok(handle) => {
                     prove_job_id = handle.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
-                    info!("🔄 Generating proof for block {}, job_id: {}", proved_block_number, prove_job_id);
+                    info!("🔄 Generating proof ({}) for block {}, job_id: {}", proof_type, proved_block_number, prove_job_id);
 
                     handle.await.map_err(|e| anyhow!(e))
                 }
@@ -131,8 +136,8 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 let job_id_str = result.job_id().map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string());
 
                 info!(
-                    "✅ Proof generated for block {}, proving_time: {} ms, cycles: {}, job: {}",
-                    proved_block_number, proving_time_ms, proving_cycles, job_id_str
+                    "✅ Proof ({}) generated for block {}, proving_time: {} ms, cycles: {}, job: {}",
+                    proof_type, proved_block_number, proving_time_ms, proving_cycles, job_id_str
                 );
             }
 
@@ -280,11 +285,14 @@ async fn process_proof_success(
         proving_time_ms as u64,
     );
 
-    // Get the raw proof bytes. PLONK proofs carry their serialized bytes directly, while
-    // STARK (VadcopFinal/VadcopFinalMinimal) proofs are stored as u64 field elements
+    // Get the raw proof bytes. SNARK proofs (Plonk/Pilfflonk) carry their serialized bytes
+    // directly, while STARK (VadcopFinal/VadcopFinalMinimal) proofs are stored as u64 field
+    // elements. The match is exhaustive on purpose so new proof body variants fail to compile
     let proof_bytes = match &result.get_proof().body {
-        ProofBody::Plonk { proof_bytes, .. } => proof_bytes.clone(),
-        _ => match result.get_proof_u64() {
+        ProofBody::Plonk { proof_bytes, .. } | ProofBody::Pilfflonk { proof_bytes, .. } => {
+            proof_bytes.clone()
+        }
+        ProofBody::Vadcop { .. } => match result.get_proof_u64() {
             Ok(bytes) => {
                 // Convert Vec<u64> to Vec<u8> (little-endian)
                 bytes.iter().flat_map(|x| x.to_le_bytes()).collect::<Vec<u8>>()
