@@ -8,7 +8,7 @@ use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine};
 use chrono::Utc;
 use log::{debug, error, info, warn};
-use zisk_sdk::{ExecutorKind, ProofKind, ProveResult, ZiskStdin};
+use zisk_sdk::{ExecutorKind, ProofBody, ProofKind, ProveResult, ZiskStdin};
 
 use crate::{
     db::BlockProof,
@@ -51,7 +51,9 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
             // Wall-clock timestamp marking the start of this block's proof generation.
             let proof_start_ts = Utc::now().format("%Y-%m-%dT%H:%M:%S%.6fZ").to_string();
 
-            let proof_kind = if state.cliargs.compressed {
+            let proof_kind = if state.cliargs.plonk {
+                ProofKind::Plonk
+            } else if state.cliargs.compressed {
                 ProofKind::VadcopFinalMinimal
             } else {
                 ProofKind::VadcopFinal
@@ -278,16 +280,23 @@ async fn process_proof_success(
         proving_time_ms as u64,
     );
 
-    // Encode compressed proof to base64
-    let proof_bytes = match result.get_proof_u64() {
-        Ok(bytes) => {
-            // Convert Vec<u64> to Vec<u8> (little-endian)
-            bytes.iter().flat_map(|x| x.to_le_bytes()).collect::<Vec<u8>>()
-        }
-        Err(e) => {
-            error!("❌ Failed to get proof bytes for block {}, error: {}", proved_block_number, e);
-            return;
-        }
+    // Get the raw proof bytes. PLONK proofs carry their serialized bytes directly, while
+    // STARK (VadcopFinal/VadcopFinalMinimal) proofs are stored as u64 field elements
+    let proof_bytes = match &result.get_proof().body {
+        ProofBody::Plonk { proof_bytes, .. } => proof_bytes.clone(),
+        _ => match result.get_proof_u64() {
+            Ok(bytes) => {
+                // Convert Vec<u64> to Vec<u8> (little-endian)
+                bytes.iter().flat_map(|x| x.to_le_bytes()).collect::<Vec<u8>>()
+            }
+            Err(e) => {
+                error!(
+                    "❌ Failed to get proof bytes for block {}, error: {}",
+                    proved_block_number, e
+                );
+                return;
+            }
+        },
     };
 
     // Save proof to disk if enabled
