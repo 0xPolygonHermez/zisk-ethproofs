@@ -306,12 +306,12 @@ pub struct CliArgs {
     pub exit_on_error: bool,
 
     /// Wrap the final proof into its compressed (size-optimized) variant
-    #[arg(long, conflicts_with = "plonk")]
+    #[arg(long, conflicts_with = "snark")]
     pub compressed: bool,
 
-    /// Generate a PLONK (SNARK) proof instead of the default STARK proof
+    /// Generate a SNARK (PILFFLONK) proof instead of the default STARK proof
     #[arg(long, conflicts_with = "compressed")]
-    pub plonk: bool,
+    pub snark: bool,
 
     /// Maximum run time in minutes. When set, the application exits once this
     /// time has elapsed

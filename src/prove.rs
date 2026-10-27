@@ -51,7 +51,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
             // Wall-clock timestamp marking the start of this block's proof generation.
             let proof_start_ts = Utc::now().format("%Y-%m-%dT%H:%M:%S%.6fZ").to_string();
 
-            let proof_kind = if state.cliargs.plonk {
+            let proof_kind = if state.cliargs.snark {
                 ProofKind::Plonk
             } else if state.cliargs.compressed {
                 ProofKind::VadcopFinalMinimal
@@ -59,7 +59,7 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
                 ProofKind::VadcopFinal
             };
             let proof_type = match proof_kind {
-                ProofKind::Plonk => "PLONK",
+                ProofKind::Plonk => "PILFFLONK",
                 ProofKind::VadcopFinalMinimal => "STARK compressed",
                 ProofKind::VadcopFinal => "STARK",
             };
