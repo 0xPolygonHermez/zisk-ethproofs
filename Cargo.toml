@@ -43,8 +43,8 @@ regex = "1.12.2"
 # that alloy-trie 0.9.9 added. Keeps `cargo update` from breaking reth-trie-common.
 alloy-trie = "=0.9.5"
 
-zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.4.0-alpha" }
+# zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.4.0-alpha" }
 # crates.io dependency
-# zisk-sdk = "1.4.0-alpha"
+zisk-sdk = "1.4.0-alpha"
 # Local development
 # zisk-sdk = { path = "../../../zisk/sdk" }
