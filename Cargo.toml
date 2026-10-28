@@ -1,6 +1,6 @@
 [package]
 name = "ethproofs-client"
-version = "0.10.0"
+version = "0.14.0"
 edition = "2021"
 description = ""
 
@@ -39,6 +39,9 @@ sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio", "macros", "tls
 tonic = "0.14"
 zstd = "0.13.3"
 regex = "1.12.2"
+# Pinned: reth v2.1.0 builds `HashBuilder` without the `all_branch_nodes` field
+# that alloy-trie 0.9.9 added. Keeps `cargo update` from breaking reth-trie-common.
+alloy-trie = "=0.9.5"
 
 zisk-sdk = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.4.0-alpha" }
 # crates.io dependency
