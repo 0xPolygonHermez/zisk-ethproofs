@@ -294,7 +294,7 @@ pub struct CliArgs {
     pub guest: String,
 
     /// ZisK coordinator URL
-    #[arg(long, short = 'c', default_value = "http://localhost:50051")]
+    #[arg(long, short = 'c', default_value = "http://localhost:7000")]
     pub coordinator_url: String,
 
     /// Prove timeout in seconds
