@@ -52,14 +52,14 @@ pub async fn generate_proof(block_info: BlockInfo, state: AppState) -> Result<St
             let proof_start_ts = Utc::now().format("%Y-%m-%dT%H:%M:%S%.6fZ").to_string();
 
             let proof_kind = if state.cliargs.snark {
-                ProofKind::Plonk
+                ProofKind::Snark
             } else if state.cliargs.compressed {
                 ProofKind::VadcopFinalMinimal
             } else {
                 ProofKind::VadcopFinal
             };
             let proof_type = match proof_kind {
-                ProofKind::Plonk => "PILFFLONK",
+                ProofKind::Snark => "SNARK",
                 ProofKind::VadcopFinalMinimal => "STARK compressed",
                 ProofKind::VadcopFinal => "STARK",
             };
